@@ -4,13 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#2C1A0E" />
-  <meta name="description" content="AfroTresse — Trouve ta tresse parfaite" />
+  <meta name="description" content="AfroTresse â€” Trouve ta tresse parfaite" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="AfroTresse" />
   <link rel="manifest" href="/manifest.json" />
-  <title>AfroTresse — Trouve ta tresse parfaite</title>
+  <title>AfroTresse â€” Trouve ta tresse parfaite</title>
 </head>
 <body style="margin:0;padding:0;background:#2C1A0E">
   <div id="root"></div>
@@ -20,20 +20,20 @@
   <script type="text/babel" data-presets="react">
 const { useState, useRef, useEffect, useCallback } = React;
 
-/* ═══════════════════════════════════════════════════════════════
-   AFROTRESSE  —  PWA Complète avec IA réelle
-   ✦ Analyse visage via Claude Vision API (Anthropic)
-   ✦ 3 recommandations personnalisées
-   ✦ Mobile Money simulé (CinetPay-ready)
-   ✦ Bibliothèque premium, Parrainage, Avis
-   ✦ Marché : Bénin, Togo, Niger, Mali, Sénégal, Burkina, Côte d'Ivoire
-   ═══════════════════════════════════════════════════════════════ */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   AFROTRESSE  â€”  PWA ComplÃ¨te avec IA rÃ©elle
+   âœ¦ Analyse visage via Claude Vision API (Anthropic)
+   âœ¦ 3 recommandations personnalisÃ©es
+   âœ¦ Mobile Money simulÃ© (CinetPay-ready)
+   âœ¦ BibliothÃ¨que premium, Parrainage, Avis
+   âœ¦ MarchÃ© : BÃ©nin, Togo, Niger, Mali, SÃ©nÃ©gal, Burkina, CÃ´te d'Ivoire
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
-// ─── 🔑 CONFIGURATION ─────────────────────────────────────────────────────
-// Colle ta clé API Anthropic ici (console.anthropic.com)
+// â”€â”€â”€ ðŸ”‘ CONFIGURATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Colle ta clÃ© API Anthropic ici (console.anthropic.com)
 const ANTHROPIC_API_KEY = "COLLE_TA_CLE_ICI"; // sk-ant-...
 
-// ─── Palette design ───────────────────────────────────────────────────────
+// â”€â”€â”€ Palette design â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const C = {
   brown: "#2C1A0E", mid: "#5C3317", warm: "#8B5E3C",
   gold: "#C9963A", goldL: "#E8B96A", cream: "#FAF4EC",
@@ -42,54 +42,54 @@ const C = {
   ok: "#4CAF7D", green: "#1B5E20",
 };
 
-// ─── Catalogue des tresses ─────────────────────────────────────────────────
+// â”€â”€â”€ Catalogue des tresses â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const BRAIDS = [
-  { id:1,  name:"Knotless Braids",   emoji:"🌟", shapes:["ovale","cœur","long"],         tags:["Naturel","Léger","Longue durée"],      dur:"4–6h", desc:"Sans nœud à la racine, légères et naturelles. Idéales pour l'ovale — allongent subtilement les traits." },
-  { id:2,  name:"Fulani Braids",     emoji:"✨", shapes:["ovale","long","diamant"],       tags:["Traditionnel","Tendance","Peul"],      dur:"3–5h", desc:"Style africain avec motifs géométriques. Met en valeur les pommettes et la structure du visage." },
-  { id:3,  name:"Goddess Braids",    emoji:"👑", shapes:["rond","carré","large"],         tags:["Festif","Majestueux","Rapide"],        dur:"2–3h", desc:"Volumineuses et puissantes. Crée une couronne qui encadre majestueusement le visage." },
-  { id:4,  name:"Box Braids",        emoji:"💎", shapes:["universel"],                    tags:["Classique","Polyvalent","Protecteur"], dur:"5–8h", desc:"Le grand classique indémodable. Sections carrées régulières, adapté à toutes les occasions." },
-  { id:5,  name:"Senegalese Twist",  emoji:"🌿", shapes:["ovale","rond","cœur"],          tags:["Élégant","Doux","Sénégalais"],         dur:"4–6h", desc:"Torsades originaires du Sénégal. Met en valeur le cou et l'ovale. Très apprécié dans toute la sous-région." },
-  { id:6,  name:"Ghana Braids",      emoji:"⭐", shapes:["ovale","long","étroit"],         tags:["Puissant","Africain","Structure"],     dur:"3–5h", desc:"Épaisses à la base, effilées au bout. Style ghanéen populaire dans toute l'Afrique de l'Ouest." },
-  { id:7,  name:"Feed-in Braids",    emoji:"🌺", shapes:["cœur","diamant","étroit"],      tags:["Naturel","Léger","Confort"],           dur:"3–4h", desc:"Tresses progressives sans tension. Le style le plus doux et naturel pour le cuir chevelu." },
-  { id:8,  name:"Lemonade Braids",   emoji:"🍋", shapes:["ovale","carré","large"],        tags:["Moderne","Audacieux","Urban"],         dur:"4–5h", desc:"Sur le côté, audacieux et urban. Tendance digitale adoptée dans toute l'Afrique de l'Ouest." },
-  { id:9,  name:"Cornrows stylisés", emoji:"🔱", shapes:["universel"],                    tags:["Quotidien","Sport","Rapide"],          dur:"1–2h", desc:"Tresses collées élaborées. Élégant au quotidien, dégagent le visage et les traits." },
-  { id:10, name:"Micro Braids",      emoji:"🪷", shapes:["ovale","cœur","fin"],           tags:["Fin","Longévité","Délicat"],           dur:"6–10h", desc:"Très fines et légères. Une longévité exceptionnelle et une liberté de coiffage unique." },
+  { id:1,  name:"Knotless Braids",   emoji:"ðŸŒŸ", shapes:["ovale","cÅ“ur","long"],         tags:["Naturel","LÃ©ger","Longue durÃ©e"],      dur:"4â€“6h", desc:"Sans nÅ“ud Ã  la racine, lÃ©gÃ¨res et naturelles. IdÃ©ales pour l'ovale â€” allongent subtilement les traits." },
+  { id:2,  name:"Fulani Braids",     emoji:"âœ¨", shapes:["ovale","long","diamant"],       tags:["Traditionnel","Tendance","Peul"],      dur:"3â€“5h", desc:"Style africain avec motifs gÃ©omÃ©triques. Met en valeur les pommettes et la structure du visage." },
+  { id:3,  name:"Goddess Braids",    emoji:"ðŸ‘‘", shapes:["rond","carrÃ©","large"],         tags:["Festif","Majestueux","Rapide"],        dur:"2â€“3h", desc:"Volumineuses et puissantes. CrÃ©e une couronne qui encadre majestueusement le visage." },
+  { id:4,  name:"Box Braids",        emoji:"ðŸ’Ž", shapes:["universel"],                    tags:["Classique","Polyvalent","Protecteur"], dur:"5â€“8h", desc:"Le grand classique indÃ©modable. Sections carrÃ©es rÃ©guliÃ¨res, adaptÃ© Ã  toutes les occasions." },
+  { id:5,  name:"Senegalese Twist",  emoji:"ðŸŒ¿", shapes:["ovale","rond","cÅ“ur"],          tags:["Ã‰lÃ©gant","Doux","SÃ©nÃ©galais"],         dur:"4â€“6h", desc:"Torsades originaires du SÃ©nÃ©gal. Met en valeur le cou et l'ovale. TrÃ¨s apprÃ©ciÃ© dans toute la sous-rÃ©gion." },
+  { id:6,  name:"Ghana Braids",      emoji:"â­", shapes:["ovale","long","Ã©troit"],         tags:["Puissant","Africain","Structure"],     dur:"3â€“5h", desc:"Ã‰paisses Ã  la base, effilÃ©es au bout. Style ghanÃ©en populaire dans toute l'Afrique de l'Ouest." },
+  { id:7,  name:"Feed-in Braids",    emoji:"ðŸŒº", shapes:["cÅ“ur","diamant","Ã©troit"],      tags:["Naturel","LÃ©ger","Confort"],           dur:"3â€“4h", desc:"Tresses progressives sans tension. Le style le plus doux et naturel pour le cuir chevelu." },
+  { id:8,  name:"Lemonade Braids",   emoji:"ðŸ‹", shapes:["ovale","carrÃ©","large"],        tags:["Moderne","Audacieux","Urban"],         dur:"4â€“5h", desc:"Sur le cÃ´tÃ©, audacieux et urban. Tendance digitale adoptÃ©e dans toute l'Afrique de l'Ouest." },
+  { id:9,  name:"Cornrows stylisÃ©s", emoji:"ðŸ”±", shapes:["universel"],                    tags:["Quotidien","Sport","Rapide"],          dur:"1â€“2h", desc:"Tresses collÃ©es Ã©laborÃ©es. Ã‰lÃ©gant au quotidien, dÃ©gagent le visage et les traits." },
+  { id:10, name:"Micro Braids",      emoji:"ðŸª·", shapes:["ovale","cÅ“ur","fin"],           tags:["Fin","LongÃ©vitÃ©","DÃ©licat"],           dur:"6â€“10h", desc:"TrÃ¨s fines et lÃ©gÃ¨res. Une longÃ©vitÃ© exceptionnelle et une libertÃ© de coiffage unique." },
 ];
 
-const COUNTRIES = ["Bénin","Togo","Niger","Mali","Sénégal","Burkina Faso","Côte d'Ivoire","Autre (diaspora)"];
+const COUNTRIES = ["BÃ©nin","Togo","Niger","Mali","SÃ©nÃ©gal","Burkina Faso","CÃ´te d'Ivoire","Autre (diaspora)"];
 const OPERATORS = {
-  "Bénin":["MTN Mobile Money","Moov Money"],
+  "BÃ©nin":["MTN Mobile Money","Moov Money"],
   "Togo":["T-Money (Togocel)","Moov Money"],
   "Niger":["Airtel Money","Zamani Mobile Money"],
   "Mali":["Orange Money","Moov Money"],
-  "Sénégal":["Orange Money","Wave","Free Money"],
+  "SÃ©nÃ©gal":["Orange Money","Wave","Free Money"],
   "Burkina Faso":["Orange Money","Moov Money"],
-  "Côte d'Ivoire":["Orange Money","MTN Mobile Money","Wave"],
+  "CÃ´te d'Ivoire":["Orange Money","MTN Mobile Money","Wave"],
   "Autre (diaspora)":["PayPal"],
 };
 
-// ─── Prompt IA pour l'analyse du visage ───────────────────────────────────
-const buildPrompt = () => `Tu es une experte en coiffure africaine spécialisée dans les tresses pour l'Afrique de l'Ouest.
+// â”€â”€â”€ Prompt IA pour l'analyse du visage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const buildPrompt = () => `Tu es une experte en coiffure africaine spÃ©cialisÃ©e dans les tresses pour l'Afrique de l'Ouest.
 
-Analyse cette photo de visage et réponds UNIQUEMENT en JSON valide, sans texte avant ou après.
+Analyse cette photo de visage et rÃ©ponds UNIQUEMENT en JSON valide, sans texte avant ou aprÃ¨s.
 
 Analyse :
-1. La forme du visage (ovale / rond / carré / cœur / long / diamant / large)
-2. Les proportions faciales (front, pommettes, mâchoire, longueur)
-3. Les traits caractéristiques
+1. La forme du visage (ovale / rond / carrÃ© / cÅ“ur / long / diamant / large)
+2. Les proportions faciales (front, pommettes, mÃ¢choire, longueur)
+3. Les traits caractÃ©ristiques
 
 Puis recommande les 3 MEILLEURS styles parmi cette liste :
-${BRAIDS.map(b => `- ${b.name} (adapté à : ${b.shapes.join(", ")})`).join("\n")}
+${BRAIDS.map(b => `- ${b.name} (adaptÃ© Ã  : ${b.shapes.join(", ")})`).join("\n")}
 
-Réponds en JSON :
+RÃ©ponds en JSON :
 {
   "forme": "ovale",
-  "description_visage": "2 phrases décrivant les traits caractéristiques détectés",
+  "description_visage": "2 phrases dÃ©crivant les traits caractÃ©ristiques dÃ©tectÃ©s",
   "recommandations": [
     {
       "nom": "Knotless Braids",
       "score": 97,
-      "raison": "1 phrase expliquant pourquoi ce style est parfait pour CE visage précis"
+      "raison": "1 phrase expliquant pourquoi ce style est parfait pour CE visage prÃ©cis"
     },
     {
       "nom": "Fulani Braids",
@@ -104,18 +104,18 @@ Réponds en JSON :
   ]
 }`;
 
-// ─── Appel à l'API Claude Vision ───────────────────────────────────────────
+// â”€â”€â”€ Appel Ã  l'API Claude Vision â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function analyzeWithClaude(base64Image, mimeType = "image/jpeg") {
-  // Si pas de clé configurée → simulation réaliste
+  // Si pas de clÃ© configurÃ©e â†’ simulation rÃ©aliste
   if (!ANTHROPIC_API_KEY || ANTHROPIC_API_KEY === "COLLE_TA_CLE_ICI") {
     await new Promise(r => setTimeout(r, 3500));
     return {
       forme: "Ovale",
-      description_visage: "Visage harmonieux aux proportions équilibrées. Front légèrement plus large que le menton avec des pommettes doucement saillantes — la forme idéale pour la quasi-totalité des styles de tresses.",
+      description_visage: "Visage harmonieux aux proportions Ã©quilibrÃ©es. Front lÃ©gÃ¨rement plus large que le menton avec des pommettes doucement saillantes â€” la forme idÃ©ale pour la quasi-totalitÃ© des styles de tresses.",
       recommandations: [
-        { nom:"Knotless Braids",  score:97, raison:"La forme ovale équilibrée met parfaitement en valeur les knotless — leur légèreté naturelle sublime les traits sans alourdir le visage." },
-        { nom:"Fulani Braids",    score:91, raison:"Les motifs géométriques des Fulani Braids s'harmonisent idéalement avec la symétrie naturelle de ce type de visage." },
-        { nom:"Senegalese Twist", score:86, raison:"Les torsades créent un effet d'allongement élégant qui accentue la beauté des proportions naturelles de ce visage." },
+        { nom:"Knotless Braids",  score:97, raison:"La forme ovale Ã©quilibrÃ©e met parfaitement en valeur les knotless â€” leur lÃ©gÃ¨retÃ© naturelle sublime les traits sans alourdir le visage." },
+        { nom:"Fulani Braids",    score:91, raison:"Les motifs gÃ©omÃ©triques des Fulani Braids s'harmonisent idÃ©alement avec la symÃ©trie naturelle de ce type de visage." },
+        { nom:"Senegalese Twist", score:86, raison:"Les torsades crÃ©ent un effet d'allongement Ã©lÃ©gant qui accentue la beautÃ© des proportions naturelles de ce visage." },
       ],
       simulated: true,
     };
@@ -148,7 +148,7 @@ async function analyzeWithClaude(base64Image, mimeType = "image/jpeg") {
   return JSON.parse(clean);
 }
 
-// ─── Helpers UI ───────────────────────────────────────────────────────────
+// â”€â”€â”€ Helpers UI â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function useLS(key, init) {
   const [v, sv] = useState(() => { try { const s = localStorage.getItem(key); return s ? JSON.parse(s) : init; } catch { return init; } });
   const set = useCallback(val => { sv(val); try { localStorage.setItem(key, JSON.stringify(val)); } catch {} }, [key]);
@@ -166,7 +166,7 @@ function Toast({ msg, show }) {
 function Nav({ cur, go }) {
   return (
     <div style={{ position:"fixed", bottom:0, left:"50%", transform:"translateX(-50%)", width:"100%", maxWidth:430, background:C.white, borderTop:`1px solid ${C.dark}`, display:"flex", padding:"10px 0 22px", zIndex:100 }}>
-      {[["home","🏠","Accueil"],["selfie","📸","Analyser"],["premium","👑","Premium"],["profile","👤","Profil"]].map(([id,ic,lb]) => (
+      {[["home","ðŸ ","Accueil"],["selfie","ðŸ“¸","Analyser"],["premium","ðŸ‘‘","Premium"],["profile","ðŸ‘¤","Profil"]].map(([id,ic,lb]) => (
         <div key={id} onClick={() => go(id)} style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:4, cursor:"pointer" }}>
           <span style={{ fontSize:22 }}>{ic}</span>
           <span style={{ fontSize:10, color:cur===id?C.gold:C.txtL, fontWeight:cur===id?700:400 }}>{lb}</span>
@@ -179,7 +179,7 @@ function Nav({ cur, go }) {
 function Bar({ title, back, right }) {
   return (
     <div style={{ display:"flex", alignItems:"center", padding:"50px 20px 14px", gap:12 }}>
-      {back && <button onClick={back} style={{ width:40, height:40, borderRadius:"50%", background:C.dark, border:"none", cursor:"pointer", fontSize:18, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>←</button>}
+      {back && <button onClick={back} style={{ width:40, height:40, borderRadius:"50%", background:C.dark, border:"none", cursor:"pointer", fontSize:18, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>â†</button>}
       <span style={{ fontFamily:"'Playfair Display',serif", fontSize:20, color:C.brown, flex:1 }}>{title}</span>
       {right}
     </div>
@@ -217,15 +217,16 @@ function Select({ label, options, ...p }) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════
-// CARROUSEL HERO — composant réutilisable
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// CARROUSEL HERO â€” composant rÃ©utilisable
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 const HERO_SLIDES = [
-  { url:"https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&q=80", style:"Knotless Braids", tag:"Tendance #1" },
-  { url:"https://images.unsplash.com/photo-1605980776566-0486c3ac7617?w=600&q=80", style:"Fulani Braids", tag:"Style traditionnel" },
-  { url:"https://images.unsplash.com/photo-1614289371518-722f2615943d?w=600&q=80", style:"Box Braids", tag:"Classique intemporel" },
-  { url:"https://images.unsplash.com/photo-1580489944761-15a19d654956?w=600&q=80", style:"Goddess Braids", tag:"Look majestueux" },
-  { url:"https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=600&q=80", style:"Cornrows", tag:"Style élégant" },
+  { url:"/Afrotresse1.jpg", style:"Cornrows", tag:"Tendance #1" },
+  { url:"/Afrotresse2.jpg", style:"Knotless Braids", tag:"Tendance #2" },
+  { url:"/Afrotresse3.jpg", style:"Fulani Braids", tag:"Tendance #3" },
+  { url:"/Afrotresse4.jpg", style:"Two-Strand Twists", tag:"Tendance #4" },
+  { url:"/Afrotresse5.jpg", style:"Cornrows", tag:"Tendance #5" },
+  { url:"/Afrotresse6.jpg", style:"Pom-Poms Natural", tag:"Tendance #6" },
 ];
 
 function HeroCarousel({ height="100vh", overlay=true }) {
@@ -253,7 +254,7 @@ function HeroCarousel({ height="100vh", overlay=true }) {
         opacity: fade ? 1 : 0,
       }} />
 
-      {/* Dégradé sombre en bas */}
+      {/* DÃ©gradÃ© sombre en bas */}
       {overlay && <div style={{ position:"absolute", inset:0, background:"linear-gradient(to bottom, rgba(44,26,14,.3) 0%, rgba(44,26,14,.15) 40%, rgba(44,26,14,.85) 100%)" }} />}
 
       {/* Badge style actuel */}
@@ -282,14 +283,14 @@ function HeroCarousel({ height="100vh", overlay=true }) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // SPLASH
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 function Splash({ go }) {
   return (
     <div style={{ minHeight:"100vh", background:C.brown, position:"relative", overflow:"hidden", display:"flex", flexDirection:"column" }}>
 
-      {/* HERO CARROUSEL plein écran */}
+      {/* HERO CARROUSEL plein Ã©cran */}
       <div style={{ position:"absolute", inset:0 }}>
         <HeroCarousel height="100%" overlay={true} />
       </div>
@@ -305,7 +306,7 @@ function Splash({ go }) {
             border:`1px solid rgba(201,150,58,.4)`, borderRadius:50,
             padding:"10px 20px",
           }}>
-            <span style={{ fontSize:22 }}>🌍</span>
+            <span style={{ fontSize:22 }}>ðŸŒ</span>
             <h1 style={{ fontFamily:"'Playfair Display',serif", margin:0, lineHeight:1 }}>
               <span style={{ fontSize:28, color:C.cream }}>Afro</span>
               <em style={{ fontSize:28, color:C.gold }}>Tresse</em>
@@ -316,7 +317,7 @@ function Splash({ go }) {
         {/* Spacer */}
         <div style={{ flex:1 }} />
 
-        {/* Bas de page — CTA */}
+        {/* Bas de page â€” CTA */}
         <div style={{
           background:"rgba(44,26,14,.75)", backdropFilter:"blur(16px)",
           borderRadius:"28px 28px 0 0", padding:"28px 24px 44px",
@@ -326,44 +327,44 @@ function Splash({ go }) {
             Trouve ta tresse <em style={{ color:C.gold }}>parfaite</em>
           </h2>
           <p style={{ color:"rgba(250,244,236,.7)", fontSize:14, lineHeight:1.6, margin:"0 0 20px" }}>
-            L'IA analyse ton visage et te propose les <strong style={{ color:C.goldL }}>3 tresses idéales</strong> pour ta morphologie.
+            L'IA analyse ton visage et te propose les <strong style={{ color:C.goldL }}>3 tresses idÃ©ales</strong> pour ta morphologie.
           </p>
 
           <div style={{ display:"flex", flexWrap:"wrap", gap:6, margin:"0 0 22px" }}>
-            {["🇧🇯","🇹🇬","🇳🇪","🇲🇱","🇸🇳","🇧🇫","🇨🇮"].map((f,i) => (
+            {["ðŸ‡§ðŸ‡¯","ðŸ‡¹ðŸ‡¬","ðŸ‡³ðŸ‡ª","ðŸ‡²ðŸ‡±","ðŸ‡¸ðŸ‡³","ðŸ‡§ðŸ‡«","ðŸ‡¨ðŸ‡®"].map((f,i) => (
               <span key={i} style={{ background:"rgba(201,150,58,.15)", border:`1px solid rgba(201,150,58,.25)`, borderRadius:50, padding:"3px 8px", fontSize:13 }}>{f}</span>
             ))}
           </div>
 
-          <Btn onClick={() => go("register")} style={{ marginBottom:10, boxShadow:"0 8px 30px rgba(201,150,58,.4)" }}>Commencer gratuitement ✦</Btn>
-          <Btn onClick={() => go("login")} variant="ghost">J'ai déjà un compte</Btn>
+          <Btn onClick={() => go("register")} style={{ marginBottom:10, boxShadow:"0 8px 30px rgba(201,150,58,.4)" }}>Commencer gratuitement âœ¦</Btn>
+          <Btn onClick={() => go("login")} variant="ghost">J'ai dÃ©jÃ  un compte</Btn>
         </div>
       </div>
     </div>
   );
 }
 
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // INSCRIPTION
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 function Register({ go, setUser, toast }) {
-  const [f, sf] = useState({ name:"", email:"", password:"", country:"Bénin" });
+  const [f, sf] = useState({ name:"", email:"", password:"", country:"BÃ©nin" });
   const [busy, sb] = useState(false);
 
   const submit = () => {
-    if (!f.name||!f.email||!f.password) { toast("⚠️ Remplis tous les champs"); return; }
-    if (f.password.length < 6) { toast("⚠️ Mot de passe : 6 caractères minimum"); return; }
+    if (!f.name||!f.email||!f.password) { toast("âš ï¸ Remplis tous les champs"); return; }
+    if (f.password.length < 6) { toast("âš ï¸ Mot de passe : 6 caractÃ¨res minimum"); return; }
     sb(true);
     setTimeout(() => {
       setUser({ name:f.name, email:f.email, country:f.country, points:30, plan:"gratuit", analyses:0, saved:[], referrals:0, code:"AFRO"+Math.random().toString(36).slice(2,6).toUpperCase() });
-      toast("🎉 Bienvenue ! 30 points offerts !");
+      toast("ðŸŽ‰ Bienvenue ! 30 points offerts !");
       go("home");
     }, 1000);
   };
 
   const demoLogin = () => {
-    setUser({ name:"Aïcha K.", email:"demo@afrotresse.com", country:"Côte d'Ivoire", points:120, plan:"premium", analyses:8, saved:[1,3], referrals:3, code:"AICHA30" });
-    toast("👋 Connexion démo activée !");
+    setUser({ name:"AÃ¯cha K.", email:"demo@afrotresse.com", country:"CÃ´te d'Ivoire", points:120, plan:"premium", analyses:8, saved:[1,3], referrals:3, code:"AICHA30" });
+    toast("ðŸ‘‹ Connexion dÃ©mo activÃ©e !");
     go("home");
   };
 
@@ -371,21 +372,21 @@ function Register({ go, setUser, toast }) {
     <div style={{ minHeight:"100vh", background:C.cream }}>
       <div style={{ background:C.brown, padding:"54px 24px 32px", position:"relative", overflow:"hidden" }}>
         <div style={{ position:"absolute", inset:0, background:"radial-gradient(ellipse at 100% 0%,rgba(201,150,58,.2) 0%,transparent 50%)", pointerEvents:"none" }} />
-        <button onClick={() => go("splash")} style={{ background:"rgba(255,255,255,.1)", border:"none", borderRadius:"50%", width:36, height:36, color:C.cream, fontSize:18, cursor:"pointer", marginBottom:16, display:"flex", alignItems:"center", justifyContent:"center" }}>←</button>
-        <h1 style={{ fontFamily:"'Playfair Display',serif", color:C.cream, fontSize:28, margin:"0 0 6px" }}>Créer mon compte</h1>
-        <p style={{ color:C.sand, fontSize:13, margin:0 }}>🎁 30 points offerts dès l'inscription</p>
+        <button onClick={() => go("splash")} style={{ background:"rgba(255,255,255,.1)", border:"none", borderRadius:"50%", width:36, height:36, color:C.cream, fontSize:18, cursor:"pointer", marginBottom:16, display:"flex", alignItems:"center", justifyContent:"center" }}>â†</button>
+        <h1 style={{ fontFamily:"'Playfair Display',serif", color:C.cream, fontSize:28, margin:"0 0 6px" }}>CrÃ©er mon compte</h1>
+        <p style={{ color:C.sand, fontSize:13, margin:0 }}>ðŸŽ 30 points offerts dÃ¨s l'inscription</p>
       </div>
 
       <div style={{ padding:"28px 24px 100px" }}>
-        <Input label="Ton prénom" type="text" placeholder="Ex : Aïcha" value={f.name} onChange={e=>sf({...f,name:e.target.value})} />
+        <Input label="Ton prÃ©nom" type="text" placeholder="Ex : AÃ¯cha" value={f.name} onChange={e=>sf({...f,name:e.target.value})} />
         <Input label="Email" type="email" placeholder="ton@email.com" value={f.email} onChange={e=>sf({...f,email:e.target.value})} />
-        <Input label="Mot de passe" type="password" placeholder="Minimum 6 caractères" value={f.password} onChange={e=>sf({...f,password:e.target.value})} />
+        <Input label="Mot de passe" type="password" placeholder="Minimum 6 caractÃ¨res" value={f.password} onChange={e=>sf({...f,password:e.target.value})} />
         <Select label="Ton pays" value={f.country} onChange={e=>sf({...f,country:e.target.value})} options={COUNTRIES} />
 
-        <Btn onClick={submit} disabled={busy} style={{ marginBottom:12 }}>{busy?"Création…":"Créer mon compte →"}</Btn>
+        <Btn onClick={submit} disabled={busy} style={{ marginBottom:12 }}>{busy?"CrÃ©ationâ€¦":"CrÃ©er mon compte â†’"}</Btn>
 
         <div style={{ textAlign:"center", marginBottom:24 }}>
-          <span style={{ color:C.txtL, fontSize:14 }}>Déjà un compte ? </span>
+          <span style={{ color:C.txtL, fontSize:14 }}>DÃ©jÃ  un compte ? </span>
           <span onClick={() => go("login")} style={{ color:C.gold, fontSize:14, fontWeight:600, cursor:"pointer" }}>Se connecter</span>
         </div>
 
@@ -395,16 +396,16 @@ function Register({ go, setUser, toast }) {
           <div style={{ flex:1, height:1, background:C.dark }} />
         </div>
         <button onClick={demoLogin} style={{ width:"100%", padding:"14px", borderRadius:12, background:C.white, border:`1.5px solid ${C.dark}`, cursor:"pointer", fontSize:14, color:C.txt, fontFamily:"inherit" }}>
-          🎬 Connexion démo (compte Premium)
+          ðŸŽ¬ Connexion dÃ©mo (compte Premium)
         </button>
       </div>
     </div>
   );
 }
 
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // CONNEXION
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 function Login({ go, setUser, toast }) {
   const [f, sf] = useState({ email:"", password:"" });
   const [busy, sb] = useState(false);
@@ -412,18 +413,18 @@ function Login({ go, setUser, toast }) {
   return (
     <div style={{ minHeight:"100vh", background:C.cream }}>
       <div style={{ background:C.brown, padding:"54px 24px 32px" }}>
-        <button onClick={() => go("splash")} style={{ background:"rgba(255,255,255,.1)", border:"none", borderRadius:"50%", width:36, height:36, color:C.cream, fontSize:18, cursor:"pointer", marginBottom:16, display:"flex", alignItems:"center", justifyContent:"center" }}>←</button>
-        <h1 style={{ fontFamily:"'Playfair Display',serif", color:C.cream, fontSize:28, margin:"0 0 6px" }}>Bon retour ✨</h1>
-        <p style={{ color:C.sand, fontSize:13, margin:0 }}>Connecte-toi pour accéder à ta bibliothèque</p>
+        <button onClick={() => go("splash")} style={{ background:"rgba(255,255,255,.1)", border:"none", borderRadius:"50%", width:36, height:36, color:C.cream, fontSize:18, cursor:"pointer", marginBottom:16, display:"flex", alignItems:"center", justifyContent:"center" }}>â†</button>
+        <h1 style={{ fontFamily:"'Playfair Display',serif", color:C.cream, fontSize:28, margin:"0 0 6px" }}>Bon retour âœ¨</h1>
+        <p style={{ color:C.sand, fontSize:13, margin:0 }}>Connecte-toi pour accÃ©der Ã  ta bibliothÃ¨que</p>
       </div>
       <div style={{ padding:"28px 24px" }}>
         <Input label="Email" type="email" placeholder="ton@email.com" value={f.email} onChange={e=>sf({...f,email:e.target.value})} />
-        <Input label="Mot de passe" type="password" placeholder="••••••" value={f.password} onChange={e=>sf({...f,password:e.target.value})} />
+        <Input label="Mot de passe" type="password" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢" value={f.password} onChange={e=>sf({...f,password:e.target.value})} />
         <div style={{ textAlign:"right", marginBottom:24 }}>
-          <span onClick={() => toast("📧 Email de réinitialisation envoyé !")} style={{ color:C.gold, fontSize:13, cursor:"pointer" }}>Mot de passe oublié ?</span>
+          <span onClick={() => toast("ðŸ“§ Email de rÃ©initialisation envoyÃ© !")} style={{ color:C.gold, fontSize:13, cursor:"pointer" }}>Mot de passe oubliÃ© ?</span>
         </div>
-        <Btn onClick={() => { if(!f.email||!f.password){toast("⚠️ Remplis tous les champs");return;} sb(true); setTimeout(()=>{ setUser({name:"Aïcha K.",email:f.email,country:"Côte d'Ivoire",points:120,plan:"premium",analyses:8,saved:[1,3],referrals:3,code:"AICHA30"}); toast("👋 Bon retour !"); go("home"); },900); }} disabled={busy} style={{ marginBottom:16 }}>
-          {busy?"Connexion…":"Se connecter →"}
+        <Btn onClick={() => { if(!f.email||!f.password){toast("âš ï¸ Remplis tous les champs");return;} sb(true); setTimeout(()=>{ setUser({name:"AÃ¯cha K.",email:f.email,country:"CÃ´te d'Ivoire",points:120,plan:"premium",analyses:8,saved:[1,3],referrals:3,code:"AICHA30"}); toast("ðŸ‘‹ Bon retour !"); go("home"); },900); }} disabled={busy} style={{ marginBottom:16 }}>
+          {busy?"Connexionâ€¦":"Se connecter â†’"}
         </Btn>
         <div style={{ textAlign:"center" }}>
           <span style={{ color:C.txtL, fontSize:14 }}>Pas de compte ? </span>
@@ -434,47 +435,44 @@ function Login({ go, setUser, toast }) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // HOME
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 function Home({ go, user, toast }) {
   const name = user?.name?.split(" ")[0] || "Belle";
   return (
     <div style={{ minHeight:"100vh", background:C.cream, paddingBottom:80 }}>
       {/* HERO CARROUSEL */}
-      <div style={{ position:"relative", height:260, overflow:"hidden" }}>
-        <HeroCarousel height="260px" overlay={true} />
+      <div style={{ position:"relative", height:340, overflow:"hidden" }}>
+        <HeroCarousel height="340px" overlay={true} />
         <div style={{ position:"absolute", inset:0, zIndex:3, display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"16px 20px 20px" }}>
-          <p style={{ color:"rgba(250,244,236,.8)", fontSize:11, letterSpacing:2, textTransform:"uppercase", margin:"0 0 2px" }}>Bonjour 👋</p>
+          <p style={{ color:"rgba(250,244,236,.8)", fontSize:11, letterSpacing:2, textTransform:"uppercase", margin:"0 0 2px" }}>Bonjour ðŸ‘‹</p>
           <h1 style={{ fontFamily:"'Playfair Display',serif", color:C.cream, fontSize:22, margin:"0 0 10px", lineHeight:1.2, textShadow:"0 2px 8px rgba(0,0,0,.5)" }}>
             {name}, <em style={{ color:C.gold }}>quelle tresse aujourd'hui ?</em>
           </h1>
           <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(44,26,14,.6)", backdropFilter:"blur(8px)", border:`1px solid rgba(201,150,58,.4)`, borderRadius:50, padding:"6px 14px", color:C.goldL, fontSize:13, alignSelf:"flex-start" }}>
-            ⭐ <strong style={{ fontSize:15 }}>{user?.points||30}</strong> pts · <span style={{ fontSize:11, opacity:.8 }}>{user?.plan==="premium"?"✦ Premium":"Plan gratuit"}</span>
+            â­ <strong style={{ fontSize:15 }}>{user?.points||30}</strong> pts Â· <span style={{ fontSize:11, opacity:.8 }}>{user?.plan==="premium"?"âœ¦ Premium":"Plan gratuit"}</span>
           </div>
         </div>
       </div>
 
       <div style={{ padding:"24px" }}>
         {/* CTA principal */}
-        <div onClick={()=>go("selfie")} style={{ background:`linear-gradient(135deg,${C.mid},${C.brown})`, borderRadius:22, padding:"28px", textAlign:"center", cursor:"pointer", boxShadow:`0 12px 40px rgba(44,26,14,.22)`, position:"relative", overflow:"hidden", marginBottom:24 }}>
-          <div style={{ position:"absolute", inset:0, background:"radial-gradient(ellipse at 50% 50%,rgba(201,150,58,.12) 0%,transparent 60%)", pointerEvents:"none" }} />
-          <span style={{ fontSize:52, display:"block", marginBottom:12 }}>📸</span>
-          <h2 style={{ fontFamily:"'Playfair Display',serif", color:C.cream, fontSize:22, margin:"0 0 8px" }}>Analyse ton visage</h2>
-          <p style={{ color:C.sand, fontSize:14, lineHeight:1.5, margin:"0 0 20px" }}>L'IA analyse ta morphologie et te propose les 3 tresses qui te subliment.</p>
-          <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:C.gold, color:C.brown, padding:"14px 28px", borderRadius:50, fontWeight:700, fontSize:14 }}>
-            Prendre mon selfie →
+        <div onClick={()=>go("selfie")} style={{ background:`linear-gradient(135deg,${C.mid},${C.brown})`, borderRadius:22, padding:"20px 28px", display:"flex", alignItems:"center", gap:16, cursor:"pointer", boxShadow:`0 12px 40px rgba(44,26,14,.22)`, marginBottom:24 }}>
+          <span style={{ fontSize:42 }}>ðŸ“¸</span>
+          <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:C.gold, color:C.brown, padding:"14px 24px", borderRadius:50, fontWeight:700, fontSize:15, flex:1, justifyContent:"center" }}>
+            Prendre mon selfie â†’
           </div>
         </div>
 
         {/* Grid */}
-        <p style={{ fontFamily:"'Playfair Display',serif", fontSize:18, color:C.brown, margin:"0 0 14px" }}>Accès rapide</p>
+        <p style={{ fontFamily:"'Playfair Display',serif", fontSize:18, color:C.brown, margin:"0 0 14px" }}>AccÃ¨s rapide</p>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:20 }}>
           {[
-            { ic:"💫", t:"Mes résultats",   s:"Dernière analyse",   sc:"results"  },
-            { ic:"📚", t:"Bibliothèque",    s:"Styles sauvegardés", sc:"library"  },
-            { ic:"🎁", t:"Parrainage",      s:"Gagne des points",   sc:"referral" },
-            { ic:"⭐", t:"Avis clients",    s:"La communauté",      sc:"reviews"  },
+            { ic:"ðŸ’«", t:"Mes rÃ©sultats",   s:"DerniÃ¨re analyse",   sc:"results"  },
+            { ic:"ðŸ“š", t:"BibliothÃ¨que",    s:"Styles sauvegardÃ©s", sc:"library"  },
+            { ic:"ðŸŽ", t:"Parrainage",      s:"Gagne des points",   sc:"referral" },
+            { ic:"â­", t:"Avis clients",    s:"La communautÃ©",      sc:"reviews"  },
           ].map(c => (
             <div key={c.sc} onClick={()=>go(c.sc)} style={{ background:C.white, borderRadius:16, padding:"18px", cursor:"pointer", boxShadow:`0 2px 12px rgba(0,0,0,.06)` }}>
               <span style={{ fontSize:28, display:"block", marginBottom:8 }}>{c.ic}</span>
@@ -486,21 +484,21 @@ function Home({ go, user, toast }) {
 
         {user?.plan !== "premium" && (
           <div onClick={()=>go("premium")} style={{ background:`linear-gradient(135deg,${C.gold},#7A5018)`, borderRadius:16, padding:"18px 20px", cursor:"pointer", display:"flex", alignItems:"center", gap:14 }}>
-            <span style={{ fontSize:32 }}>👑</span>
+            <span style={{ fontSize:32 }}>ðŸ‘‘</span>
             <div style={{ flex:1 }}>
               <strong style={{ color:C.white, fontSize:14, display:"block" }}>Passe en Premium</strong>
-              <span style={{ color:"rgba(255,255,255,.8)", fontSize:12 }}>Bibliothèque · Analyses illimitées · dès 1 500 XOF/mois</span>
+              <span style={{ color:"rgba(255,255,255,.8)", fontSize:12 }}>BibliothÃ¨que Â· Analyses illimitÃ©es Â· dÃ¨s 1 500 XOF/mois</span>
             </div>
-            <span style={{ color:C.white, fontSize:20 }}>›</span>
+            <span style={{ color:C.white, fontSize:20 }}>â€º</span>
           </div>
         )}
 
-        {/* Clé API manquante */}
+        {/* ClÃ© API manquante */}
         {ANTHROPIC_API_KEY === "COLLE_TA_CLE_ICI" && (
           <div style={{ marginTop:16, background:"#FFF3CD", borderRadius:16, padding:"16px 18px", border:"1px solid #FBBF24" }}>
-            <strong style={{ fontSize:13, color:"#92400E", display:"block", marginBottom:4 }}>⚙️ Mode démonstration actif</strong>
+            <strong style={{ fontSize:13, color:"#92400E", display:"block", marginBottom:4 }}>âš™ï¸ Mode dÃ©monstration actif</strong>
             <p style={{ fontSize:12, color:"#92400E", margin:0, lineHeight:1.5 }}>
-              L'analyse IA utilise des résultats simulés. Pour activer la vraie IA : <strong>console.anthropic.com</strong> → API Keys → colle ta clé dans le code (ligne 18).
+              L'analyse IA utilise des rÃ©sultats simulÃ©s. Pour activer la vraie IA : <strong>console.anthropic.com</strong> â†’ API Keys â†’ colle ta clÃ© dans le code (ligne 18).
             </p>
           </div>
         )}
@@ -510,9 +508,9 @@ function Home({ go, user, toast }) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // SELFIE  
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 function Selfie({ go, user, setUser, toast, setAnalysis }) {
   const [phase, sp] = useState("guide"); // guide | preview
   const [photo, setPhoto] = useState(null);
@@ -535,7 +533,7 @@ function Selfie({ go, user, setUser, toast, setAnalysis }) {
 
   const launch = async () => {
     if (user?.plan !== "premium" && (user?.points||0) < 10) {
-      toast("⚠️ 10 points requis. Achète un pack ou abonne-toi.");
+      toast("âš ï¸ 10 points requis. AchÃ¨te un pack ou abonne-toi.");
       go("premium"); return;
     }
     setAnalysis({ b64, mime, photo });
@@ -551,7 +549,7 @@ function Selfie({ go, user, setUser, toast, setAnalysis }) {
         {photo
           ? <img src={photo} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
           : <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:12, color:"rgba(250,244,236,.25)" }}>
-              <span style={{ fontSize:64 }}>📷</span>
+              <span style={{ fontSize:64 }}>ðŸ“·</span>
               <p style={{ fontSize:13, letterSpacing:1, margin:0 }}>Appuie pour prendre ton selfie</p>
             </div>
         }
@@ -571,33 +569,33 @@ function Selfie({ go, user, setUser, toast, setAnalysis }) {
         )}
       </div>
 
-      {/* Contrôles */}
+      {/* ContrÃ´les */}
       <div style={{ padding:"24px 24px 48px", display:"flex", flexDirection:"column", alignItems:"center", gap:16 }}>
         {phase === "preview" ? (
           <>
-            <p style={{ color:C.sand, fontSize:14, textAlign:"center", margin:0 }}>Photo prise · Lancer l'analyse IA ?</p>
+            <p style={{ color:C.sand, fontSize:14, textAlign:"center", margin:0 }}>Photo prise Â· Lancer l'analyse IA ?</p>
             <div style={{ display:"flex", gap:10, width:"100%" }}>
               <button onClick={()=>{setPhoto(null);setB64(null);sp("guide");}} style={{ flex:1, padding:"15px", borderRadius:50, background:"rgba(255,255,255,.1)", border:"none", color:C.cream, fontSize:14, cursor:"pointer", fontFamily:"inherit" }}>
-                ↺ Recommencer
+                â†º Recommencer
               </button>
               <button onClick={launch} style={{ flex:2, padding:"15px", borderRadius:50, background:`linear-gradient(135deg,${C.gold},#A8782A)`, border:"none", color:C.white, fontSize:15, fontWeight:700, cursor:"pointer", fontFamily:"inherit" }}>
-                ✦ Analyser mon visage
+                âœ¦ Analyser mon visage
               </button>
             </div>
           </>
         ) : (
           <>
-            <p style={{ color:C.sand, fontSize:13, textAlign:"center", margin:0 }}>Centre ton visage · Bonne lumière · Regarde l'objectif</p>
+            <p style={{ color:C.sand, fontSize:13, textAlign:"center", margin:0 }}>Centre ton visage Â· Bonne lumiÃ¨re Â· Regarde l'objectif</p>
             <div style={{ display:"flex", alignItems:"center", gap:28 }}>
-              <button onClick={()=>go("home")} style={{ width:52, height:52, borderRadius:"50%", background:"rgba(255,255,255,.1)", border:"none", color:C.cream, fontSize:20, cursor:"pointer" }}>←</button>
+              <button onClick={()=>go("home")} style={{ width:52, height:52, borderRadius:"50%", background:"rgba(255,255,255,.1)", border:"none", color:C.cream, fontSize:20, cursor:"pointer" }}>â†</button>
               <label htmlFor="cam" style={{ width:76, height:76, borderRadius:"50%", background:C.white, border:`4px solid rgba(255,255,255,.3)`, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:30, boxShadow:`0 0 0 8px rgba(255,255,255,.1)` }}>
-                📸
+                ðŸ“¸
               </label>
               <input id="cam" type="file" accept="image/*" capture="user" onChange={onFile} style={{ display:"none" }} />
-              <button onClick={()=>toast("🔄 Retournement caméra")} style={{ width:52, height:52, borderRadius:"50%", background:"rgba(255,255,255,.1)", border:"none", color:C.cream, fontSize:20, cursor:"pointer" }}>🔄</button>
+              <button onClick={()=>toast("ðŸ”„ Retournement camÃ©ra")} style={{ width:52, height:52, borderRadius:"50%", background:"rgba(255,255,255,.1)", border:"none", color:C.cream, fontSize:20, cursor:"pointer" }}>ðŸ”„</button>
             </div>
             <p style={{ color:"rgba(212,184,150,.5)", fontSize:12, margin:0 }}>
-              {user?.plan==="premium" ? "✦ Analyses illimitées" : `10 points · Il t'en reste ${user?.points||0}`}
+              {user?.plan==="premium" ? "âœ¦ Analyses illimitÃ©es" : `10 points Â· Il t'en reste ${user?.points||0}`}
             </p>
           </>
         )}
@@ -606,24 +604,24 @@ function Selfie({ go, user, setUser, toast, setAnalysis }) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // ANALYSE IA
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 function Analyzing({ go, analysis, setResults, toast }) {
   const [step, ss] = useState(0);
   const [prog, sp] = useState(0);
   const [err, se] = useState(null);
-  const steps = ["Détection de la forme du visage…","Analyse des proportions…","Identification des traits…","Sélection des 3 meilleures tresses…"];
+  const steps = ["DÃ©tection de la forme du visageâ€¦","Analyse des proportionsâ€¦","Identification des traitsâ€¦","SÃ©lection des 3 meilleures tressesâ€¦"];
   const ran = useRef(false);
 
   useEffect(() => {
     if (ran.current) return;
     ran.current = true;
 
-    // Anime les étapes en parallèle de l'appel API
+    // Anime les Ã©tapes en parallÃ¨le de l'appel API
     steps.forEach((_,i) => setTimeout(() => { ss(i+1); sp((i+1)/steps.length*100); }, (i+1)*900));
 
-    // Appel IA réel
+    // Appel IA rÃ©el
     analyzeWithClaude(analysis?.b64 || "", analysis?.mime || "image/jpeg")
       .then(data => {
         setTimeout(() => {
@@ -633,31 +631,31 @@ function Analyzing({ go, analysis, setResults, toast }) {
       })
       .catch(e => {
         se(e.message);
-        toast("❌ Erreur IA : " + e.message.slice(0,60));
+        toast("âŒ Erreur IA : " + e.message.slice(0,60));
       });
   }, []);
 
   if (err) return (
     <div style={{ minHeight:"100vh", background:C.brown, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:32, textAlign:"center" }}>
-      <span style={{ fontSize:64, marginBottom:20 }}>⚠️</span>
+      <span style={{ fontSize:64, marginBottom:20 }}>âš ï¸</span>
       <h2 style={{ fontFamily:"'Playfair Display',serif", color:C.cream, fontSize:22, margin:"0 0 12px" }}>Erreur d'analyse</h2>
       <p style={{ color:C.sand, fontSize:14, marginBottom:28, lineHeight:1.5 }}>{err}</p>
-      <Btn onClick={()=>go("selfie")}>← Réessayer</Btn>
+      <Btn onClick={()=>go("selfie")}>â† RÃ©essayer</Btn>
     </div>
   );
 
   return (
     <div style={{ minHeight:"100vh", background:C.brown, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"40px 32px", textAlign:"center" }}>
       <div style={{ position:"relative", marginBottom:32 }}>
-        <div style={{ width:160, height:160, borderRadius:"50%", background:`linear-gradient(135deg,${C.mid},${C.warm})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:64 }}>🪞</div>
+        <div style={{ width:160, height:160, borderRadius:"50%", background:`linear-gradient(135deg,${C.mid},${C.warm})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:64 }}>ðŸªž</div>
         {[{i:-12,d:"1.2s",bTop:C.gold,bRight:C.gold},{i:-22,d:"2s",rev:true,bBot:"rgba(201,150,58,.4)"}].map((s,k) => (
           <div key={k} style={{ position:"absolute", borderRadius:"50%", border:"2px solid transparent", inset:s.i, borderTopColor:s.bTop||"transparent", borderRightColor:s.bRight||"transparent", borderBottomColor:s.bBot||"transparent", animation:`spin ${s.d} linear infinite ${s.rev?"reverse":""}` }} />
         ))}
       </div>
 
-      <h2 style={{ fontFamily:"'Playfair Display',serif", color:C.cream, fontSize:26, margin:"0 0 8px" }}>Analyse en cours…</h2>
+      <h2 style={{ fontFamily:"'Playfair Display',serif", color:C.cream, fontSize:26, margin:"0 0 8px" }}>Analyse en coursâ€¦</h2>
       <p style={{ color:C.sand, fontSize:14, margin:"0 0 28px" }}>
-        {ANTHROPIC_API_KEY !== "COLLE_TA_CLE_ICI" ? "AfroTresse IA analyse ton visage" : "Simulation en cours (mode démo)"}
+        {ANTHROPIC_API_KEY !== "COLLE_TA_CLE_ICI" ? "AfroTresse IA analyse ton visage" : "Simulation en cours (mode dÃ©mo)"}
       </p>
 
       <div style={{ width:"100%", display:"flex", flexDirection:"column", gap:10 }}>
@@ -665,7 +663,7 @@ function Analyzing({ go, analysis, setResults, toast }) {
           <div key={i} style={{ display:"flex", alignItems:"center", gap:12, background:"rgba(255,255,255,.05)", borderRadius:12, padding:"14px 18px", opacity:step>i?1:.3, transition:"all .5s" }}>
             <div style={{ width:10, height:10, borderRadius:"50%", background:step>i?C.ok:"rgba(201,150,58,.3)", flexShrink:0 }} />
             <span style={{ fontSize:14, color:step>i?C.cream:C.sand, flex:1, textAlign:"left" }}>{s}</span>
-            {step>i && <span style={{ color:C.ok, fontSize:14 }}>✓</span>}
+            {step>i && <span style={{ color:C.ok, fontSize:14 }}>âœ“</span>}
           </div>
         ))}
       </div>
@@ -677,13 +675,13 @@ function Analyzing({ go, analysis, setResults, toast }) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════
-// RÉSULTATS IA — 3 recommandations
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// RÃ‰SULTATS IA â€” 3 recommandations
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 function Results({ go, user, setUser, results, toast }) {
   const recs = results?.recommandations || [];
 
-  // Récupère les données complètes depuis BRAIDS
+  // RÃ©cupÃ¨re les donnÃ©es complÃ¨tes depuis BRAIDS
   const enriched = recs.map(r => {
     const found = BRAIDS.find(b => b.name.toLowerCase() === r.nom.toLowerCase()) ||
                   BRAIDS.find(b => r.nom.toLowerCase().includes(b.name.toLowerCase().split(" ")[0])) ||
@@ -693,13 +691,13 @@ function Results({ go, user, setUser, results, toast }) {
 
   const save = (style) => {
     if (user?.plan !== "premium" && (user?.points||0) < 5) {
-      toast("⚠️ 5 points requis pour sauvegarder"); go("premium"); return;
+      toast("âš ï¸ 5 points requis pour sauvegarder"); go("premium"); return;
     }
     const saved = user?.saved || [];
-    if (saved.includes(style.id)) { toast("✅ Déjà dans ta bibliothèque !"); return; }
+    if (saved.includes(style.id)) { toast("âœ… DÃ©jÃ  dans ta bibliothÃ¨que !"); return; }
     const pts = user?.plan === "premium" ? user.points : Math.max(0,(user.points||0)-5);
     setUser({...user, saved:[...saved,style.id], points:pts});
-    toast(`💾 "${style.nom || style.name}" sauvegardé !`);
+    toast(`ðŸ’¾ "${style.nom || style.name}" sauvegardÃ© !`);
   };
 
   const bgs = [`linear-gradient(135deg,${C.mid},${C.brown})`,`linear-gradient(135deg,#3D1A0A,#6B2E10)`,`linear-gradient(135deg,#1A2C1A,#2D5A2D)`];
@@ -710,37 +708,37 @@ function Results({ go, user, setUser, results, toast }) {
       <div style={{ background:C.brown, padding:"54px 24px 28px", position:"relative", overflow:"hidden" }}>
         <div style={{ position:"absolute", inset:0, background:"radial-gradient(ellipse at 100% 0%,rgba(201,150,58,.2) 0%,transparent 50%)", pointerEvents:"none" }} />
         <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(201,150,58,.2)", border:`1px solid rgba(201,150,58,.5)`, borderRadius:50, padding:"5px 14px", color:C.goldL, fontSize:11, fontWeight:600, letterSpacing:1, textTransform:"uppercase", marginBottom:12 }}>
-          ✦ Visage {results?.forme || "Ovale"} détecté
+          âœ¦ Visage {results?.forme || "Ovale"} dÃ©tectÃ©
         </div>
-        <h2 style={{ fontFamily:"'Playfair Display',serif", color:C.cream, fontSize:24, margin:"0 0 6px" }}>Tes 3 tresses idéales 💫</h2>
+        <h2 style={{ fontFamily:"'Playfair Display',serif", color:C.cream, fontSize:24, margin:"0 0 6px" }}>Tes 3 tresses idÃ©ales ðŸ’«</h2>
         <p style={{ color:C.sand, fontSize:13, margin:0, lineHeight:1.5 }}>
-          {results?.description_visage || "Analyse personnalisée basée sur ta morphologie."}
+          {results?.description_visage || "Analyse personnalisÃ©e basÃ©e sur ta morphologie."}
         </p>
-        {results?.simulated && <p style={{ color:"rgba(212,184,150,.6)", fontSize:11, margin:"8px 0 0", fontStyle:"italic" }}>⚙️ Mode démo — active ta clé API pour une analyse réelle</p>}
+        {results?.simulated && <p style={{ color:"rgba(212,184,150,.6)", fontSize:11, margin:"8px 0 0", fontStyle:"italic" }}>âš™ï¸ Mode dÃ©mo â€” active ta clÃ© API pour une analyse rÃ©elle</p>}
       </div>
 
       <div style={{ padding:"20px 24px" }}>
         {enriched.length === 0 ? (
           <div style={{ textAlign:"center", padding:"60px 0" }}>
-            <span style={{ fontSize:48 }}>😕</span>
-            <p style={{ color:C.txtL, marginTop:16 }}>Aucun résultat. Lance une nouvelle analyse.</p>
-            <Btn onClick={()=>go("selfie")} style={{ marginTop:16 }}>📸 Nouvelle analyse</Btn>
+            <span style={{ fontSize:48 }}>ðŸ˜•</span>
+            <p style={{ color:C.txtL, marginTop:16 }}>Aucun rÃ©sultat. Lance une nouvelle analyse.</p>
+            <Btn onClick={()=>go("selfie")} style={{ marginTop:16 }}>ðŸ“¸ Nouvelle analyse</Btn>
           </div>
         ) : enriched.map((s,i) => (
           <div key={i} style={{ background:C.white, borderRadius:20, overflow:"hidden", marginBottom:18, boxShadow:`0 4px 20px rgba(0,0,0,.07)` }}>
             <div style={{ height:180, background:bgs[i], position:"relative", display:"flex", alignItems:"center", justifyContent:"center" }}>
-              <span style={{ fontSize:72 }}>{s.emoji||"🌟"}</span>
+              <span style={{ fontSize:72 }}>{s.emoji||"ðŸŒŸ"}</span>
               <div style={{ position:"absolute", top:12, right:12, background:i===0?C.gold:C.warm, color:C.white, fontSize:11, fontWeight:800, padding:"4px 10px", borderRadius:50 }}>
                 {s.score}% match
               </div>
-              {i===0 && <div style={{ position:"absolute", top:12, left:12, background:"rgba(201,150,58,.25)", border:`1px solid rgba(201,150,58,.6)`, color:C.goldL, fontSize:10, fontWeight:700, padding:"4px 10px", borderRadius:50 }}>✦ MEILLEUR CHOIX</div>}
+              {i===0 && <div style={{ position:"absolute", top:12, left:12, background:"rgba(201,150,58,.25)", border:`1px solid rgba(201,150,58,.6)`, color:C.goldL, fontSize:10, fontWeight:700, padding:"4px 10px", borderRadius:50 }}>âœ¦ MEILLEUR CHOIX</div>}
             </div>
             <div style={{ padding:20 }}>
               <h3 style={{ fontFamily:"'Playfair Display',serif", fontSize:18, color:C.brown, margin:"0 0 6px" }}>{s.nom || s.name}</h3>
               {/* Raison IA */}
               <div style={{ background:C.cream, borderRadius:10, padding:"10px 14px", marginBottom:10, borderLeft:`3px solid ${C.gold}` }}>
                 <p style={{ fontSize:13, color:C.txtM, lineHeight:1.5, margin:0, fontStyle:"italic" }}>
-                  💡 {s.aiRaison || s.desc}
+                  ðŸ’¡ {s.aiRaison || s.desc}
                 </p>
               </div>
               <p style={{ fontSize:13, color:C.txtL, lineHeight:1.5, margin:"0 0 12px" }}>{s.desc}</p>
@@ -748,9 +746,9 @@ function Results({ go, user, setUser, results, toast }) {
                 {(s.tags||[]).map(t => <span key={t} style={{ background:C.dark, color:C.txtM, fontSize:11, padding:"4px 10px", borderRadius:50 }}>{t}</span>)}
               </div>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                <span style={{ fontSize:12, color:C.txtL }}>⏱ {s.dur}</span>
+                <span style={{ fontSize:12, color:C.txtL }}>â± {s.dur}</span>
                 <button onClick={()=>save(s)} style={{ background:(user?.saved||[]).includes(s.id)?C.ok:C.brown, color:C.white, border:"none", padding:"9px 18px", borderRadius:50, fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:"inherit" }}>
-                  {(user?.saved||[]).includes(s.id)?"✓ Sauvegardé":"💾 Sauvegarder"}
+                  {(user?.saved||[]).includes(s.id)?"âœ“ SauvegardÃ©":"ðŸ’¾ Sauvegarder"}
                 </button>
               </div>
             </div>
@@ -759,41 +757,41 @@ function Results({ go, user, setUser, results, toast }) {
       </div>
 
       <div style={{ position:"fixed", bottom:0, left:"50%", transform:"translateX(-50%)", width:"100%", maxWidth:430, padding:"14px 20px 30px", background:C.cream, borderTop:`1px solid ${C.dark}`, display:"flex", gap:10 }}>
-        <button onClick={()=>toast("📤 Lien copié ! Partage sur WhatsApp 💬")} style={{ width:50, height:50, borderRadius:"50%", background:C.dark, border:"none", fontSize:20, cursor:"pointer" }}>📤</button>
-        <button onClick={()=>go("selfie")} style={{ flex:1, background:C.brown, color:C.cream, border:"none", padding:"14px", borderRadius:50, fontSize:14, fontWeight:600, cursor:"pointer", fontFamily:"inherit" }}>📸 Nouvelle analyse</button>
-        <button onClick={()=>go("library")} style={{ width:50, height:50, borderRadius:"50%", background:C.gold, border:"none", fontSize:20, cursor:"pointer" }}>📚</button>
+        <button onClick={()=>toast("ðŸ“¤ Lien copiÃ© ! Partage sur WhatsApp ðŸ’¬")} style={{ width:50, height:50, borderRadius:"50%", background:C.dark, border:"none", fontSize:20, cursor:"pointer" }}>ðŸ“¤</button>
+        <button onClick={()=>go("selfie")} style={{ flex:1, background:C.brown, color:C.cream, border:"none", padding:"14px", borderRadius:50, fontSize:14, fontWeight:600, cursor:"pointer", fontFamily:"inherit" }}>ðŸ“¸ Nouvelle analyse</button>
+        <button onClick={()=>go("library")} style={{ width:50, height:50, borderRadius:"50%", background:C.gold, border:"none", fontSize:20, cursor:"pointer" }}>ðŸ“š</button>
       </div>
     </div>
   );
 }
 
-// ═══════════════════════════════════════════════════════════
-// BIBLIOTHÈQUE
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// BIBLIOTHÃˆQUE
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 function Library({ go, user, toast }) {
   const isPrem = user?.plan === "premium";
   const savedStyles = BRAIDS.filter(b => (user?.saved||[]).includes(b.id));
 
   if (!isPrem && savedStyles.length === 0) return (
     <div style={{ minHeight:"100vh", background:C.cream }}>
-      <Bar title="Ma bibliothèque" back={()=>go("home")} />
+      <Bar title="Ma bibliothÃ¨que" back={()=>go("home")} />
       <div style={{ padding:"40px 28px", textAlign:"center" }}>
-        <span style={{ fontSize:72, display:"block", marginBottom:20 }}>📚</span>
-        <h2 style={{ fontFamily:"'Playfair Display',serif", color:C.brown, fontSize:24, margin:"0 0 12px" }}>Bibliothèque Premium</h2>
-        <p style={{ color:C.txtL, fontSize:15, lineHeight:1.65, margin:"0 0 28px" }}>Sauvegarde tes styles, crée des collections et accède au catalogue complet des tresses.</p>
-        <Btn onClick={()=>go("premium")}>Débloquer la bibliothèque 👑</Btn>
-        <p style={{ color:C.txtL, fontSize:13, marginTop:12 }}>À partir de 1 500 XOF / mois</p>
+        <span style={{ fontSize:72, display:"block", marginBottom:20 }}>ðŸ“š</span>
+        <h2 style={{ fontFamily:"'Playfair Display',serif", color:C.brown, fontSize:24, margin:"0 0 12px" }}>BibliothÃ¨que Premium</h2>
+        <p style={{ color:C.txtL, fontSize:15, lineHeight:1.65, margin:"0 0 28px" }}>Sauvegarde tes styles, crÃ©e des collections et accÃ¨de au catalogue complet des tresses.</p>
+        <Btn onClick={()=>go("premium")}>DÃ©bloquer la bibliothÃ¨que ðŸ‘‘</Btn>
+        <p style={{ color:C.txtL, fontSize:13, marginTop:12 }}>Ã€ partir de 1 500 XOF / mois</p>
       </div>
     </div>
   );
 
   return (
     <div style={{ minHeight:"100vh", background:C.cream, paddingBottom:80 }}>
-      <Bar title="Ma bibliothèque 📚" back={()=>go("home")} right={isPrem ? <span style={{ background:C.gold, color:C.white, fontSize:11, fontWeight:700, padding:"4px 10px", borderRadius:50 }}>PREMIUM</span> : null} />
+      <Bar title="Ma bibliothÃ¨que ðŸ“š" back={()=>go("home")} right={isPrem ? <span style={{ background:C.gold, color:C.white, fontSize:11, fontWeight:700, padding:"4px 10px", borderRadius:50 }}>PREMIUM</span> : null} />
       <div style={{ padding:"0 24px 24px" }}>
-        {/* Sauvegardés */}
+        {/* SauvegardÃ©s */}
         {savedStyles.length > 0 && <>
-          <p style={{ fontFamily:"'Playfair Display',serif", fontSize:17, color:C.brown, margin:"8px 0 14px" }}>Styles sauvegardés ({savedStyles.length})</p>
+          <p style={{ fontFamily:"'Playfair Display',serif", fontSize:17, color:C.brown, margin:"8px 0 14px" }}>Styles sauvegardÃ©s ({savedStyles.length})</p>
           {savedStyles.map(s => (
             <div key={s.id} style={{ background:C.white, borderRadius:16, overflow:"hidden", marginBottom:12, display:"flex", boxShadow:`0 2px 12px rgba(0,0,0,.06)` }}>
               <div style={{ width:78, background:`linear-gradient(135deg,${C.mid},${C.brown})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:32, flexShrink:0 }}>{s.emoji}</div>
@@ -803,7 +801,7 @@ function Library({ go, user, toast }) {
                   {s.tags.map(t => <span key={t} style={{ background:C.dark, color:C.txtM, fontSize:10, padding:"3px 8px", borderRadius:50 }}>{t}</span>)}
                 </div>
               </div>
-              <button onClick={()=>toast("📤 Partagé sur WhatsApp !")} style={{ background:"none", border:"none", padding:"0 16px", cursor:"pointer", fontSize:20 }}>📤</button>
+              <button onClick={()=>toast("ðŸ“¤ PartagÃ© sur WhatsApp !")} style={{ background:"none", border:"none", padding:"0 16px", cursor:"pointer", fontSize:20 }}>ðŸ“¤</button>
             </div>
           ))}
         </>}
@@ -826,19 +824,19 @@ function Library({ go, user, toast }) {
 
         {savedStyles.length === 0 && isPrem && (
           <div style={{ textAlign:"center", padding:"32px 0" }}>
-            <span style={{ fontSize:48, display:"block", marginBottom:12 }}>🌟</span>
-            <p style={{ color:C.txtL, fontSize:15 }}>Aucun style sauvegardé.<br />Lance une analyse pour commencer !</p>
+            <span style={{ fontSize:48, display:"block", marginBottom:12 }}>ðŸŒŸ</span>
+            <p style={{ color:C.txtL, fontSize:15 }}>Aucun style sauvegardÃ©.<br />Lance une analyse pour commencer !</p>
           </div>
         )}
-        <Btn onClick={()=>go("selfie")} variant="dark" style={{ marginTop:20 }}>📸 Nouvelle analyse</Btn>
+        <Btn onClick={()=>go("selfie")} variant="dark" style={{ marginTop:20 }}>ðŸ“¸ Nouvelle analyse</Btn>
       </div>
     </div>
   );
 }
 
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // PREMIUM & PAIEMENT
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 function Premium({ go, user, setUser, toast }) {
   const [sel, ss] = useState(null);
   const [pay, sp] = useState(null);
@@ -846,23 +844,23 @@ function Premium({ go, user, setUser, toast }) {
   const ops = OPERATORS[user?.country] || OPERATORS["Autre (diaspora)"];
 
   const plans = [
-    { id:"essential", label:"Essentiel", xof:"1 500 XOF", eur:"2,29 €", feats:["3 analyses / mois","1 sauvegarde par analyse","Tendances du moment","Support standard"] },
-    { id:"premium",   label:"Premium",   xof:"3 500 XOF", eur:"5,34 €", pop:true, feats:["Analyses illimitées","Bibliothèque complète + catalogue","Toutes les sauvegardes","Partage WhatsApp intégré","Support prioritaire"] },
+    { id:"essential", label:"Essentiel", xof:"1 500 XOF", eur:"2,29 â‚¬", feats:["3 analyses / mois","1 sauvegarde par analyse","Tendances du moment","Support standard"] },
+    { id:"premium",   label:"Premium",   xof:"3 500 XOF", eur:"5,34 â‚¬", pop:true, feats:["Analyses illimitÃ©es","BibliothÃ¨que complÃ¨te + catalogue","Toutes les sauvegardes","Partage WhatsApp intÃ©grÃ©","Support prioritaire"] },
   ];
   const packs = [
-    { pts:30, xof:"900 XOF",   eur:"1,37 €", label:"3 analyses" },
-    { pts:80, xof:"2 000 XOF", eur:"3,05 €", label:"8 analyses", best:true },
-    { pts:200,xof:"4 500 XOF", eur:"6,87 €", label:"20 analyses" },
+    { pts:30, xof:"900 XOF",   eur:"1,37 â‚¬", label:"3 analyses" },
+    { pts:80, xof:"2 000 XOF", eur:"3,05 â‚¬", label:"8 analyses", best:true },
+    { pts:200,xof:"4 500 XOF", eur:"6,87 â‚¬", label:"20 analyses" },
   ];
 
   const doPay = () => {
-    if (!sel) { toast("⚠️ Choisis un plan ou un pack"); return; }
-    if (pay==="momo" && !momo.phone) { toast("⚠️ Saisis ton numéro Mobile Money"); return; }
-    toast("⏳ Notification envoyée sur ton téléphone…");
+    if (!sel) { toast("âš ï¸ Choisis un plan ou un pack"); return; }
+    if (pay==="momo" && !momo.phone) { toast("âš ï¸ Saisis ton numÃ©ro Mobile Money"); return; }
+    toast("â³ Notification envoyÃ©e sur ton tÃ©lÃ©phoneâ€¦");
     setTimeout(() => {
       const newPts = sel.startsWith("pts_") ? (user?.points||0) + parseInt(sel.split("_")[1]) : (user?.points||0) + 50;
       setUser({...user, plan:"premium", points:newPts });
-      toast("🎉 Premium activé ! Bienvenue dans le club ✦");
+      toast("ðŸŽ‰ Premium activÃ© ! Bienvenue dans le club âœ¦");
       go("home");
     }, 2200);
   };
@@ -871,9 +869,9 @@ function Premium({ go, user, setUser, toast }) {
     <div style={{ minHeight:"100vh", background:C.cream, paddingBottom:80 }}>
       <div style={{ background:C.brown, padding:"54px 24px 32px", textAlign:"center", position:"relative", overflow:"hidden" }}>
         <div style={{ position:"absolute", inset:0, background:"radial-gradient(ellipse at 50% 100%,rgba(201,150,58,.2) 0%,transparent 60%)", pointerEvents:"none" }} />
-        <span style={{ fontSize:52, display:"block", position:"relative", zIndex:1 }}>👑</span>
+        <span style={{ fontSize:52, display:"block", position:"relative", zIndex:1 }}>ðŸ‘‘</span>
         <h2 style={{ fontFamily:"'Playfair Display',serif", color:C.cream, fontSize:26, margin:"12px 0 8px", position:"relative", zIndex:1 }}>Passe en Premium</h2>
-        <p style={{ color:C.sand, fontSize:14, position:"relative", zIndex:1 }}>Bibliothèque illimitée · Analyses sans limite · Marché UEMOA</p>
+        <p style={{ color:C.sand, fontSize:14, position:"relative", zIndex:1 }}>BibliothÃ¨que illimitÃ©e Â· Analyses sans limite Â· MarchÃ© UEMOA</p>
       </div>
 
       <div style={{ padding:"24px" }}>
@@ -881,37 +879,37 @@ function Premium({ go, user, setUser, toast }) {
         <p style={{ fontFamily:"'Playfair Display',serif", fontSize:18, color:C.brown, margin:"0 0 14px" }}>Abonnements mensuels</p>
         {plans.map(p => (
           <div key={p.id} onClick={()=>{ss(p.id);sp(null);}} style={{ background:sel===p.id?`linear-gradient(to bottom right,${C.white},#FFF8EE)`:C.white, borderRadius:20, padding:22, marginBottom:14, cursor:"pointer", border:`2px solid ${sel===p.id?C.gold:"transparent"}`, boxShadow:sel===p.id?`0 4px 28px rgba(201,150,58,.22)`:`0 4px 18px rgba(0,0,0,.06)`, position:"relative" }}>
-            {p.pop && <div style={{ position:"absolute", top:14, right:14, background:C.gold, color:C.white, fontSize:10, fontWeight:800, letterSpacing:1, textTransform:"uppercase", padding:"4px 10px", borderRadius:50 }}>⭐ Populaire</div>}
+            {p.pop && <div style={{ position:"absolute", top:14, right:14, background:C.gold, color:C.white, fontSize:10, fontWeight:800, letterSpacing:1, textTransform:"uppercase", padding:"4px 10px", borderRadius:50 }}>â­ Populaire</div>}
             <div style={{ display:"flex", alignItems:"baseline", gap:6, marginBottom:2 }}>
               <span style={{ fontFamily:"'Playfair Display',serif", fontSize:28, color:C.brown, fontWeight:700 }}>{p.xof}</span>
-              <span style={{ fontSize:12, color:C.txtL }}>/ mois · ≈ {p.eur}</span>
+              <span style={{ fontSize:12, color:C.txtL }}>/ mois Â· â‰ˆ {p.eur}</span>
             </div>
             <p style={{ fontSize:15, fontWeight:600, color:C.mid, margin:"0 0 14px" }}>{p.label}</p>
-            {p.feats.map(f => <div key={f} style={{ display:"flex", alignItems:"center", gap:8, marginBottom:7, fontSize:13, color:C.txtM }}><span style={{ color:C.gold, fontWeight:700 }}>✓</span>{f}</div>)}
+            {p.feats.map(f => <div key={f} style={{ display:"flex", alignItems:"center", gap:8, marginBottom:7, fontSize:13, color:C.txtM }}><span style={{ color:C.gold, fontWeight:700 }}>âœ“</span>{f}</div>)}
           </div>
         ))}
 
         {/* Points */}
-        <p style={{ fontFamily:"'Playfair Display',serif", fontSize:18, color:C.brown, margin:"20px 0 14px" }}>🪙 Acheter des points</p>
+        <p style={{ fontFamily:"'Playfair Display',serif", fontSize:18, color:C.brown, margin:"20px 0 14px" }}>ðŸª™ Acheter des points</p>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10, marginBottom:6 }}>
           {packs.map(p => (
             <div key={p.pts} onClick={()=>{ss(`pts_${p.pts}`);sp(null);}} style={{ background:sel===`pts_${p.pts}`?`linear-gradient(to bottom right,${C.white},#FFF8EE)`:C.white, borderRadius:16, padding:"14px 8px", textAlign:"center", cursor:"pointer", border:`2px solid ${sel===`pts_${p.pts}`?C.gold:p.best?C.gold+"66":"transparent"}`, boxShadow:`0 2px 10px rgba(0,0,0,.05)` }}>
               <div style={{ fontSize:9, color:C.txtL, textTransform:"uppercase", letterSpacing:1 }}>POINTS</div>
               <div style={{ fontSize:22, fontWeight:700, color:C.brown }}>{p.pts}</div>
               <div style={{ fontSize:11, color:C.gold, fontWeight:600 }}>{p.xof}</div>
-              <div style={{ fontSize:10, color:C.txtL }}>≈ {p.eur}</div>
+              <div style={{ fontSize:10, color:C.txtL }}>â‰ˆ {p.eur}</div>
               <div style={{ fontSize:10, color:C.txtL }}>{p.label}</div>
-              {p.best && <div style={{ fontSize:9, color:C.gold, fontWeight:700, marginTop:4 }}>✦ Meilleur prix</div>}
+              {p.best && <div style={{ fontSize:9, color:C.gold, fontWeight:700, marginTop:4 }}>âœ¦ Meilleur prix</div>}
             </div>
           ))}
         </div>
-        <p style={{ fontSize:11, color:C.txtL, textAlign:"center", marginBottom:20 }}>10 pts = 1 analyse · 5 pts = 1 sauvegarde · Les points n'expirent pas</p>
+        <p style={{ fontSize:11, color:C.txtL, textAlign:"center", marginBottom:20 }}>10 pts = 1 analyse Â· 5 pts = 1 sauvegarde Â· Les points n'expirent pas</p>
 
         {/* Mode paiement */}
         {sel && <>
           <p style={{ fontFamily:"'Playfair Display',serif", fontSize:18, color:C.brown, margin:"0 0 14px" }}>Mode de paiement</p>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:16 }}>
-            {[{id:"momo",ic:"📱",lb:"Mobile Money",sub:ops.slice(0,2).join(" · ")},{id:"paypal",ic:"🅿️",lb:"PayPal",sub:"Diaspora · International"}].map(m => (
+            {[{id:"momo",ic:"ðŸ“±",lb:"Mobile Money",sub:ops.slice(0,2).join(" Â· ")},{id:"paypal",ic:"ðŸ…¿ï¸",lb:"PayPal",sub:"Diaspora Â· International"}].map(m => (
               <div key={m.id} onClick={()=>sp(m.id)} style={{ background:pay===m.id?`linear-gradient(to bottom right,${C.white},#FFF8EE)`:C.white, borderRadius:16, padding:"16px 12px", cursor:"pointer", textAlign:"center", border:`2px solid ${pay===m.id?C.gold:"transparent"}`, boxShadow:`0 2px 10px rgba(0,0,0,.05)` }}>
                 <span style={{ fontSize:28, display:"block", marginBottom:6 }}>{m.ic}</span>
                 <strong style={{ fontSize:13, color:C.brown, display:"block" }}>{m.lb}</strong>
@@ -922,19 +920,19 @@ function Premium({ go, user, setUser, toast }) {
 
           {pay==="momo" && (
             <div style={{ background:C.white, borderRadius:16, padding:"18px", marginBottom:16, boxShadow:`0 2px 10px rgba(0,0,0,.05)` }}>
-              <Select label="Opérateur Mobile Money" value={momo.op} onChange={e=>sm({...momo,op:e.target.value})} options={["Choisir…",...ops]} />
-              <Input label="Numéro Mobile Money" type="tel" placeholder="+229 XX XX XX XX" value={momo.phone} onChange={e=>sm({...momo,phone:e.target.value})} />
-              <p style={{ fontSize:12, color:C.txtL, margin:"8px 0 0", lineHeight:1.5 }}>📲 Tu recevras une notification USSD pour confirmer avec ton code PIN.</p>
+              <Select label="OpÃ©rateur Mobile Money" value={momo.op} onChange={e=>sm({...momo,op:e.target.value})} options={["Choisirâ€¦",...ops]} />
+              <Input label="NumÃ©ro Mobile Money" type="tel" placeholder="+229 XX XX XX XX" value={momo.phone} onChange={e=>sm({...momo,phone:e.target.value})} />
+              <p style={{ fontSize:12, color:C.txtL, margin:"8px 0 0", lineHeight:1.5 }}>ðŸ“² Tu recevras une notification USSD pour confirmer avec ton code PIN.</p>
             </div>
           )}
           {pay==="paypal" && (
             <div style={{ background:C.white, borderRadius:16, padding:"18px", marginBottom:16, textAlign:"center", boxShadow:`0 2px 10px rgba(0,0,0,.05)` }}>
-              <span style={{ fontSize:40, display:"block", marginBottom:8 }}>🅿️</span>
-              <p style={{ color:C.txtM, fontSize:14, lineHeight:1.5, margin:0 }}>Tu seras redirigée vers PayPal pour finaliser le paiement en toute sécurité.</p>
+              <span style={{ fontSize:40, display:"block", marginBottom:8 }}>ðŸ…¿ï¸</span>
+              <p style={{ color:C.txtM, fontSize:14, lineHeight:1.5, margin:0 }}>Tu seras redirigÃ©e vers PayPal pour finaliser le paiement en toute sÃ©curitÃ©.</p>
             </div>
           )}
           <Btn onClick={doPay} disabled={!pay}>
-            {pay==="momo"?"📱 Confirmer via Mobile Money":pay==="paypal"?"🅿️ Payer avec PayPal":"→ Choisis un mode de paiement"}
+            {pay==="momo"?"ðŸ“± Confirmer via Mobile Money":pay==="paypal"?"ðŸ…¿ï¸ Payer avec PayPal":"â†’ Choisis un mode de paiement"}
           </Btn>
         </>}
       </div>
@@ -943,9 +941,9 @@ function Premium({ go, user, setUser, toast }) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // PARRAINAGE
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 function Referral({ go, user, toast }) {
   const code = user?.code || "TRESS30";
   const refs = user?.referrals || 0;
@@ -953,7 +951,7 @@ function Referral({ go, user, toast }) {
     <div style={{ minHeight:"100vh", background:C.cream, paddingBottom:80 }}>
       <div style={{ background:`linear-gradient(160deg,${C.brown},#3D1F0A)`, padding:"54px 24px 48px", textAlign:"center", position:"relative", overflow:"hidden" }}>
         <div style={{ position:"absolute", bottom:-2, left:0, width:"100%", height:40, background:C.cream, borderRadius:"40px 40px 0 0" }} />
-        <span style={{ fontSize:56, display:"block", position:"relative", zIndex:1 }}>🎁</span>
+        <span style={{ fontSize:56, display:"block", position:"relative", zIndex:1 }}>ðŸŽ</span>
         <h2 style={{ fontFamily:"'Playfair Display',serif", color:C.cream, fontSize:26, margin:"12px 0 8px", position:"relative", zIndex:1 }}>Invite tes amies,<br/>gagne des points</h2>
         <p style={{ color:C.sand, fontSize:14, lineHeight:1.5, position:"relative", zIndex:1 }}>Pour chaque amie inscrite avec ton code,<br/>vous recevez toutes les deux <strong style={{ color:C.gold }}>20 points offerts</strong></p>
       </div>
@@ -964,11 +962,11 @@ function Referral({ go, user, toast }) {
             <div style={{ fontSize:11, color:C.txtL, textTransform:"uppercase", letterSpacing:1, marginBottom:4 }}>Ton code parrain</div>
             <div style={{ fontFamily:"'Playfair Display',serif", fontSize:24, color:C.brown, letterSpacing:2 }}>{code}</div>
           </div>
-          <button onClick={()=>toast("📋 Code copié !")} style={{ background:C.gold, color:C.white, border:"none", padding:"10px 18px", borderRadius:50, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:"inherit" }}>Copier</button>
+          <button onClick={()=>toast("ðŸ“‹ Code copiÃ© !")} style={{ background:C.gold, color:C.white, border:"none", padding:"10px 18px", borderRadius:50, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:"inherit" }}>Copier</button>
         </div>
 
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:24 }}>
-          {[{n:refs,l:"Amies parrainées"},{n:refs*20,l:"Points gagnés",c:C.gold}].map((s,i) => (
+          {[{n:refs,l:"Amies parrainÃ©es"},{n:refs*20,l:"Points gagnÃ©s",c:C.gold}].map((s,i) => (
             <div key={i} style={{ background:C.white, borderRadius:16, padding:"18px", textAlign:"center", boxShadow:`0 2px 10px rgba(0,0,0,.05)` }}>
               <div style={{ fontFamily:"'Playfair Display',serif", fontSize:28, color:s.c||C.brown, fontWeight:700 }}>{s.n}</div>
               <div style={{ fontSize:12, color:C.txtL, marginTop:2 }}>{s.l}</div>
@@ -976,8 +974,8 @@ function Referral({ go, user, toast }) {
           ))}
         </div>
 
-        <h3 style={{ fontFamily:"'Playfair Display',serif", fontSize:18, color:C.brown, margin:"0 0 14px" }}>Comment ça marche ?</h3>
-        {[[1,"Partage ton code","Envoie ton code unique via WhatsApp, Facebook ou SMS"],[2,"Elle s'inscrit","Ton amie crée son compte en utilisant ton code"],[3,"Vous gagnez toutes les deux","+20 points pour toi, +20 pour elle — immédiatement !"]].map(([n,t,d]) => (
+        <h3 style={{ fontFamily:"'Playfair Display',serif", fontSize:18, color:C.brown, margin:"0 0 14px" }}>Comment Ã§a marche ?</h3>
+        {[[1,"Partage ton code","Envoie ton code unique via WhatsApp, Facebook ou SMS"],[2,"Elle s'inscrit","Ton amie crÃ©e son compte en utilisant ton code"],[3,"Vous gagnez toutes les deux","+20 points pour toi, +20 pour elle â€” immÃ©diatement !"]].map(([n,t,d]) => (
           <div key={n} style={{ display:"flex", alignItems:"flex-start", gap:14, marginBottom:16 }}>
             <div style={{ width:36, height:36, borderRadius:"50%", background:C.brown, color:C.gold, fontWeight:700, fontSize:14, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>{n}</div>
             <div>
@@ -989,8 +987,8 @@ function Referral({ go, user, toast }) {
 
         <p style={{ fontSize:14, fontWeight:600, color:C.brown, margin:"20px 0 12px" }}>Partager via</p>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10 }}>
-          {[["💬","WhatsApp","WhatsApp ouvert !"],["📘","Facebook","Facebook ouvert !"],["🔗","Copier lien","Lien copié !"]].map(([ic,lb,msg]) => (
-            <button key={lb} onClick={()=>toast(`📤 ${msg}`)} style={{ background:C.white, border:"none", borderRadius:16, padding:"16px 8px", textAlign:"center", cursor:"pointer", boxShadow:`0 2px 10px rgba(0,0,0,.05)`, fontFamily:"inherit" }}>
+          {[["ðŸ’¬","WhatsApp","WhatsApp ouvert !"],["ðŸ“˜","Facebook","Facebook ouvert !"],["ðŸ”—","Copier lien","Lien copiÃ© !"]].map(([ic,lb,msg]) => (
+            <button key={lb} onClick={()=>toast(`ðŸ“¤ ${msg}`)} style={{ background:C.white, border:"none", borderRadius:16, padding:"16px 8px", textAlign:"center", cursor:"pointer", boxShadow:`0 2px 10px rgba(0,0,0,.05)`, fontFamily:"inherit" }}>
               <span style={{ fontSize:28, display:"block", marginBottom:6 }}>{ic}</span>
               <span style={{ fontSize:11, color:C.txtL, fontWeight:500 }}>{lb}</span>
             </button>
@@ -1002,19 +1000,19 @@ function Referral({ go, user, toast }) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // PROFIL
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 function Profile({ go, user, setUser, toast }) {
   if (!user) { go("splash"); return null; }
   return (
     <div style={{ minHeight:"100vh", background:C.cream, paddingBottom:80 }}>
       <div style={{ background:C.brown, padding:"54px 24px 28px", textAlign:"center" }}>
-        <div style={{ width:80, height:80, borderRadius:"50%", background:`linear-gradient(135deg,${C.gold},${C.warm})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:36, margin:"0 auto 12px", border:`3px solid rgba(201,150,58,.5)` }}>👩🏾</div>
+        <div style={{ width:80, height:80, borderRadius:"50%", background:`linear-gradient(135deg,${C.gold},${C.warm})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:36, margin:"0 auto 12px", border:`3px solid rgba(201,150,58,.5)` }}>ðŸ‘©ðŸ¾</div>
         <h2 style={{ fontFamily:"'Playfair Display',serif", color:C.cream, fontSize:22, margin:"0 0 4px" }}>{user.name}</h2>
-        <p style={{ color:C.sand, fontSize:13, margin:0 }}>{user.plan==="premium"?"✦ Premium":""} · {user.country}</p>
+        <p style={{ color:C.sand, fontSize:13, margin:0 }}>{user.plan==="premium"?"âœ¦ Premium":""} Â· {user.country}</p>
         <div style={{ display:"flex", background:"rgba(255,255,255,.06)", marginTop:18, borderRadius:12, overflow:"hidden" }}>
-          {[[user.analyses||0,"Analyses"],[user.points||0,"Points"],[user.referrals||0,"Parrainages"],[(user.saved||[]).length,"Sauvés"]].map(([v,k],i,a) => (
+          {[[user.analyses||0,"Analyses"],[user.points||0,"Points"],[user.referrals||0,"Parrainages"],[(user.saved||[]).length,"SauvÃ©s"]].map(([v,k],i,a) => (
             <div key={k} style={{ flex:1, padding:"12px 4px", textAlign:"center", borderRight:i<a.length-1?`1px solid rgba(255,255,255,.08)`:"none" }}>
               <div style={{ fontSize:19, fontWeight:700, color:C.gold }}>{v}</div>
               <div style={{ fontSize:10, color:C.sand, marginTop:1 }}>{k}</div>
@@ -1025,23 +1023,23 @@ function Profile({ go, user, setUser, toast }) {
 
       <div style={{ padding:"20px 24px" }}>
         {[
-          {ic:"💾",t:"Styles sauvegardés",s:`${(user.saved||[]).length} coiffures`,sc:"library"},
-          {ic:"🎁",t:"Parrainage",s:"Invite tes amies",sc:"referral"},
-          {ic:"👑",t:"Mon abonnement",s:user.plan==="premium"?"✦ Premium actif":"Plan gratuit",sc:"premium"},
-          {ic:"⭐",t:"Avis & Évaluations",s:"Donne ton avis",sc:"reviews"},
-          {ic:"🔒",t:"Confidentialité & RGPD",s:"Gestion de tes données",sc:null},
+          {ic:"ðŸ’¾",t:"Styles sauvegardÃ©s",s:`${(user.saved||[]).length} coiffures`,sc:"library"},
+          {ic:"ðŸŽ",t:"Parrainage",s:"Invite tes amies",sc:"referral"},
+          {ic:"ðŸ‘‘",t:"Mon abonnement",s:user.plan==="premium"?"âœ¦ Premium actif":"Plan gratuit",sc:"premium"},
+          {ic:"â­",t:"Avis & Ã‰valuations",s:"Donne ton avis",sc:"reviews"},
+          {ic:"ðŸ”’",t:"ConfidentialitÃ© & RGPD",s:"Gestion de tes donnÃ©es",sc:null},
         ].map(m => (
-          <div key={m.t} onClick={()=>m.sc?go(m.sc):toast("🔒 Données sécurisées — conformes RGPD")} style={{ display:"flex", alignItems:"center", gap:14, background:C.white, borderRadius:14, padding:"16px 18px", marginBottom:10, cursor:"pointer", boxShadow:`0 2px 8px rgba(0,0,0,.04)` }}>
+          <div key={m.t} onClick={()=>m.sc?go(m.sc):toast("ðŸ”’ DonnÃ©es sÃ©curisÃ©es â€” conformes RGPD")} style={{ display:"flex", alignItems:"center", gap:14, background:C.white, borderRadius:14, padding:"16px 18px", marginBottom:10, cursor:"pointer", boxShadow:`0 2px 8px rgba(0,0,0,.04)` }}>
             <span style={{ fontSize:22, width:36, textAlign:"center" }}>{m.ic}</span>
             <div style={{ flex:1 }}>
               <strong style={{ fontSize:14, color:C.txt, display:"block" }}>{m.t}</strong>
               <span style={{ fontSize:12, color:C.txtL }}>{m.s}</span>
             </div>
-            <span style={{ color:C.txtL, fontSize:16 }}>›</span>
+            <span style={{ color:C.txtL, fontSize:16 }}>â€º</span>
           </div>
         ))}
         <button onClick={()=>{setUser(null);go("splash");}} style={{ width:"100%", marginTop:16, padding:"14px", borderRadius:50, background:"transparent", border:`1.5px solid ${C.dark}`, color:C.txtL, fontSize:14, cursor:"pointer", fontFamily:"inherit" }}>
-          Se déconnecter
+          Se dÃ©connecter
         </button>
       </div>
       <Nav cur="profile" go={go} />
@@ -1049,28 +1047,28 @@ function Profile({ go, user, setUser, toast }) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // AVIS
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 function Reviews({ go, toast }) {
   const [stars, ss] = useState(0);
   const [txt, st] = useState("");
   const reviews = [
-    {n:"Fatoumata D.",co:"🇨🇮 Abidjan",s:5,av:"👩🏿",t:"Incroyable ! J'ai enfin trouvé les tresses qui correspondent vraiment à mon visage. Les Knotless Braids recommandées sont parfaites. Je recommande à toutes mes amies !"},
-    {n:"Aminata K.",co:"🇸🇳 Dakar",s:5,av:"👩🏽",t:"L'application est magnifique et facile à utiliser. L'IA est vraiment précise. J'étais sceptique au départ mais les recommandations sont exactement ce qu'il me fallait !"},
-    {n:"Mariama B.",co:"🇧🇯 Cotonou",s:4,av:"👩🏾",t:"Super app ! J'ai pu montrer le style directement à ma coiffeuse. Le système de points est cool, j'ai gagné des analyses gratuites grâce au parrainage."},
-    {n:"Kadia S.",co:"🇧🇫 Ouagadougou",s:5,av:"👩🏿",t:"Le paiement par Orange Money, c'est parfait ! Pas besoin de carte bancaire. L'abonnement à 1 500 XOF c'est vraiment abordable pour ce que ça apporte."},
+    {n:"Fatoumata D.",co:"ðŸ‡¨ðŸ‡® Abidjan",s:5,av:"ðŸ‘©ðŸ¿",t:"Incroyable ! J'ai enfin trouvÃ© les tresses qui correspondent vraiment Ã  mon visage. Les Knotless Braids recommandÃ©es sont parfaites. Je recommande Ã  toutes mes amies !"},
+    {n:"Aminata K.",co:"ðŸ‡¸ðŸ‡³ Dakar",s:5,av:"ðŸ‘©ðŸ½",t:"L'application est magnifique et facile Ã  utiliser. L'IA est vraiment prÃ©cise. J'Ã©tais sceptique au dÃ©part mais les recommandations sont exactement ce qu'il me fallait !"},
+    {n:"Mariama B.",co:"ðŸ‡§ðŸ‡¯ Cotonou",s:4,av:"ðŸ‘©ðŸ¾",t:"Super app ! J'ai pu montrer le style directement Ã  ma coiffeuse. Le systÃ¨me de points est cool, j'ai gagnÃ© des analyses gratuites grÃ¢ce au parrainage."},
+    {n:"Kadia S.",co:"ðŸ‡§ðŸ‡« Ouagadougou",s:5,av:"ðŸ‘©ðŸ¿",t:"Le paiement par Orange Money, c'est parfait ! Pas besoin de carte bancaire. L'abonnement Ã  1 500 XOF c'est vraiment abordable pour ce que Ã§a apporte."},
   ];
   const avg = (reviews.reduce((a,r)=>a+r.s,0)/reviews.length).toFixed(1);
 
   return (
     <div style={{ minHeight:"100vh", background:C.cream, paddingBottom:80 }}>
-      <Bar title="Avis de la communauté" back={()=>go("profile")} />
+      <Bar title="Avis de la communautÃ©" back={()=>go("profile")} />
       <div style={{ padding:"0 24px 24px" }}>
         <div style={{ background:C.brown, borderRadius:20, padding:"24px", textAlign:"center", marginBottom:24 }}>
           <div style={{ fontFamily:"'Playfair Display',serif", fontSize:52, color:C.gold, fontWeight:700 }}>{avg}</div>
-          <div style={{ fontSize:22, letterSpacing:4, margin:"4px 0 8px", color:C.gold }}>{"★".repeat(Math.round(+avg))}{"☆".repeat(5-Math.round(+avg))}</div>
-          <p style={{ color:C.sand, fontSize:13, margin:0 }}>{reviews.length} avis vérifiés · Afrique de l'Ouest</p>
+          <div style={{ fontSize:22, letterSpacing:4, margin:"4px 0 8px", color:C.gold }}>{"â˜…".repeat(Math.round(+avg))}{"â˜†".repeat(5-Math.round(+avg))}</div>
+          <p style={{ color:C.sand, fontSize:13, margin:0 }}>{reviews.length} avis vÃ©rifiÃ©s Â· Afrique de l'Ouest</p>
         </div>
 
         {reviews.map((r,i) => (
@@ -1081,22 +1079,22 @@ function Reviews({ go, toast }) {
                 <div style={{ fontSize:13, fontWeight:600, color:C.txt }}>{r.n}</div>
                 <div style={{ fontSize:11, color:C.txtL }}>{r.co}</div>
               </div>
-              <div style={{ marginLeft:"auto", color:C.gold, fontSize:13, letterSpacing:2 }}>{"★".repeat(r.s)}</div>
+              <div style={{ marginLeft:"auto", color:C.gold, fontSize:13, letterSpacing:2 }}>{"â˜…".repeat(r.s)}</div>
             </div>
             <p style={{ fontSize:13, color:C.txtL, lineHeight:1.5, margin:0 }}>{r.t}</p>
           </div>
         ))}
 
         <div style={{ background:C.white, borderRadius:20, padding:"22px", boxShadow:`0 4px 20px rgba(0,0,0,.06)` }}>
-          <h3 style={{ fontFamily:"'Playfair Display',serif", fontSize:18, color:C.brown, margin:"0 0 14px" }}>Donne ton avis ✍️</h3>
+          <h3 style={{ fontFamily:"'Playfair Display',serif", fontSize:18, color:C.brown, margin:"0 0 14px" }}>Donne ton avis âœï¸</h3>
           <div style={{ display:"flex", gap:8, marginBottom:16 }}>
             {[1,2,3,4,5].map(n => (
-              <button key={n} onClick={()=>ss(n)} style={{ fontSize:28, background:"none", border:"none", cursor:"pointer", filter:n<=stars?"none":"grayscale(1) opacity(.3)", padding:0 }}>⭐</button>
+              <button key={n} onClick={()=>ss(n)} style={{ fontSize:28, background:"none", border:"none", cursor:"pointer", filter:n<=stars?"none":"grayscale(1) opacity(.3)", padding:0 }}>â­</button>
             ))}
           </div>
-          <textarea placeholder="Partage ton expérience…" value={txt} onChange={e=>st(e.target.value)}
+          <textarea placeholder="Partage ton expÃ©rienceâ€¦" value={txt} onChange={e=>st(e.target.value)}
             style={{ width:"100%", padding:"12px 14px", borderRadius:12, fontSize:14, border:`1.5px solid ${C.dark}`, background:C.cream, color:C.txt, outline:"none", resize:"none", height:88, boxSizing:"border-box", fontFamily:"sans-serif", lineHeight:1.5 }} />
-          <Btn onClick={()=>{ if(!stars){toast("⭐ Note d'abord !"); return;} toast("✅ Avis publié ! +10 points"); ss(0); st(""); }} style={{ marginTop:12 }}>
+          <Btn onClick={()=>{ if(!stars){toast("â­ Note d'abord !"); return;} toast("âœ… Avis publiÃ© ! +10 points"); ss(0); st(""); }} style={{ marginTop:12 }}>
             Publier (+10 points)
           </Btn>
         </div>
@@ -1105,9 +1103,9 @@ function Reviews({ go, toast }) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // APP ROOT
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 function AfroTresse() {
   const [screen, setScreen] = useState("splash");
   const [user, setUser] = useLS("afrotresse_user", null);
