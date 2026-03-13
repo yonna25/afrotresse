@@ -105,35 +105,55 @@ Réponds en JSON :
 }`;
 
 // ─── Gestion économique de l'API ──────────────────────────────────────────
-const DAILY_LIMIT = 3; // analyses gratuites par jour
-const CACHE_KEY   = "afrotresse_cache";
-const USAGE_KEY   = "afrotresse_usage";
+const FREE_LIMIT        = 3;   // analyses gratuites de base
+const BONUS_LIMIT       = 5;   // analyses bonus après avis WhatsApp
+const TOTAL_FREE_LIMIT  = 8;   // total max gratuit (3+5)
+const CACHE_KEY         = "afrotresse_cache";
+const USAGE_KEY         = "afrotresse_total_usage";
+const BONUS_KEY         = "afrotresse_bonus_unlocked";
 
-function getTodayKey() {
-  return new Date().toISOString().slice(0,10); // "2026-03-13"
+// ─── Compteur total d'analyses (pas quotidien) ────────────────────────────
+function getTotalUsage() {
+  try { return parseInt(localStorage.getItem(USAGE_KEY) || "0"); }
+  catch { return 0; }
 }
 
-function getDailyUsage() {
-  try {
-    const raw = localStorage.getItem(USAGE_KEY);
-    const data = raw ? JSON.parse(raw) : {};
-    const today = getTodayKey();
-    return data[today] || 0;
-  } catch { return 0; }
+function isBonusUnlocked() {
+  try { return localStorage.getItem(BONUS_KEY) === "true"; }
+  catch { return false; }
 }
 
-function incrementDailyUsage() {
+function unlockBonus() {
+  try { localStorage.setItem(BONUS_KEY, "true"); }
+  catch {}
+}
+
+function getCurrentLimit() {
+  return isBonusUnlocked() ? TOTAL_FREE_LIMIT : FREE_LIMIT;
+}
+
+function getRemainingAnalyses() {
+  return Math.max(0, getCurrentLimit() - getTotalUsage());
+}
+
+function incrementTotalUsage() {
   try {
-    const raw = localStorage.getItem(USAGE_KEY);
-    const data = raw ? JSON.parse(raw) : {};
-    const today = getTodayKey();
-    // Garde seulement les 7 derniers jours pour économiser l'espace
-    const keys = Object.keys(data).sort().slice(-7);
-    const clean = {};
-    keys.forEach(k => { clean[k] = data[k]; });
-    clean[today] = (clean[today] || 0) + 1;
-    localStorage.setItem(USAGE_KEY, JSON.stringify(clean));
+    const current = getTotalUsage();
+    localStorage.setItem(USAGE_KEY, String(current + 1));
   } catch {}
+}
+
+// Fingerprint léger pour éviter contournement par effacement cache
+function getDeviceFingerprint() {
+  try {
+    const fp = [
+      navigator.language,
+      navigator.platform,
+      screen.width + "x" + screen.height,
+      new Date().getTimezoneOffset(),
+    ].join("|");
+    return btoa(fp).slice(0, 12);
+  } catch { return "unknown"; }
 }
 
 function getCachedResult(imageHash) {
@@ -194,10 +214,11 @@ async function analyzeWithClaude(base64Image, mimeType = "image/jpeg") {
     return { ...cached, fromCache: true };
   }
 
-  // 3. Vérifier la limite journalière
-  const usage = getDailyUsage();
-  if (usage >= DAILY_LIMIT) {
-    throw new Error(`LIMIT_REACHED:${usage}`);
+  // 3. Vérifier le quota total
+  const usage = getTotalUsage();
+  const limit = getCurrentLimit();
+  if (usage >= limit) {
+    throw new Error(`LIMIT_REACHED:${usage}:${isBonusUnlocked()}`);
   }
 
   // 4. Compresser l'image avant envoi (réduit le coût)
@@ -238,10 +259,10 @@ async function analyzeWithClaude(base64Image, mimeType = "image/jpeg") {
   const clean = raw.replace(/```json|```/g, "").trim();
   const result = JSON.parse(clean);
 
-  // 6. Sauvegarder en cache + incrémenter compteur
+  // 6. Sauvegarder en cache + incrémenter compteur total
   setCachedResult(imageHash, result);
-  incrementDailyUsage();
-  console.log(`✓ Analyse ${getDailyUsage()}/${DAILY_LIMIT} aujourd'hui`);
+  incrementTotalUsage();
+  console.log(`✓ Analyse ${getTotalUsage()}/${getCurrentLimit()} au total`);
 
   return result;
 }
@@ -1283,6 +1304,91 @@ function Reviews({ go, toast }) {
 // ═══════════════════════════════════════════════════════════
 // APP ROOT
 // ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
+// ÉCRAN QUOTA ATTEINT — avec tarifs
+// ═══════════════════════════════════════════════════════════
+function QuotaScreen({ go, bonusAlreadyUsed }) {
+  const WHATSAPP_NUMBER = "22960000000"; // ← remplace par ton numéro
+  const msgBonus = encodeURIComponent("Bonjour ! J'ai testé AfroTresse et je veux laisser mon avis pour débloquer 5 analyses 🌍✨");
+  const msgPay   = encodeURIComponent("Bonjour ! Je veux accéder à AfroTresse Premium. Comment procéder ?");
+
+  return (
+    <div style={{ minHeight:"100vh", background:C.cream, display:"flex", flexDirection:"column" }}>
+      {/* Header */}
+      <div style={{ background:C.brown, padding:"54px 24px 32px", textAlign:"center", position:"relative", overflow:"hidden" }}>
+        <div style={{ position:"absolute", inset:0, background:"radial-gradient(ellipse at 50% 0%,rgba(201,150,58,.25) 0%,transparent 60%)", pointerEvents:"none" }} />
+        <div style={{ fontSize:48, marginBottom:12 }}>🎉</div>
+        <h1 style={{ fontFamily:"'Playfair Display',serif", color:C.cream, fontSize:26, margin:"0 0 8px", lineHeight:1.2 }}>
+          Tu as tout exploré !
+        </h1>
+        <p style={{ color:C.sand, fontSize:14, margin:0, lineHeight:1.6 }}>
+          {bonusAlreadyUsed
+            ? "Tu as utilisé tes 8 analyses gratuites."
+            : "Tu as utilisé tes 3 analyses gratuites."}
+        </p>
+      </div>
+
+      <div style={{ padding:"24px", flex:1 }}>
+
+        {/* Bonus WhatsApp — seulement si pas encore utilisé */}
+        {!bonusAlreadyUsed && (
+          <div style={{ background:"linear-gradient(135deg,#25D366,#128C7E)", borderRadius:20, padding:"20px", marginBottom:20, cursor:"pointer" }}
+            onClick={() => {
+              unlockBonus();
+              window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msgBonus}`, "_blank");
+              setTimeout(() => go("home"), 800);
+            }}>
+            <div style={{ display:"flex", alignItems:"center", gap:14 }}>
+              <div style={{ fontSize:36 }}>💬</div>
+              <div style={{ flex:1 }}>
+                <strong style={{ color:"white", fontSize:16, display:"block", marginBottom:4 }}>Laisse un avis sur WhatsApp</strong>
+                <span style={{ color:"rgba(255,255,255,.85)", fontSize:13, lineHeight:1.4, display:"block" }}>Et reçois <strong>+5 analyses gratuites</strong> immédiatement 🎁</span>
+              </div>
+              <svg width="20" height="20" viewBox="0 0 16 16" fill="none">
+                <path d="M3 8h10M9 4l4 4-4 4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+          </div>
+        )}
+
+        {/* Tarifs */}
+        <p style={{ fontFamily:"'Playfair Display',serif", fontSize:18, color:C.brown, margin:"0 0 14px", fontWeight:700 }}>Continuer avec AfroTresse</p>
+
+        {[
+          { ic:"✨", name:"Essentiel", price:"1 500 XOF", period:"/mois", desc:"20 analyses · Résultats sauvegardés", color:C.brown },
+          { ic:"👑", name:"Premium", price:"3 500 XOF", period:"/mois", desc:"Analyses illimitées · Priorité IA · Support", color:C.gold, best:true },
+          { ic:"⭐", name:"Pack 10 analyses", price:"900 XOF", period:"une fois", desc:"Pas d'abonnement · Valable 30 jours", color:"#5C3317" },
+        ].map(plan => (
+          <div key={plan.name}
+            onClick={() => window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msgPay}`, "_blank")}
+            style={{ background:C.white, borderRadius:18, padding:"18px 20px", marginBottom:12, cursor:"pointer", boxShadow: plan.best ? `0 4px 20px rgba(201,150,58,.25)` : "0 2px 10px rgba(0,0,0,.06)", border: plan.best ? `2px solid ${C.gold}` : "2px solid transparent", position:"relative" }}>
+            {plan.best && <div style={{ position:"absolute", top:-10, right:16, background:C.gold, color:"white", fontSize:10, fontWeight:700, padding:"3px 10px", borderRadius:50, letterSpacing:1 }}>POPULAIRE</div>}
+            <div style={{ display:"flex", alignItems:"center", gap:14 }}>
+              <span style={{ fontSize:28 }}>{plan.ic}</span>
+              <div style={{ flex:1 }}>
+                <strong style={{ fontSize:15, color:C.txt, display:"block" }}>{plan.name}</strong>
+                <span style={{ fontSize:12, color:C.txtL }}>{plan.desc}</span>
+              </div>
+              <div style={{ textAlign:"right" }}>
+                <strong style={{ fontSize:16, color:plan.color, display:"block" }}>{plan.price}</strong>
+                <span style={{ fontSize:11, color:C.txtL }}>{plan.period}</span>
+              </div>
+            </div>
+          </div>
+        ))}
+
+        <p style={{ textAlign:"center", fontSize:12, color:C.txtL, marginTop:8 }}>
+          Paiement via Mobile Money · Orange · MTN · Wave
+        </p>
+
+        <div style={{ marginTop:8, textAlign:"center" }}>
+          <span onClick={() => go("home")} style={{ color:C.gold, fontSize:13, cursor:"pointer" }}>← Retour à l'accueil</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AfroTresse() {
   const [screen, setScreen] = useState("splash");
   const [user, setUser] = useLS("afrotresse_user", null);
@@ -1297,7 +1403,13 @@ function AfroTresse() {
     tRef.current = setTimeout(() => setToastState(s => ({...s,show:false})), 2600);
   }, []);
 
-  const go = useCallback((s) => { window.scrollTo(0,0); setScreen(s); }, []);
+  const go = useCallback((s) => {
+    // Vérifier quota avant d'aller sur selfie
+    if (s === "selfie" && getTotalUsage() >= getCurrentLimit()) {
+      window.scrollTo(0,0); setScreen("quota"); return;
+    }
+    window.scrollTo(0,0); setScreen(s);
+  }, []);
 
   useEffect(() => { if (user && screen==="splash") setScreen("home"); }, []);
 
@@ -1316,6 +1428,7 @@ function AfroTresse() {
     referral:  <Referral  {...p} />,
     profile:   <Profile   {...p} />,
     reviews:   <Reviews   {...p} />,
+    quota:     <QuotaScreen {...p} bonusAlreadyUsed={isBonusUnlocked()} />,
   };
 
   return (
