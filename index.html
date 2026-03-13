@@ -31,40 +31,7 @@ const { useState, useRef, useEffect, useCallback } = React;
 
 // ─── 🔑 CONFIGURATION ─────────────────────────────────────────────────────
 // Colle ta clé API Anthropic ici (console.anthropic.com)
-const ANTHROPIC_API_KEY = "curl 
-
-https://api.anthropic.com/v1/m
-
-essages \
-        --header "x-api-key: 
-
-sk-ant-api03-
-
-p_PD8vAVL3qhPFCleFjmGIXg8MKVNw
-
-TirE2oD2S5xBGJi8-
-
-ABjyHCqp84AKzgzPqLJpacis6uxsPP
-
-AMvBoDeEg-sNePjAAA" \
-        --header "anthropic-
-
-version: 2023-06-01" \
-        --header "content-
-
-type: application/json" \
-        --data \
-    '{
-        "model": "claude-
-
-sonnet-4-20250514",
-        "max_tokens": 1024,
-        "messages": [
-            {"role": "user", 
-
-"content": "Hello, world"}
-        ]
-    }'"; // sk-ant-...
+const ANTHROPIC_API_KEY = "COLLE_TA_CLE_ICI"; // sk-ant-...
 
 // ─── Palette design ───────────────────────────────────────────────────────
 const C = {
@@ -137,33 +104,124 @@ Réponds en JSON :
   ]
 }`;
 
-// ─── Appel à l'API Claude Vision ───────────────────────────────────────────
+// ─── Gestion économique de l'API ──────────────────────────────────────────
+const DAILY_LIMIT = 3; // analyses gratuites par jour
+const CACHE_KEY   = "afrotresse_cache";
+const USAGE_KEY   = "afrotresse_usage";
+
+function getTodayKey() {
+  return new Date().toISOString().slice(0,10); // "2026-03-13"
+}
+
+function getDailyUsage() {
+  try {
+    const raw = localStorage.getItem(USAGE_KEY);
+    const data = raw ? JSON.parse(raw) : {};
+    const today = getTodayKey();
+    return data[today] || 0;
+  } catch { return 0; }
+}
+
+function incrementDailyUsage() {
+  try {
+    const raw = localStorage.getItem(USAGE_KEY);
+    const data = raw ? JSON.parse(raw) : {};
+    const today = getTodayKey();
+    // Garde seulement les 7 derniers jours pour économiser l'espace
+    const keys = Object.keys(data).sort().slice(-7);
+    const clean = {};
+    keys.forEach(k => { clean[k] = data[k]; });
+    clean[today] = (clean[today] || 0) + 1;
+    localStorage.setItem(USAGE_KEY, JSON.stringify(clean));
+  } catch {}
+}
+
+function getCachedResult(imageHash) {
+  try {
+    const cache = JSON.parse(localStorage.getItem(CACHE_KEY) || "{}");
+    const entry = cache[imageHash];
+    if (!entry) return null;
+    // Cache valide 24h
+    if (Date.now() - entry.ts > 86400000) return null;
+    return entry.result;
+  } catch { return null; }
+}
+
+function setCachedResult(imageHash, result) {
+  try {
+    const cache = JSON.parse(localStorage.getItem(CACHE_KEY) || "{}");
+    // Garde max 10 entrées en cache
+    const keys = Object.keys(cache);
+    if (keys.length >= 10) delete cache[keys[0]];
+    cache[imageHash] = { result, ts: Date.now() };
+    localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+  } catch {}
+}
+
+function simpleHash(str) {
+  // Hash rapide pour identifier une image sans stocker les pixels
+  let h = 0;
+  for (let i = 0; i < Math.min(str.length, 500); i++) {
+    h = ((h << 5) - h) + str.charCodeAt(i);
+    h |= 0;
+  }
+  return h.toString(36);
+}
+
+// ─── Appel à l'API Claude Vision — économique ─────────────────────────────
 async function analyzeWithClaude(base64Image, mimeType = "image/jpeg") {
-  // Si pas de clé configurée → simulation réaliste
+
+  // 1. Mode démo si pas de clé
   if (!ANTHROPIC_API_KEY || ANTHROPIC_API_KEY === "COLLE_TA_CLE_ICI") {
     await new Promise(r => setTimeout(r, 3500));
     return {
       forme: "Ovale",
-      description_visage: "Visage harmonieux aux proportions équilibrées. Front légèrement plus large que le menton avec des pommettes doucement saillantes — la forme idéale pour la quasi-totalité des styles de tresses.",
+      description_visage: "Visage harmonieux aux proportions équilibrées. Front légèrement plus large que le menton avec des pommettes doucement saillantes.",
       recommandations: [
-        { nom:"Knotless Braids",  score:97, raison:"La forme ovale équilibrée met parfaitement en valeur les knotless — leur légèreté naturelle sublime les traits sans alourdir le visage." },
-        { nom:"Fulani Braids",    score:91, raison:"Les motifs géométriques des Fulani Braids s'harmonisent idéalement avec la symétrie naturelle de ce type de visage." },
-        { nom:"Senegalese Twist", score:86, raison:"Les torsades créent un effet d'allongement élégant qui accentue la beauté des proportions naturelles de ce visage." },
+        { nom:"Knotless Braids",  score:97, raison:"La forme ovale met parfaitement en valeur les knotless — leur légèreté naturelle sublime les traits." },
+        { nom:"Fulani Braids",    score:91, raison:"Les motifs géométriques s'harmonisent idéalement avec la symétrie naturelle de ce visage." },
+        { nom:"Senegalese Twist", score:86, raison:"Les torsades créent un effet d'allongement élégant qui accentue les proportions naturelles." },
       ],
       simulated: true,
     };
   }
 
+  // 2. Vérifier le cache — même image = pas d'appel API
+  const imageHash = simpleHash(base64Image);
+  const cached = getCachedResult(imageHash);
+  if (cached) {
+    console.log("✓ Résultat depuis le cache — 0 crédit utilisé");
+    return { ...cached, fromCache: true };
+  }
+
+  // 3. Vérifier la limite journalière
+  const usage = getDailyUsage();
+  if (usage >= DAILY_LIMIT) {
+    throw new Error(`LIMIT_REACHED:${usage}`);
+  }
+
+  // 4. Compresser l'image avant envoi (réduit le coût)
+  // On tronque le base64 à 300KB max pour économiser les tokens
+  const maxChars = 300000;
+  const optimizedImage = base64Image.length > maxChars
+    ? base64Image.slice(0, maxChars)
+    : base64Image;
+
+  // 5. Appel API avec modèle léger (haiku = 10x moins cher que opus)
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
-    headers: { "Content-Type": "application/json", "x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": ANTHROPIC_API_KEY,
+      "anthropic-version": "2023-06-01",
+    },
     body: JSON.stringify({
-      model: "claude-opus-4-6",
-      max_tokens: 1024,
+      model: "claude-haiku-4-5-20251001", // modèle léger = moins cher
+      max_tokens: 600, // réduit de 1024 → 600 (économie 40%)
       messages: [{
         role: "user",
         content: [
-          { type: "image", source: { type: "base64", media_type: mimeType, data: base64Image } },
+          { type: "image", source: { type: "base64", media_type: mimeType, data: optimizedImage } },
           { type: "text", text: buildPrompt() },
         ],
       }],
@@ -178,7 +236,14 @@ async function analyzeWithClaude(base64Image, mimeType = "image/jpeg") {
   const data = await response.json();
   const raw = data.content?.[0]?.text || "{}";
   const clean = raw.replace(/```json|```/g, "").trim();
-  return JSON.parse(clean);
+  const result = JSON.parse(clean);
+
+  // 6. Sauvegarder en cache + incrémenter compteur
+  setCachedResult(imageHash, result);
+  incrementDailyUsage();
+  console.log(`✓ Analyse ${getDailyUsage()}/${DAILY_LIMIT} aujourd'hui`);
+
+  return result;
 }
 
 // ─── Helpers UI ───────────────────────────────────────────────────────────
@@ -487,7 +552,7 @@ function Login({ go, setUser, toast }) {
 // ═══════════════════════════════════════════════════════════
 // HOME HERO — grand carrousel avec texte + badge tendance
 // ═══════════════════════════════════════════════════════════
-function HomeHero({ name }) {
+function HomeHero({ name, onSelfie }) {
   const [cur, sc] = useState(0);
   const [fade, sf] = useState(true);
 
@@ -543,6 +608,32 @@ function HomeHero({ name }) {
             }} />
           ))}
         </div>
+
+        {/* Bouton Selfie dans le hero */}
+        <div onClick={onSelfie} style={{
+          marginTop:20,
+          background:"linear-gradient(135deg,#C9963A 0%,#A8782A 55%,#8B6020 100%)",
+          borderRadius:20, padding:"15px 16px",
+          display:"flex", alignItems:"center", gap:12,
+          cursor:"pointer",
+          boxShadow:"0 6px 20px rgba(201,150,58,.4), inset 0 1px 0 rgba(255,255,255,.2)",
+        }}>
+          <div style={{ width:42, height:42, borderRadius:13, background:"rgba(255,255,255,.18)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <rect x="2" y="7" width="20" height="14" rx="3.5" stroke="white" strokeWidth="1.8"/>
+              <circle cx="12" cy="14" r="4" stroke="white" strokeWidth="1.8"/>
+              <path d="M8 7l1.5-3h5L16 7" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              <circle cx="19" cy="10" r="1" fill="white"/>
+            </svg>
+          </div>
+          <strong style={{ color:"white", fontSize:15, flex:1, fontWeight:700, textShadow:"0 1px 3px rgba(0,0,0,.3)" }}>Prendre mon Selfie</strong>
+          <div style={{ width:34, height:34, borderRadius:"50%", background:"rgba(0,0,0,.2)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M3 8h10M9 4l4 4-4 4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+        </div>
+
       </div>
     </div>
   );
@@ -556,36 +647,10 @@ function Home({ go, user, toast }) {
   return (
     <div style={{ minHeight:"100vh", background:C.cream, paddingBottom:80 }}>
       {/* HERO CARROUSEL */}
-      <HomeHero name={name} go={go} />
+      <HomeHero name={name} onSelfie={()=>go("selfie")} />
 
       <div style={{ padding:"20px 20px 0" }}>
-        {/* CTA principal */}
-        <div onClick={()=>go("selfie")} style={{
-          background:"linear-gradient(135deg,#C9963A 0%,#A8782A 55%,#8B6020 100%)",
-          borderRadius:20, padding:"15px 16px",
-          display:"flex", alignItems:"center", gap:12,
-          cursor:"pointer",
-          boxShadow:"0 6px 20px rgba(201,150,58,.4), inset 0 1px 0 rgba(255,255,255,.2)",
-          marginBottom:20, maxWidth:400,
-        }}>
-          <div style={{ width:42, height:42, borderRadius:13, background:"rgba(255,255,255,.18)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <rect x="2" y="7" width="20" height="14" rx="3.5" stroke="white" strokeWidth="1.8"/>
-              <circle cx="12" cy="14" r="4" stroke="white" strokeWidth="1.8"/>
-              <path d="M8 7l1.5-3h5L16 7" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-              <circle cx="19" cy="10" r="1" fill="white"/>
-            </svg>
-          </div>
-          <div style={{ flex:1 }}>
-            <strong style={{ color:"white", fontSize:15, display:"block", lineHeight:1.3, fontWeight:700, textShadow:"0 1px 3px rgba(0,0,0,.3)" }}>Prendre mon Selfie</strong>
-            <span style={{ color:"rgba(255,255,255,.8)", fontSize:12 }}>Analysez vos tresses avec l'IA</span>
-          </div>
-          <div style={{ width:34, height:34, borderRadius:"50%", background:"rgba(0,0,0,.2)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M3 8h10M9 4l4 4-4 4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </div>
-        </div>
+
 
         {/* Dernière analyse */}
         <p style={{ fontFamily:"'Playfair Display',serif", fontSize:20, color:C.brown, margin:"0 0 12px", fontWeight:700 }}>Mes analyses</p>
