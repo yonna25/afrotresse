@@ -163,13 +163,39 @@ function Toast({ msg, show }) {
   );
 }
 
+function NavIcon({ id, cur }) {
+  const active = cur === id;
+  const color = active ? "#C9963A" : "#9B8B7A";
+  if (id === "home") return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <path d="M3 10.5L12 3l9 7.5V21a1 1 0 01-1 1H15v-6H9v6H4a1 1 0 01-1-1V10.5z" stroke={color} strokeWidth="1.8" fill={active ? color : "none"} strokeLinejoin="round"/>
+    </svg>
+  );
+  if (id === "selfie") return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <rect x="2" y="7" width="20" height="14" rx="3" stroke={color} strokeWidth="1.8" fill={active ? color : "none"}/>
+      <circle cx="12" cy="14" r="4" stroke={active ? "white" : color} strokeWidth="1.8"/>
+      <path d="M8 7l1.5-3h5L16 7" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+      <circle cx="19" cy="10" r="1" fill={color}/>
+    </svg>
+  );
+  if (id === "profile") return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="8" r="4" stroke={color} strokeWidth="1.8" fill={active ? color : "none"}/>
+      <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke={color} strokeWidth="1.8" strokeLinecap="round"/>
+    </svg>
+  );
+  return null;
+}
+
 function Nav({ cur, go }) {
+  const items = [["home","Accueil"],["selfie","Selfie"],["profile","Profil"]];
   return (
-    <div style={{ position:"fixed", bottom:0, left:"50%", transform:"translateX(-50%)", width:"100%", maxWidth:430, background:C.white, borderTop:`1px solid ${C.dark}`, display:"flex", padding:"10px 0 22px", zIndex:100 }}>
-      {[["home","🏠","Accueil"],["selfie","📸","Analyser"],["profile","👤","Profil"]].map(([id,ic,lb]) => (
+    <div style={{ position:"fixed", bottom:0, left:"50%", transform:"translateX(-50%)", width:"100%", maxWidth:430, background:C.white, borderTop:`1px solid ${C.dark}`, display:"flex", padding:"10px 0 24px", zIndex:100 }}>
+      {items.map(([id, lb]) => (
         <div key={id} onClick={() => go(id)} style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:4, cursor:"pointer" }}>
-          <span style={{ fontSize:22 }}>{ic}</span>
-          <span style={{ fontSize:10, color:cur===id?C.gold:C.txtL, fontWeight:cur===id?700:400 }}>{lb}</span>
+          <NavIcon id={id} cur={cur} />
+          <span style={{ fontSize:10, color:cur===id?"#C9963A":"#9B8B7A", fontWeight:cur===id?700:400 }}>{lb}</span>
         </div>
       ))}
     </div>
@@ -502,34 +528,30 @@ function Home({ go, user, toast }) {
       <div style={{ padding:"20px 20px 0" }}>
         {/* CTA principal */}
         <div onClick={()=>go("selfie")} style={{
-          background:"linear-gradient(135deg, #C9963A 0%, #A8782A 60%, #8B6020 100%)",
-          borderRadius:22, padding:"18px 20px",
-          display:"flex", alignItems:"center", gap:16,
+          background:"linear-gradient(135deg,#C9963A 0%,#A8782A 55%,#8B6020 100%)",
+          borderRadius:20, padding:"15px 16px",
+          display:"flex", alignItems:"center", gap:12,
           cursor:"pointer",
-          boxShadow:"0 4px 20px rgba(201,150,58,.3), inset 0 1px 0 rgba(255,255,255,.15)",
-          marginBottom:20,
+          boxShadow:"0 6px 20px rgba(201,150,58,.4), inset 0 1px 0 rgba(255,255,255,.2)",
+          marginBottom:20, maxWidth:400,
         }}>
-          {/* Icône caméra SVG style outline blanc */}
-          <div style={{ flexShrink:0 }}>
-            <svg width="38" height="38" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="4" y="11" width="30" height="22" rx="5" stroke="white" strokeWidth="2.2" fill="none"/>
-              <circle cx="19" cy="22" r="6" stroke="white" strokeWidth="2.2" fill="none"/>
-              <path d="M13 11l2.5-4h7L25 11" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-              <circle cx="29" cy="17" r="1.5" fill="white"/>
+          <div style={{ width:42, height:42, borderRadius:13, background:"rgba(255,255,255,.18)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <rect x="2" y="7" width="20" height="14" rx="3.5" stroke="white" strokeWidth="1.8"/>
+              <circle cx="12" cy="14" r="4" stroke="white" strokeWidth="1.8"/>
+              <path d="M8 7l1.5-3h5L16 7" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              <circle cx="19" cy="10" r="1" fill="white"/>
             </svg>
           </div>
-          {/* Texte */}
           <div style={{ flex:1 }}>
-            <strong style={{ color:"#1a0f06", fontSize:16, display:"block", lineHeight:1.3, fontWeight:700 }}>Prendre mon Selfie</strong>
-            <span style={{ color:"rgba(26,15,6,.65)", fontSize:12.5 }}>Prenez un selfie pour analyser vos tresses</span>
+            <strong style={{ color:"white", fontSize:15, display:"block", lineHeight:1.3, fontWeight:700, textShadow:"0 1px 3px rgba(0,0,0,.3)" }}>Prendre mon Selfie</strong>
+            <span style={{ color:"rgba(255,255,255,.8)", fontSize:12 }}>Analysez vos tresses avec l'IA</span>
           </div>
-          {/* Flèche ronde sombre */}
-          <div style={{
-            width:40, height:40, borderRadius:"50%",
-            background:"rgba(44,26,14,.35)",
-            display:"flex", alignItems:"center", justifyContent:"center",
-            color:"#1a0f06", fontSize:18, fontWeight:700, flexShrink:0,
-          }}>→</div>
+          <div style={{ width:34, height:34, borderRadius:"50%", background:"rgba(0,0,0,.2)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M3 8h10M9 4l4 4-4 4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
         </div>
 
         {/* Dernière analyse */}
