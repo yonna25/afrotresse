@@ -31,7 +31,40 @@ const { useState, useRef, useEffect, useCallback } = React;
 
 // ─── 🔑 CONFIGURATION ─────────────────────────────────────────────────────
 // Colle ta clé API Anthropic ici (console.anthropic.com)
-const ANTHROPIC_API_KEY = "COLLE_TA_CLE_ICI"; // sk-ant-...
+const ANTHROPIC_API_KEY = "curl 
+
+https://api.anthropic.com/v1/m
+
+essages \
+        --header "x-api-key: 
+
+sk-ant-api03-
+
+p_PD8vAVL3qhPFCleFjmGIXg8MKVNw
+
+TirE2oD2S5xBGJi8-
+
+ABjyHCqp84AKzgzPqLJpacis6uxsPP
+
+AMvBoDeEg-sNePjAAA" \
+        --header "anthropic-
+
+version: 2023-06-01" \
+        --header "content-
+
+type: application/json" \
+        --data \
+    '{
+        "model": "claude-
+
+sonnet-4-20250514",
+        "max_tokens": 1024,
+        "messages": [
+            {"role": "user", 
+
+"content": "Hello, world"}
+        ]
+    }'"; // sk-ant-...
 
 // ─── Palette design ───────────────────────────────────────────────────────
 const C = {
