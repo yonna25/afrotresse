@@ -31,7 +31,7 @@ const { useState, useRef, useEffect, useCallback } = React;
 
 // ─── 🔑 CONFIGURATION ─────────────────────────────────────────────────────
 // Colle ta clé API Anthropic ici (console.anthropic.com)
-const ANTHROPIC_API_KEY = "ANTHROPIC_API_key"; // sk-ant-...
+const ANTHROPIC_API_KEY = "COLLE_TA_CLE_ICI"; // sk-ant-...
 
 // ─── Palette design ───────────────────────────────────────────────────────
 const C = {
@@ -609,29 +609,27 @@ function HomeHero({ name, onSelfie }) {
           ))}
         </div>
 
-        {/* Bouton Selfie dans le hero */}
+        {/* Bouton Selfie dans le hero — compact */}
         <div onClick={onSelfie} style={{
-          marginTop:20,
+          marginTop:16, alignSelf:"flex-start",
           background:"linear-gradient(135deg,#C9963A 0%,#A8782A 55%,#8B6020 100%)",
-          borderRadius:20, padding:"15px 16px",
-          display:"flex", alignItems:"center", gap:12,
+          borderRadius:50, padding:"12px 20px 12px 14px",
+          display:"inline-flex", alignItems:"center", gap:10,
           cursor:"pointer",
-          boxShadow:"0 6px 20px rgba(201,150,58,.4), inset 0 1px 0 rgba(255,255,255,.2)",
+          boxShadow:"0 6px 20px rgba(201,150,58,.45), inset 0 1px 0 rgba(255,255,255,.2)",
         }}>
-          <div style={{ width:42, height:42, borderRadius:13, background:"rgba(255,255,255,.18)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <div style={{ width:34, height:34, borderRadius:"50%", background:"rgba(255,255,255,.18)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
               <rect x="2" y="7" width="20" height="14" rx="3.5" stroke="white" strokeWidth="1.8"/>
               <circle cx="12" cy="14" r="4" stroke="white" strokeWidth="1.8"/>
               <path d="M8 7l1.5-3h5L16 7" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
               <circle cx="19" cy="10" r="1" fill="white"/>
             </svg>
           </div>
-          <strong style={{ color:"white", fontSize:15, flex:1, fontWeight:700, textShadow:"0 1px 3px rgba(0,0,0,.3)" }}>Prendre mon Selfie</strong>
-          <div style={{ width:34, height:34, borderRadius:"50%", background:"rgba(0,0,0,.2)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M3 8h10M9 4l4 4-4 4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </div>
+          <strong style={{ color:"white", fontSize:14, fontWeight:700, textShadow:"0 1px 3px rgba(0,0,0,.3)", whiteSpace:"nowrap" }}>Prendre mon Selfie</strong>
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+            <path d="M3 8h10M9 4l4 4-4 4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
         </div>
 
       </div>
