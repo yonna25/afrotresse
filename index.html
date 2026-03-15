@@ -196,6 +196,7 @@ async function analyzeWithClaude(base64Image, mimeType = "image/jpeg") {
   const cached = getCachedResult(imageHash);
   if (cached) {
     console.log("✓ Résultat depuis le cache — 0 crédit utilisé");
+    localStorage.setItem("afrotresse_pending_result", JSON.stringify(cached));
     return { ...cached, fromCache: true };
   }
 
@@ -263,6 +264,8 @@ async function analyzeWithClaude(base64Image, mimeType = "image/jpeg") {
   incrementTotalUsage();
   console.log(`✓ Analyse ${getTotalUsage()}/${getCurrentLimit()} au total`);
 
+  // Stocker résultat en attente pour Results
+  localStorage.setItem("afrotresse_pending_result", JSON.stringify(result));
   return result;
 }
 
@@ -821,13 +824,14 @@ function Analyzing({ go, setScreen, analysis, setResults, toast }) {
         const animDuration = steps.length * 900 + 600;
         const elapsed = Date.now() - startTime;
         const remaining = Math.max(0, animDuration - elapsed);
-        const dispatch = () => {
-          window.dispatchEvent(new CustomEvent("afro:results", { detail: data }));
+        const showResults = () => {
+          localStorage.setItem("afrotresse_pending_result", JSON.stringify(data));
+          go("results");
         };
         if (remaining > 0) {
-          setTimeout(dispatch, remaining);
+          setTimeout(showResults, remaining);
         } else {
-          dispatch();
+          showResults();
         }
       })
       .catch(e => {
@@ -879,8 +883,12 @@ function Analyzing({ go, setScreen, analysis, setResults, toast }) {
 // ═══════════════════════════════════════════════════════════
 // RÉSULTATS IA — 3 recommandations
 // ═══════════════════════════════════════════════════════════
-function Results({ go, user, setUser, results, toast }) {
-  const recs = results?.recommandations || [];
+function Results({ go, user, setUser, results, setResults, toast }) {
+  // Lire depuis localStorage si results pas encore dans le state
+  const data = results || (() => {
+    try { return JSON.parse(localStorage.getItem("afrotresse_pending_result") || "null"); } catch { return null; }
+  })();
+  const recs = data?.recommandations || [];
 
   // Récupère les données complètes depuis BRAIDS
   const enriched = recs.map(r => {
@@ -909,13 +917,13 @@ function Results({ go, user, setUser, results, toast }) {
       <div style={{ background:C.brown, padding:"54px 24px 28px", position:"relative", overflow:"hidden" }}>
         <div style={{ position:"absolute", inset:0, background:"radial-gradient(ellipse at 100% 0%,rgba(201,150,58,.2) 0%,transparent 50%)", pointerEvents:"none" }} />
         <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(201,150,58,.2)", border:`1px solid rgba(201,150,58,.5)`, borderRadius:50, padding:"5px 14px", color:C.goldL, fontSize:11, fontWeight:600, letterSpacing:1, textTransform:"uppercase", marginBottom:12 }}>
-          ✦ Visage {results?.forme || "Ovale"} détecté
+          ✦ Visage {data?.forme || "Ovale"} détecté
         </div>
         <h2 style={{ fontFamily:"'Playfair Display',serif", color:C.cream, fontSize:24, margin:"0 0 6px" }}>Tes 3 tresses idéales 💫</h2>
         <p style={{ color:C.sand, fontSize:13, margin:0, lineHeight:1.5 }}>
           {results?.description_visage || "Analyse personnalisée basée sur ta morphologie."}
         </p>
-        {results?.simulated && <p style={{ color:"rgba(212,184,150,.6)", fontSize:11, margin:"8px 0 0", fontStyle:"italic" }}>⚙️ Mode démo — active ta clé API pour une analyse réelle</p>}
+        {data?.simulated && <p style={{ color:"rgba(212,184,150,.6)", fontSize:11, margin:"8px 0 0", fontStyle:"italic" }}>⚙️ Mode démo — active ta clé API pour une analyse réelle</p>}
       </div>
 
       <div style={{ padding:"20px 24px" }}>
@@ -1418,15 +1426,7 @@ function AfroTresse() {
 
   useEffect(() => { if (user && screen==="splash") setScreen("home"); }, []);
 
-  useEffect(() => {
-    const handler = (e) => {
-      setResults(e.detail);
-      window.scrollTo(0,0);
-      setScreen("results");
-    };
-    window.addEventListener("afro:results", handler);
-    return () => window.removeEventListener("afro:results", handler);
-  }, []);
+
 
   const p = { go, setScreen, user, setUser, toast, analysis, setAnalysis, results, setResults };
 
