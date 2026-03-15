@@ -809,23 +809,23 @@ function Analyzing({ go, onDone, analysis, setResults, toast }) {
   const [err, se] = useState(null);
   const steps = ["Détection de la forme du visage…","Analyse des proportions…","Identification des traits…","Sélection des 3 meilleures tresses…"];
   const ran = useRef(false);
+  const onDoneRef = useRef(onDone);
+  onDoneRef.current = onDone;
 
   useEffect(() => {
     if (ran.current) return;
     ran.current = true;
 
     const startTime = Date.now();
-    // Anime les étapes en parallèle de l'appel API
     steps.forEach((_,i) => setTimeout(() => { ss(i+1); sp((i+1)/steps.length*100); }, (i+1)*900));
 
-    // Appel IA réel
     analyzeWithClaude(analysis?.b64 || "", analysis?.mime || "image/jpeg")
       .then(data => {
         const animDuration = steps.length * 900 + 600;
         const elapsed = Date.now() - startTime;
         const remaining = Math.max(0, animDuration - elapsed);
         const showResults = () => {
-          onDone(data);
+          onDoneRef.current(data);
         };
         if (remaining > 0) {
           setTimeout(showResults, remaining);
