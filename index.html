@@ -188,47 +188,17 @@ function simpleHash(str) {
   return h.toString(36);
 }
 
+// ─── Appel à l'API Claude Vision — économique ─────────────────────────────
 async function analyzeWithClaude(base64Image, mimeType = "image/jpeg") {
-  console.log("📡 Appel de l'IA en cours... (Le cache est ignoré)");
 
-  // On saute l'étape du cache et on appelle directement votre proxy Vercel
-  const response = await fetch("/api/analyze", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "claude-3-5-sonnet-20240620",
-      max_tokens: 1000,
-      messages: [{
-        role: "user",
-        content: [
-          { 
-            type: "image", 
-            source: { type: "base64", media_type: mimeType, data: base64Image } 
-          },
-          { 
-            type: "text", 
-            text: "Analyse ce visage et suggère 3 coiffures de tresses africaines. Réponds uniquement en JSON." 
-          }
-        ]
-      }]
-    })
-  });
-
-  if (!response.ok) {
-    throw new Error("Le serveur a répondu avec une erreur : " + response.status);
+  // 2. Vérifier le cache — même image = pas d'appel API
+  const imageHash = simpleHash(base64Image);
+  const cached = getCachedResult(imageHash);
+  if (cached) {
+    console.log("✓ Résultat depuis le cache — 0 crédit utilisé");
+    localStorage.setItem("afrotresse_pending_result", JSON.stringify(cached));
+    return { ...cached, fromCache: true };
   }
-
-  const data = await response.json();
-  
-  // On extrait le texte renvoyé par Claude
-  const texteDeLIA = data.content[0].text;
-  
-  // On nettoie le texte pour être sûr d'avoir du JSON pur
-  const jsonNettoyé = texteDeLIA.replace(/`json|```/g, "").trim();
-  
-  console.log("✅ IA a répondu !");
-  return JSON.parse(jsonNettoyé);
-}
 
   // 3. Vérifier le quota total
   const usage = getTotalUsage();
