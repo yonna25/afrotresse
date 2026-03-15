@@ -1428,22 +1428,6 @@ function AfroTresse() {
 
   const p = { go, setScreen, user, setUser, toast, analysis, setAnalysis, results, setResults };
 
-  const SCREENS = {
-    splash:    <Splash    {...p} />,
-    register:  <Register  {...p} />,
-    login:     <Login     {...p} />,
-    home:      <Home      {...p} />,
-    selfie:    <Selfie    {...p} />,
-    analyzing: <Analyzing {...p} />,
-    results:   <Results   {...p} />,
-    library:   <Library   {...p} />,
-    premium:   <Premium   {...p} />,
-    referral:  <Referral  {...p} />,
-    profile:   <Profile   {...p} />,
-    reviews:   <Reviews   {...p} />,
-    quota:     <QuotaScreen {...p} bonusAlreadyUsed={isBonusUnlocked()} />,
-  };
-
   return (
     <div style={{ fontFamily:"'DM Sans',sans-serif", background:C.cream, minHeight:"100vh", maxWidth:430, margin:"0 auto", position:"relative", overflowX:"hidden", boxShadow:"0 0 80px rgba(0,0,0,.18)" }}>
       <style>{`
@@ -1456,7 +1440,21 @@ function AfroTresse() {
         ::-webkit-scrollbar{display:none}
         *{scrollbar-width:none}
       `}</style>
-      {SCREENS[screen] || SCREENS.splash}
+      { screen === "splash"    ? <Splash    {...p} /> :
+        screen === "register"  ? <Register  {...p} /> :
+        screen === "login"     ? <Login     {...p} /> :
+        screen === "home"      ? <Home      {...p} /> :
+        screen === "selfie"    ? <Selfie    {...p} /> :
+        screen === "analyzing" ? <Analyzing {...p} /> :
+        screen === "results"   ? <Results   {...p} /> :
+        screen === "library"   ? <Library   {...p} /> :
+        screen === "premium"   ? <Premium   {...p} /> :
+        screen === "referral"  ? <Referral  {...p} /> :
+        screen === "profile"   ? <Profile   {...p} /> :
+        screen === "reviews"   ? <Reviews   {...p} /> :
+        screen === "quota"     ? <QuotaScreen {...p} bonusAlreadyUsed={isBonusUnlocked()} /> :
+        <Splash {...p} />
+      }
       <Toast msg={toastState.msg} show={toastState.show} />
     </div>
   );
