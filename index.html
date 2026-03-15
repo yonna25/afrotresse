@@ -811,16 +811,21 @@ function Analyzing({ go, analysis, setResults, toast }) {
     if (ran.current) return;
     ran.current = true;
 
+    const startTime = Date.now();
     // Anime les étapes en parallèle de l'appel API
     steps.forEach((_,i) => setTimeout(() => { ss(i+1); sp((i+1)/steps.length*100); }, (i+1)*900));
 
     // Appel IA réel
     analyzeWithClaude(analysis?.b64 || "", analysis?.mime || "image/jpeg")
       .then(data => {
+        // Attendre que l'animation soit terminée avant d'afficher les résultats
+        const animDuration = steps.length * 900 + 600;
+        const elapsed = Date.now() - startTime;
+        const remaining = Math.max(0, animDuration - elapsed);
         setTimeout(() => {
           setResults(data);
           go("results");
-        }, steps.length * 900 + 600);
+        }, remaining);
       })
       .catch(e => {
         se(e.message);
