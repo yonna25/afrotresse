@@ -1427,12 +1427,13 @@ function AfroTresse() {
 
 
 
-  const handleAnalysisDone = (data) => {
+  const handleAnalysisDone = React.useCallback((data) => {
     localStorage.setItem("afrotresse_pending_result", JSON.stringify(data));
     setResults(data);
     window.scrollTo(0, 0);
-    setScreen("results");
-  };
+    // Utiliser un microtask pour s'assurer que setResults est traité avant setScreen
+    Promise.resolve().then(() => setScreen("results"));
+  }, []);
 
   const p = { go, setScreen, onDone: handleAnalysisDone, user, setUser, toast, analysis, setAnalysis, results, setResults };
 
