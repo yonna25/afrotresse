@@ -785,39 +785,32 @@ function Selfie({ go, user, setUser, toast, setAnalysis }) {
 // ═══════════════════════════════════════════════════════════
 // ANALYSE IA
 // ═══════════════════════════════════════════════════════════
-function Analyzing({ go, onDone, analysis, setResults, toast }) {
+function Analyzing({ go, onDone, analysis, toast }) {
   const [step, ss] = useState(0);
   const [prog, sp] = useState(0);
   const [err, se] = useState(null);
   const steps = ["Détection de la forme du visage…","Analyse des proportions…","Identification des traits…","Sélection des 3 meilleures tresses…"];
-  const ran = useRef(false);
-  const onDoneRef = useRef(onDone);
-  onDoneRef.current = onDone;
+  const done = useRef(false);
 
   useEffect(() => {
-    if (ran.current) return;
-    ran.current = true;
+    // Lancer l'animation des étapes
+    steps.forEach((_,i) => setTimeout(() => {
+      ss(i+1);
+      sp((i+1)/steps.length*100);
+    }, (i+1)*900));
 
-    const startTime = Date.now();
-    steps.forEach((_,i) => setTimeout(() => { ss(i+1); sp((i+1)/steps.length*100); }, (i+1)*900));
-
+    // Appel IA
     analyzeWithClaude(analysis?.b64 || "", analysis?.mime || "image/jpeg")
       .then(data => {
-        const animDuration = steps.length * 900 + 600;
-        const elapsed = Date.now() - startTime;
-        const remaining = Math.max(0, animDuration - elapsed);
-        const showResults = () => {
-          onDoneRef.current(data);
-        };
-        if (remaining > 0) {
-          setTimeout(showResults, remaining);
-        } else {
-          showResults();
-        }
+        if (done.current) return;
+        done.current = true;
+        // Attendre la fin de l'animation (4 étapes × 900ms + 600ms)
+        const wait = Math.max(600, steps.length * 900 + 600 - 100);
+        setTimeout(() => onDone(data), wait);
       })
       .catch(e => {
         se(e.message);
-        toast("❌ Erreur IA : " + e.message.slice(0,60));
+        toast("❌ Erreur : " + e.message.slice(0,60));
       });
   }, []);
 
@@ -1409,13 +1402,11 @@ function AfroTresse() {
 
 
 
-  const handleAnalysisDone = React.useCallback((data) => {
-    localStorage.setItem("afrotresse_pending_result", JSON.stringify(data));
+  const handleAnalysisDone = (data) => {
     setResults(data);
+    setScreen("results");
     window.scrollTo(0, 0);
-    // Utiliser un microtask pour s'assurer que setResults est traité avant setScreen
-    Promise.resolve().then(() => setScreen("results"));
-  }, []);
+  };
 
   const p = { go, setScreen, onDone: handleAnalysisDone, user, setUser, toast, analysis, setAnalysis, results, setResults };
 
