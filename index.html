@@ -803,7 +803,7 @@ function Selfie({ go, user, setUser, toast, setAnalysis }) {
 // ═══════════════════════════════════════════════════════════
 // ANALYSE IA
 // ═══════════════════════════════════════════════════════════
-function Analyzing({ go, setScreen, analysis, setResults, toast }) {
+function Analyzing({ go, onDone, analysis, setResults, toast }) {
   const [step, ss] = useState(0);
   const [prog, sp] = useState(0);
   const [err, se] = useState(null);
@@ -825,8 +825,7 @@ function Analyzing({ go, setScreen, analysis, setResults, toast }) {
         const elapsed = Date.now() - startTime;
         const remaining = Math.max(0, animDuration - elapsed);
         const showResults = () => {
-          localStorage.setItem("afrotresse_pending_result", JSON.stringify(data));
-          go("results");
+          onDone(data);
         };
         if (remaining > 0) {
           setTimeout(showResults, remaining);
@@ -1428,7 +1427,14 @@ function AfroTresse() {
 
 
 
-  const p = { go, setScreen, user, setUser, toast, analysis, setAnalysis, results, setResults };
+  const handleAnalysisDone = (data) => {
+    localStorage.setItem("afrotresse_pending_result", JSON.stringify(data));
+    setResults(data);
+    window.scrollTo(0, 0);
+    setScreen("results");
+  };
+
+  const p = { go, setScreen, onDone: handleAnalysisDone, user, setUser, toast, analysis, setAnalysis, results, setResults };
 
   return (
     <div style={{ fontFamily:"'DM Sans',sans-serif", background:C.cream, minHeight:"100vh", maxWidth:430, margin:"0 auto", position:"relative", overflowX:"hidden", boxShadow:"0 0 80px rgba(0,0,0,.18)" }}>
