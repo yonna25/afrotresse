@@ -100,7 +100,7 @@ export default function Home() {
           transition={{ duration:0.5 }}>
 
           {/* Badge Bonjour */}
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-4"
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-2"
             style={{ background:'rgba(201,150,58,0.15)', border:'1px solid rgba(201,150,58,0.4)' }}>
             <span className="text-sm">👋</span>
             <span className="font-body text-xs font-semibold tracking-widest uppercase"
@@ -111,7 +111,7 @@ export default function Home() {
 
           {/* Ligne 1 : Reine, (blanc) + quelle tresse (gold) */}
           {/* Ligne 2 : aujourd'hui ? (blanc) */}
-          <h1 className="font-display leading-[1.25]" style={{ fontSize:'2rem' }}>
+          <h1 className="font-display leading-[1.15]" style={{ fontSize:'1.4rem' }}>
             <span style={{ color:'#FAF4EC' }} className="italic">{userName},&nbsp;</span>
             <span style={{ color:'#C9963A' }}>quelle tresse</span>
             <br/>
