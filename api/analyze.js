@@ -160,9 +160,9 @@ Formes : oval, round, square, heart, long, diamond`,
     const selfieUrl = await uploadToFalStorage(selfieBuffer, mimeType, falKey)
 
     // 5. URL de base Vercel
-    const baseUrl = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : 'https://mon-afrotresse-6eaco8ut9-yonna25s-projects.vercel.app'
+    // URL dynamique — fonctionne peu importe le déploiement
+    const host    = req.headers.host || req.headers['x-forwarded-host']
+    const baseUrl = `https://${host}`
 
     // 6. Générer les 2 essayages en parallèle
     const recommendations = await Promise.all(
