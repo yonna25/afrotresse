@@ -3,33 +3,36 @@ import fs from 'fs'
 
 export const config = { api: { bodyParser: false } }
 
-// ─── Bibliothèque 25 styles — photos dans public/styles/ ─────────
+// ─── Tes 8 photos dans public/styles/ ────────────────────────────
+// napi1.jpg → napi7.jpg + akoto.jpg
+// Chaque style pointe vers une de tes photos
+
 const BRAIDS_LIBRARY = [
-  { id:'box-braids',       name:'Box Braids',       region:'Afrique de l\'Ouest', duration:'4-6h', difficulty:'Intermédiaire', tags:['Classique','Protectrice'],  faceShapes:['oval','round','square','heart','diamond'],        localImage:'/styles/box-braids.jpg' },
-  { id:'knotless-braids',  name:'Knotless Braids',  region:'Afrique de l\'Ouest', duration:'6-8h', difficulty:'Intermédiaire', tags:['Moderne','Naturelle'],      faceShapes:['oval','round','square','heart','diamond','long'],  localImage:'/styles/knotless-braids.jpg' },
-  { id:'cornrows',         name:'Cornrows',          region:'Afrique de l\'Ouest', duration:'2-4h', difficulty:'Avancée',       tags:['Sport','Légère'],           faceShapes:['oval','long','square','diamond'],                  localImage:'/styles/cornrows.jpg' },
-  { id:'fulani-braids',    name:'Fulani Braids',     region:'Afrique de l\'Ouest', duration:'3-5h', difficulty:'Avancée',       tags:['Perles','Unique'],          faceShapes:['oval','heart','diamond'],                          localImage:'/styles/fulani-braids.jpg' },
-  { id:'ghana-braids',     name:'Ghana Braids',      region:'Ghana',               duration:'3-4h', difficulty:'Intermédiaire', tags:['Bold','Structurée'],        faceShapes:['oval','long','diamond'],                           localImage:'/styles/ghana-braids.jpg' },
-  { id:'senegalese-twist', name:'Senegalese Twist',  region:'Sénégal',             duration:'5-7h', difficulty:'Intermédiaire', tags:['Volume','Élégante'],        faceShapes:['round','square','heart','oval'],                   localImage:'/styles/senegalese-twist.jpg' },
-  { id:'lemonade-braids',  name:'Lemonade Braids',   region:'Afrique de l\'Ouest', duration:'4-6h', difficulty:'Avancée',       tags:['Tendance','Glamour'],       faceShapes:['round','square','heart'],                          localImage:'/styles/lemonade-braids.jpg' },
-  { id:'micro-braids',     name:'Micro Braids',      region:'Afrique de l\'Ouest', duration:'8-12h',difficulty:'Expert',        tags:['Délicate','Versatile'],     faceShapes:['oval','long','heart'],                             localImage:'/styles/micro-braids.jpg' },
-  { id:'bantu-knots',      name:'Bantu Knots',       region:'Afrique Centrale',    duration:'2-3h', difficulty:'Intermédiaire', tags:['Naturelle','Culturelle'],   faceShapes:['oval','round','heart'],                            localImage:'/styles/bantu-knots.jpg' },
-  { id:'goddess-braids',   name:'Goddess Braids',    region:'Afrique Centrale',    duration:'4-5h', difficulty:'Avancée',       tags:['Majestueuse','Bold'],       faceShapes:['oval','square','long'],                            localImage:'/styles/goddess-braids.jpg' },
-  { id:'dreadlocks',       name:'Dreadlocks',        region:'Afrique de l\'Est',   duration:'3-4h', difficulty:'Intermédiaire', tags:['Naturelle','Authentique'],  faceShapes:['oval','square','diamond','long'],                  localImage:'/styles/dreadlocks.jpg' },
-  { id:'ethiopian-braids', name:'Ethiopian Braids',  region:'Éthiopie',            duration:'3-4h', difficulty:'Avancée',       tags:['Géométrique','Culturelle'], faceShapes:['oval','long','square'],                            localImage:'/styles/ethiopian-braids.jpg' },
-  { id:'jumbo-braids',     name:'Jumbo Braids',      region:'Pan-Africain',        duration:'3-5h', difficulty:'Intermédiaire', tags:['XXL','Moderne'],            faceShapes:['long','square','diamond'],                         localImage:'/styles/jumbo-braids.jpg' },
-  { id:'passion-twist',    name:'Passion Twist',     region:'Pan-Africain',        duration:'4-6h', difficulty:'Intermédiaire', tags:['Bohème','Romantique'],      faceShapes:['round','heart','oval'],                            localImage:'/styles/passion-twist.jpg' },
-  { id:'faux-locs',        name:'Faux Locs',         region:'Pan-Africain',        duration:'5-7h', difficulty:'Intermédiaire', tags:['Bohème','Longue durée'],    faceShapes:['oval','square','diamond','long'],                  localImage:'/styles/faux-locs.jpg' },
-  { id:'feed-in-braids',   name:'Feed-in Braids',    region:'Pan-Africain',        duration:'2-4h', difficulty:'Intermédiaire', tags:['Naturelle','Discrète'],     faceShapes:['oval','round','long','heart'],                     localImage:'/styles/feed-in-braids.jpg' },
-  { id:'tribal-braids',    name:'Tribal Braids',     region:'Pan-Africain',        duration:'5-7h', difficulty:'Avancée',       tags:['Tribal','Unique'],          faceShapes:['oval','square','diamond'],                         localImage:'/styles/tribal-braids.jpg' },
-  { id:'spring-twist',     name:'Spring Twist',      region:'Pan-Africain',        duration:'4-5h', difficulty:'Intermédiaire', tags:['Légère','Rebond'],          faceShapes:['round','heart','oval','square'],                   localImage:'/styles/spring-twist.jpg' },
-  { id:'butterfly-locs',   name:'Butterfly Locs',    region:'Pan-Africain',        duration:'5-7h', difficulty:'Avancée',       tags:['Bohème','Ondulé'],          faceShapes:['oval','heart','round'],                            localImage:'/styles/butterfly-locs.jpg' },
-  { id:'stitch-braids',    name:'Stitch Braids',     region:'Pan-Africain',        duration:'3-5h', difficulty:'Avancée',       tags:['Précise','Géométrique'],    faceShapes:['oval','long','square','diamond'],                  localImage:'/styles/stitch-braids.jpg' },
-  { id:'boho-braids',      name:'Boho Braids',       region:'Pan-Africain',        duration:'6-8h', difficulty:'Intermédiaire', tags:['Bohème','Naturelle'],       faceShapes:['oval','heart','round','diamond'],                  localImage:'/styles/boho-braids.jpg' },
-  { id:'havana-twist',     name:'Havana Twist',      region:'Pan-Africain',        duration:'4-6h', difficulty:'Intermédiaire', tags:['Volume','Épais'],           faceShapes:['long','square','diamond','oval'],                  localImage:'/styles/havana-twist.jpg' },
-  { id:'crochet-braids',   name:'Crochet Braids',    region:'Afrique Centrale',    duration:'2-3h', difficulty:'Intermédiaire', tags:['Rapide','Volume'],          faceShapes:['oval','round','heart','square'],                   localImage:'/styles/crochet-braids.jpg' },
-  { id:'maasai-braids',    name:'Maasai Braids',     region:'Kenya',               duration:'4-6h', difficulty:'Avancée',       tags:['Perles','Est-Africain'],    faceShapes:['oval','heart','diamond'],                          localImage:'/styles/maasai-braids.jpg' },
-  { id:'berber-braids',    name:'Berber Braids',     region:'Maroc / Algérie',     duration:'3-5h', difficulty:'Avancée',       tags:['Bijoux','Nord-Africain'],   faceShapes:['oval','heart','round'],                            localImage:'/styles/berber-braids.jpg' },
+  { id:'box-braids',       name:'Box Braids',       region:'Afrique de l\'Ouest', duration:'4-6h',  difficulty:'Intermédiaire', tags:['Classique','Protectrice'],  faceShapes:['oval','round','square','heart','diamond'],        localImage:'/styles/napi1.jpg' },
+  { id:'knotless-braids',  name:'Knotless Braids',  region:'Afrique de l\'Ouest', duration:'6-8h',  difficulty:'Intermédiaire', tags:['Moderne','Naturelle'],      faceShapes:['oval','round','square','heart','diamond','long'],  localImage:'/styles/napi2.jpg' },
+  { id:'cornrows',         name:'Cornrows',          region:'Afrique de l\'Ouest', duration:'2-4h',  difficulty:'Avancée',       tags:['Sport','Légère'],           faceShapes:['oval','long','square','diamond'],                  localImage:'/styles/napi3.jpg' },
+  { id:'fulani-braids',    name:'Fulani Braids',     region:'Afrique de l\'Ouest', duration:'3-5h',  difficulty:'Avancée',       tags:['Perles','Unique'],          faceShapes:['oval','heart','diamond'],                          localImage:'/styles/napi4.jpg' },
+  { id:'ghana-braids',     name:'Ghana Braids',      region:'Ghana',               duration:'3-4h',  difficulty:'Intermédiaire', tags:['Bold','Structurée'],        faceShapes:['oval','long','diamond'],                           localImage:'/styles/napi5.jpg' },
+  { id:'senegalese-twist', name:'Senegalese Twist',  region:'Sénégal',             duration:'5-7h',  difficulty:'Intermédiaire', tags:['Volume','Élégante'],        faceShapes:['round','square','heart','oval'],                   localImage:'/styles/napi6.jpg' },
+  { id:'lemonade-braids',  name:'Lemonade Braids',   region:'Afrique de l\'Ouest', duration:'4-6h',  difficulty:'Avancée',       tags:['Tendance','Glamour'],       faceShapes:['round','square','heart'],                          localImage:'/styles/napi7.jpg' },
+  { id:'micro-braids',     name:'Micro Braids',      region:'Afrique de l\'Ouest', duration:'8-12h', difficulty:'Expert',        tags:['Délicate','Versatile'],     faceShapes:['oval','long','heart'],                             localImage:'/styles/akoto.jpg' },
+  { id:'bantu-knots',      name:'Bantu Knots',       region:'Afrique Centrale',    duration:'2-3h',  difficulty:'Intermédiaire', tags:['Naturelle','Culturelle'],   faceShapes:['oval','round','heart'],                            localImage:'/styles/napi1.jpg' },
+  { id:'goddess-braids',   name:'Goddess Braids',    region:'Afrique Centrale',    duration:'4-5h',  difficulty:'Avancée',       tags:['Majestueuse','Bold'],       faceShapes:['oval','square','long'],                            localImage:'/styles/napi2.jpg' },
+  { id:'dreadlocks',       name:'Dreadlocks',        region:'Afrique de l\'Est',   duration:'3-4h',  difficulty:'Intermédiaire', tags:['Naturelle','Authentique'],  faceShapes:['oval','square','diamond','long'],                  localImage:'/styles/napi3.jpg' },
+  { id:'ethiopian-braids', name:'Ethiopian Braids',  region:'Éthiopie',            duration:'3-4h',  difficulty:'Avancée',       tags:['Géométrique','Culturelle'], faceShapes:['oval','long','square'],                            localImage:'/styles/napi4.jpg' },
+  { id:'jumbo-braids',     name:'Jumbo Braids',      region:'Pan-Africain',        duration:'3-5h',  difficulty:'Intermédiaire', tags:['XXL','Moderne'],            faceShapes:['long','square','diamond'],                         localImage:'/styles/napi5.jpg' },
+  { id:'passion-twist',    name:'Passion Twist',     region:'Pan-Africain',        duration:'4-6h',  difficulty:'Intermédiaire', tags:['Bohème','Romantique'],      faceShapes:['round','heart','oval'],                            localImage:'/styles/napi6.jpg' },
+  { id:'faux-locs',        name:'Faux Locs',         region:'Pan-Africain',        duration:'5-7h',  difficulty:'Intermédiaire', tags:['Bohème','Longue durée'],    faceShapes:['oval','square','diamond','long'],                  localImage:'/styles/napi7.jpg' },
+  { id:'feed-in-braids',   name:'Feed-in Braids',    region:'Pan-Africain',        duration:'2-4h',  difficulty:'Intermédiaire', tags:['Naturelle','Discrète'],     faceShapes:['oval','round','long','heart'],                     localImage:'/styles/akoto.jpg' },
+  { id:'tribal-braids',    name:'Tribal Braids',     region:'Pan-Africain',        duration:'5-7h',  difficulty:'Avancée',       tags:['Tribal','Unique'],          faceShapes:['oval','square','diamond'],                         localImage:'/styles/napi1.jpg' },
+  { id:'spring-twist',     name:'Spring Twist',      region:'Pan-Africain',        duration:'4-5h',  difficulty:'Intermédiaire', tags:['Légère','Rebond'],          faceShapes:['round','heart','oval','square'],                   localImage:'/styles/napi2.jpg' },
+  { id:'butterfly-locs',   name:'Butterfly Locs',    region:'Pan-Africain',        duration:'5-7h',  difficulty:'Avancée',       tags:['Bohème','Ondulé'],          faceShapes:['oval','heart','round'],                            localImage:'/styles/napi3.jpg' },
+  { id:'stitch-braids',    name:'Stitch Braids',     region:'Pan-Africain',        duration:'3-5h',  difficulty:'Avancée',       tags:['Précise','Géométrique'],    faceShapes:['oval','long','square','diamond'],                  localImage:'/styles/napi4.jpg' },
+  { id:'boho-braids',      name:'Boho Braids',       region:'Pan-Africain',        duration:'6-8h',  difficulty:'Intermédiaire', tags:['Bohème','Naturelle'],       faceShapes:['oval','heart','round','diamond'],                  localImage:'/styles/napi5.jpg' },
+  { id:'havana-twist',     name:'Havana Twist',      region:'Pan-Africain',        duration:'4-6h',  difficulty:'Intermédiaire', tags:['Volume','Épais'],           faceShapes:['long','square','diamond','oval'],                  localImage:'/styles/napi6.jpg' },
+  { id:'crochet-braids',   name:'Crochet Braids',    region:'Afrique Centrale',    duration:'2-3h',  difficulty:'Intermédiaire', tags:['Rapide','Volume'],          faceShapes:['oval','round','heart','square'],                   localImage:'/styles/napi7.jpg' },
+  { id:'maasai-braids',    name:'Maasai Braids',     region:'Kenya',               duration:'4-6h',  difficulty:'Avancée',       tags:['Perles','Est-Africain'],    faceShapes:['oval','heart','diamond'],                          localImage:'/styles/akoto.jpg' },
+  { id:'berber-braids',    name:'Berber Braids',     region:'Maroc / Algérie',     duration:'3-5h',  difficulty:'Avancée',       tags:['Bijoux','Nord-Africain'],   faceShapes:['oval','heart','round'],                            localImage:'/styles/napi1.jpg' },
 ]
 
 const FACE_SHAPE_NAMES = {
@@ -47,36 +50,31 @@ function parseForm(req) {
   })
 }
 
-// Pioche exactement 2 styles compatibles
 function pickTwoStyles(faceShape) {
   const compatible = BRAIDS_LIBRARY.filter(s => s.faceShapes.includes(faceShape))
   const shuffled   = [...compatible].sort(() => Math.random() - 0.5)
   return shuffled.slice(0, 2)
 }
 
-// Upload une image vers fal.ai storage → retourne l'URL publique
 async function uploadToFalStorage(buffer, mimeType, falApiKey) {
   try {
     const formData = new FormData()
     const blob     = new Blob([buffer], { type: mimeType })
     formData.append('file', blob, 'image.jpg')
-
     const res = await fetch('https://fal.run/fal-ai/storage/upload', {
       method:  'POST',
       headers: { 'Authorization': `Key ${falApiKey}` },
       body:    formData,
     })
-    if (!res.ok) throw new Error(`Storage upload failed: ${await res.text()}`)
+    if (!res.ok) throw new Error(await res.text())
     const data = await res.json()
     return data.url || data.file_url || null
   } catch (e) {
-    console.error('uploadToFalStorage error:', e)
+    console.error('Upload error:', e)
     return null
   }
 }
 
-// Applique le style de tresse sur le selfie
-// Utilise image-apps-v2/hair-change avec selfie + image de référence
 async function applyHairStyle(selfieUrl, styleImageUrl, falApiKey) {
   try {
     const res = await fetch('https://fal.run/fal-ai/image-apps-v2/hair-change', {
@@ -86,24 +84,16 @@ async function applyHairStyle(selfieUrl, styleImageUrl, falApiKey) {
         'Content-Type':  'application/json',
       },
       body: JSON.stringify({
-        image_url:           selfieUrl,      // selfie de l'utilisatrice
-        reference_image_url: styleImageUrl, // photo du style dans ta bibliothèque
+        image_url:           selfieUrl,
+        reference_image_url: styleImageUrl,
       }),
     })
-
     if (!res.ok) {
       console.error('hair-change error:', res.status, await res.text())
       return null
     }
-
     const data = await res.json()
-    return (
-      data?.image?.url       ||
-      data?.images?.[0]?.url ||
-      data?.output?.url      ||
-      data?.result           ||
-      null
-    )
+    return data?.image?.url || data?.images?.[0]?.url || data?.output?.url || null
   } catch (e) {
     console.error('applyHairStyle error:', e)
     return null
@@ -120,7 +110,7 @@ export default async function handler(req, res) {
 
   try {
     // 1. Récupérer le selfie
-    const { files }  = await parseForm(req)
+    const { files } = await parseForm(req)
     const photoFile  = files.photo?.[0] || files.photo
     if (!photoFile)  return res.status(400).json({ error: 'Aucune photo reçue.' })
 
@@ -163,29 +153,25 @@ Formes : oval, round, square, heart, long, diamond`,
       }
     } catch(e) { console.error('Claude error:', e) }
 
-    // 3. Piocher exactement 2 styles compatibles
+    // 3. Piocher exactement 2 styles
     const selected = pickTwoStyles(faceShape)
 
-    // 4. Uploader le selfie une seule fois sur Fal.ai storage
+    // 4. Uploader le selfie sur Fal.ai
     const selfieUrl = await uploadToFalStorage(selfieBuffer, mimeType, falKey)
 
-    // 5. Pour chaque style :
-    //    - Uploader la photo du style depuis public/styles/
-    //    - Appeler hair-change avec selfie + photo du style
+    // 5. URL de base Vercel
     const baseUrl = process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}`
       : 'https://mon-afrotresse-6eaco8ut9-yonna25s-projects.vercel.app'
 
+    // 6. Générer les 2 essayages en parallèle
     const recommendations = await Promise.all(
       selected.map(async (style) => {
         let generatedImage = null
-
         if (selfieUrl) {
-          // URL publique de la photo du style dans ta bibliothèque
-          const stylePublicUrl = `${baseUrl}${style.localImage}`
-          generatedImage = await applyHairStyle(selfieUrl, stylePublicUrl, falKey)
+          const styleUrl = `${baseUrl}${style.localImage}`
+          generatedImage = await applyHairStyle(selfieUrl, styleUrl, falKey)
         }
-
         return {
           id:             style.id,
           name:           style.name,
@@ -194,13 +180,12 @@ Formes : oval, round, square, heart, long, diamond`,
           difficulty:     style.difficulty,
           tags:           style.tags,
           localImage:     style.localImage,
-          generatedImage, // photo d'elle avec la tresse (null si échec)
+          generatedImage,
           matchScore:     Math.floor(Math.random() * 15) + 83,
         }
       })
     )
 
-    // 6. Retourner exactement 2 résultats
     return res.status(200).json({
       faceShape,
       faceShapeName:   FACE_SHAPE_NAMES[faceShape],
