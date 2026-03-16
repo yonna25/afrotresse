@@ -9,8 +9,14 @@ const ITEMS = [
 
 export default function BottomNav() {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50"
+    <nav
+      className="fixed bottom-0 z-50"
       style={{
+        /* Même largeur et centrage que le app-shell */
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: '100%',
+        maxWidth: '430px',
         background: 'rgba(44,26,14,0.92)',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
@@ -23,7 +29,6 @@ export default function BottomNav() {
           <NavLink key={to} to={to} className="flex-1">
             {({ isActive }) =>
               center ? (
-                /* Bouton central surélevé */
                 <motion.div
                   className="flex flex-col items-center -mt-5"
                   whileTap={{ scale: 0.92 }}
@@ -42,15 +47,12 @@ export default function BottomNav() {
                   >
                     <Icon active={isActive} center />
                   </div>
-                  <span
-                    className="text-[10px] font-body font-semibold"
-                    style={{ color: isActive ? '#C9963A' : '#8B5E3C' }}
-                  >
+                  <span className="text-[10px] font-body font-semibold"
+                    style={{ color: isActive ? '#C9963A' : '#8B5E3C' }}>
                     {label}
                   </span>
                 </motion.div>
               ) : (
-                /* Onglets normaux */
                 <motion.div
                   className="flex flex-col items-center gap-1 py-1"
                   whileTap={{ scale: 0.9 }}
@@ -61,17 +63,15 @@ export default function BottomNav() {
                         layoutId="nav-pill"
                         className="absolute -inset-2 rounded-xl"
                         style={{ background: 'rgba(201,150,58,0.1)' }}
-                        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                        transition={{ type:'spring', stiffness:300, damping:30 }}
                       />
                     )}
                     <div style={{ color: isActive ? '#C9963A' : '#8B5E3C' }} className="relative">
                       <Icon active={isActive} />
                     </div>
                   </div>
-                  <span
-                    className="text-[10px] font-body font-semibold transition-colors"
-                    style={{ color: isActive ? '#C9963A' : '#8B5E3C' }}
-                  >
+                  <span className="text-[10px] font-body font-semibold transition-colors"
+                    style={{ color: isActive ? '#C9963A' : '#8B5E3C' }}>
                     {label}
                   </span>
                 </motion.div>
@@ -86,7 +86,8 @@ export default function BottomNav() {
 
 function HomeIcon({ active }) {
   return (
-    <svg viewBox="0 0 24 24" className="w-6 h-6" fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8">
+    <svg viewBox="0 0 24 24" className="w-6 h-6"
+      fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8">
       <path d="M3 12L12 3l9 9" strokeLinecap="round" strokeLinejoin="round"/>
       <path d="M9 21V12h6v9" strokeLinecap="round" strokeLinejoin="round"/>
       <path d="M5 21h14" strokeLinecap="round"/>
@@ -98,7 +99,8 @@ function CameraIcon({ active, center }) {
   return (
     <svg viewBox="0 0 24 24" className="w-6 h-6" fill="none"
       stroke={center ? (active ? '#2C1A0E' : '#FAF4EC') : 'currentColor'} strokeWidth="2">
-      <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"
+        strokeLinecap="round" strokeLinejoin="round"/>
       <circle cx="12" cy="13" r="4"/>
     </svg>
   )
@@ -106,7 +108,8 @@ function CameraIcon({ active, center }) {
 
 function UserIcon({ active }) {
   return (
-    <svg viewBox="0 0 24 24" className="w-6 h-6" fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8">
+    <svg viewBox="0 0 24 24" className="w-6 h-6"
+      fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8">
       <circle cx="12" cy="8" r="4"/>
       <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" strokeLinecap="round"/>
     </svg>
