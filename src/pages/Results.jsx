@@ -11,8 +11,12 @@ export default function Results() {
 
   useEffect(() => {
     const raw = sessionStorage.getItem('afrotresse_results')
-    if (raw) setData(JSON.parse(raw))
-    else navigate('/camera')
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      setData(parsed)
+    } else {
+      navigate('/camera')
+    }
     setSaved(JSON.parse(localStorage.getItem('afrotresse_saved') || '[]'))
     setCredits(getCredits())
   }, [navigate])
@@ -33,9 +37,14 @@ export default function Results() {
     navigate('/camera')
   }
 
-  if (!data) return null
+  if (!data) return (
+    <div className="min-h-screen bg-brown flex items-center justify-center">
+      <p className="text-warm font-body">Chargement...</p>
+    </div>
+  )
 
   const photoUrl = sessionStorage.getItem('afrotresse_photo')
+  const recs     = (data.recommendations || []).slice(0, 2)
 
   return (
     <div className="min-h-screen bg-brown pb-28">
@@ -61,9 +70,8 @@ export default function Results() {
         </div>
       </div>
 
-      {/* Bandeau forme du visage */}
-      <motion.div initial={{ opacity:0, y:-10 }} animate={{ opacity:1, y:0 }}
-        className="mx-4 mt-4 rounded-3xl p-4 flex items-center gap-4"
+      {/* Bandeau visage */}
+      <div className="mx-4 mt-4 rounded-3xl p-4 flex items-center gap-3"
         style={{ background:'rgba(92,51,23,0.4)', border:'1px solid rgba(201,150,58,0.15)' }}>
         {photoUrl && (
           <div className="w-12 h-12 rounded-2xl overflow-hidden flex-shrink-0"
@@ -89,26 +97,35 @@ export default function Results() {
             <p className="font-body text-xs text-warm mt-0.5 italic">"{data.reason}"</p>
           )}
         </div>
-      </motion.div>
+      </div>
 
-      {/* Titre */}
+      {/* Sous-titre */}
       <div className="px-5 mt-4 mb-2">
         <p className="font-body text-warm text-xs uppercase tracking-widest">
-          2 styles sélectionnés pour toi
+          {recs.length} style{recs.length > 1 ? 's' : ''} sélectionné{recs.length > 1 ? 's' : ''} pour toi
         </p>
       </div>
 
-      {/* Les 2 cartes — strictement 2 */}
-      <div className="px-4 space-y-6">
-        {(data.recommendations || []).slice(0, 2).map((style, i) => (
-          <ResultCard
-            key={style.id}
-            style={style}
-            index={i}
-            isSaved={saved.some(s => s.id === style.id)}
-            onSave={handleSave}
-          />
-        ))}
+      {/* Cartes */}
+      <div className="px-4 space-y-5">
+        {recs.length === 0 ? (
+          <div className="rounded-3xl p-8 text-center"
+            style={{ background:'rgba(92,51,23,0.3)', border:'1px solid rgba(201,150,58,0.2)' }}>
+            <p className="text-3xl mb-3">🔍</p>
+            <p className="font-display text-cream">Aucun résultat</p>
+            <p className="font-body text-warm text-sm mt-2">Réessaie en te prenant en pleine lumière</p>
+          </div>
+        ) : (
+          recs.map((style, i) => (
+            <StyleCard
+              key={style.id || i}
+              style={style}
+              index={i}
+              isSaved={saved.some(s => s.id === style.id)}
+              onSave={handleSave}
+            />
+          ))
+        )}
       </div>
 
       {/* Actions */}
@@ -135,50 +152,38 @@ export default function Results() {
   )
 }
 
-function ResultCard({ style, index, isSaved, onSave }) {
-  const [showGenerated, setShowGenerated] = useState(true)
-  const hasGenerated = !!style.generatedImage
+function StyleCard({ style, index, isSaved, onSave }) {
+  const [imgError, setImgError] = useState(false)
+
+  // Choisir quelle image afficher
+  // 1. Photo générée par IA (si disponible)
+  // 2. Photo locale de ta bibliothèque
+  const imgSrc = (!imgError && style.generatedImage)
+    ? style.generatedImage
+    : style.localImage || null
 
   return (
     <motion.div
       initial={{ opacity:0, y:30 }} animate={{ opacity:1, y:0 }}
       transition={{ delay: index * 0.15, type:'spring', stiffness:180 }}
       className="rounded-3xl overflow-hidden"
-      style={{ border:'1px solid rgba(201,150,58,0.2)', background:'rgba(92,51,23,0.3)' }}>
+      style={{ border:'1px solid rgba(201,150,58,0.25)', background:'rgba(92,51,23,0.3)' }}>
 
-      {/* Image principale */}
-      <div className="relative aspect-[3/4] bg-mid overflow-hidden">
-
-        {/* Photo générée par Fal.ai (son visage avec la tresse) */}
-        {hasGenerated && showGenerated ? (
-          <img src={style.generatedImage} alt={style.name}
-            className="w-full h-full object-cover"
-            onError={() => setShowGenerated(false)}/>
+      {/* Image */}
+      <div className="relative bg-mid overflow-hidden" style={{ aspectRatio:'3/4' }}>
+        {imgSrc ? (
+          <img
+            src={imgSrc}
+            alt={style.name}
+            className="w-full h-full object-cover object-top"
+            onError={() => setImgError(true)}
+          />
         ) : (
-          /* Photo de référence de ta bibliothèque */
-          <img src={style.localImage} alt={style.name}
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              e.target.style.display = 'none'
-              e.target.nextSibling.style.display = 'flex'
-            }}/>
-        )}
-
-        {/* Fallback si aucune image */}
-        <div className="w-full h-full items-center justify-center flex-col gap-3 hidden"
-          style={{ background:'linear-gradient(135deg,#5C3317,#2C1A0E)' }}>
-          <span className="text-5xl">💆🏾‍♀️</span>
-          <span className="font-body text-warm text-sm">{style.name}</span>
-        </div>
-
-        {/* Toggle : voir photo générée / photo de référence */}
-        {hasGenerated && (
-          <button
-            onClick={() => setShowGenerated(!showGenerated)}
-            className="absolute bottom-3 left-3 px-3 py-1.5 rounded-full font-body text-xs font-semibold"
-            style={{ background:'rgba(44,26,14,0.85)', color:'#E8B96A', backdropFilter:'blur(8px)', border:'1px solid rgba(201,150,58,0.3)' }}>
-            {showGenerated ? '📷 Voir le style' : '🪞 Sur mon visage'}
-          </button>
+          <div className="w-full h-full flex flex-col items-center justify-center gap-4"
+            style={{ background:'linear-gradient(160deg, #5C3317 0%, #2C1A0E 100%)' }}>
+            <span className="text-5xl">💆🏾‍♀️</span>
+            <p className="font-display text-cream text-base px-4 text-center">{style.name}</p>
+          </div>
         )}
 
         {/* Badge match */}
@@ -190,7 +195,7 @@ function ResultCard({ style, index, isSaved, onSave }) {
         {/* Sauvegarder */}
         <button onClick={() => onSave(style)}
           className="absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center"
-          style={{ background:'rgba(44,26,14,0.7)', backdropFilter:'blur(8px)', border:'1px solid rgba(201,150,58,0.3)' }}>
+          style={{ background:'rgba(44,26,14,0.75)', backdropFilter:'blur(8px)', border:'1px solid rgba(201,150,58,0.3)' }}>
           <svg viewBox="0 0 24 24" className="w-5 h-5"
             fill={isSaved ? '#C9963A' : 'none'}
             stroke={isSaved ? '#C9963A' : '#8B5E3C'} strokeWidth="2">
@@ -199,16 +204,16 @@ function ResultCard({ style, index, isSaved, onSave }) {
         </button>
 
         {/* Région */}
-        <div className="absolute bottom-3 right-3 px-3 py-1 rounded-full font-body text-xs"
-          style={{ background:'rgba(44,26,14,0.8)', color:'rgba(232,185,106,0.8)', backdropFilter:'blur(8px)' }}>
+        <div className="absolute bottom-3 right-3 px-2.5 py-1 rounded-full font-body text-xs"
+          style={{ background:'rgba(44,26,14,0.85)', color:'rgba(232,185,106,0.85)', backdropFilter:'blur(8px)' }}>
           🌍 {style.region}
         </div>
       </div>
 
       {/* Infos */}
       <div className="p-4">
-        <h3 className="font-display text-cream text-lg">{style.name}</h3>
-        <div className="flex gap-3 mt-1.5">
+        <h3 className="font-display text-cream text-lg leading-tight">{style.name}</h3>
+        <div className="flex gap-3 mt-1">
           {style.duration   && <span className="font-body text-xs text-warm">⏱ {style.duration}</span>}
           {style.difficulty && <span className="font-body text-xs text-warm">⭐ {style.difficulty}</span>}
         </div>
