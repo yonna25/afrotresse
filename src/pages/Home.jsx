@@ -19,6 +19,9 @@ export default function Home() {
   const [dir,     setDir]     = useState(1)
   const timerRef  = useRef(null)
 
+  // Prénom depuis le profil
+  const userName = localStorage.getItem('afrotresse_user_name') || 'Reine'
+
   const goTo = useCallback((idx, d=1) => { setDir(d); setCurrent(idx) }, [])
   const next  = useCallback(() => goTo((current+1) % SLIDES.length, 1), [current, goTo])
 
@@ -55,7 +58,7 @@ export default function Home() {
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
-      {/* Photos */}
+      {/* ── Photos carousel ───────────────────────────────── */}
       <AnimatePresence initial={false} custom={dir}>
         <motion.div
           key={slide.id} custom={dir} variants={variants}
@@ -71,63 +74,83 @@ export default function Home() {
         </motion.div>
       </AnimatePresence>
 
-      {/* Dégradé haut */}
-      <div className="absolute inset-x-0 top-0 h-52 pointer-events-none z-10"
-        style={{ background:'linear-gradient(to bottom, rgba(44,26,14,0.65) 0%, transparent 100%)' }}/>
+      {/* ── Dégradé haut fort pour lisibilité logo ─────── */}
+      <div className="absolute inset-x-0 top-0 h-40 pointer-events-none z-10"
+        style={{ background:'linear-gradient(to bottom, rgba(44,26,14,0.85) 0%, rgba(44,26,14,0.4) 70%, transparent 100%)' }}/>
 
-      {/* Dégradé bas */}
+      {/* ── Dégradé bas ───────────────────────────────────── */}
       <div className="absolute inset-x-0 bottom-0 pointer-events-none z-10"
-        style={{ height:'45%', background:'linear-gradient(to top, rgba(44,26,14,0.98) 0%, rgba(44,26,14,0.75) 50%, transparent 100%)' }}/>
+        style={{ height:'48%', background:'linear-gradient(to top, rgba(44,26,14,0.98) 0%, rgba(44,26,14,0.80) 50%, transparent 100%)' }}/>
 
-      {/* Logo */}
-      <div className="absolute inset-x-0 top-0 z-30 flex items-center justify-between px-5 pt-12">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-full bg-gold/20 border border-gold/40 flex items-center justify-center text-xs">🌿</div>
-          <span className="font-display text-lg text-cream">Afro<span className="text-gold">Tresse</span></span>
+      {/* ── LOGO + SLOGAN (fixe, ne défile pas) ──────────── */}
+      <div className="absolute inset-x-0 top-0 z-30 px-5 pt-12">
+        <div className="flex items-center justify-between">
+          {/* Logo + slogan */}
+          <div>
+            <div className="flex items-center gap-2 mb-0.5">
+              <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs"
+                style={{ background:'rgba(201,150,58,0.25)', border:'1px solid rgba(201,150,58,0.5)' }}>
+                🌿
+              </div>
+              <span className="font-display text-2xl leading-none">
+                <span className="text-cream font-bold">Afro</span><span style={{ color:'#C9963A' }} className="font-bold">Tresse</span>
+              </span>
+            </div>
+            <p className="font-body text-xs tracking-widest ml-9"
+              style={{ color:'rgba(232,185,106,0.75)', letterSpacing:'0.15em' }}>
+              Trouve la tresse parfaite
+            </p>
+          </div>
+
+          {/* Cloche notif */}
+          <button className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+            style={{ background:'rgba(92,51,23,0.5)', backdropFilter:'blur(8px)', border:'1px solid rgba(201,150,58,0.2)' }}>
+            <svg viewBox="0 0 24 24" className="w-4 h-4 text-cream" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+          </button>
         </div>
-        <button
-          className="w-9 h-9 rounded-full flex items-center justify-center"
-          style={{ background:'rgba(92,51,23,0.5)', backdropFilter:'blur(8px)', border:'1px solid rgba(201,150,58,0.2)' }}
-        >
-          <svg viewBox="0 0 24 24" className="w-4 h-4 text-cream" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-          </svg>
-        </button>
       </div>
 
-      {/* Contenu bas */}
+      {/* ── GREETING FIXE (ne défile pas) ────────────────── */}
       <div className="absolute inset-x-0 bottom-0 z-30 px-5 pb-24">
+        <motion.div
+          initial={{ opacity:0, y:20 }}
+          animate={{ opacity:1, y:0 }}
+          transition={{ duration:0.5 }}
+        >
+          {/* Bonjour */}
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-3"
+            style={{ background:'rgba(201,150,58,0.15)', border:'1px solid rgba(201,150,58,0.3)' }}>
+            <span className="text-sm">👋</span>
+            <span className="font-body text-xs font-semibold tracking-widest uppercase"
+              style={{ color:'#E8B96A' }}>
+              Bonjour
+            </span>
+          </div>
 
-        {/* Greeting */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={`g-${current}`}
-            initial={{ opacity:0, y:18 }} animate={{ opacity:1, y:0 }}
-            exit={{ opacity:0, y:-8 }} transition={{ duration:0.4 }}
-          >
-            <p className="font-body text-xs tracking-[0.2em] uppercase mb-2"
-              style={{ color:'rgba(232,185,106,0.8)' }}>
-              Bonjour 👋
-            </p>
-            <h1 className="font-display text-cream leading-[1.15]" style={{ fontSize:'1.85rem' }}>
-              <span className="text-gold italic">Reine,</span>
-              <br/>quelle tresse aujourd&apos;hui&nbsp;?
-            </h1>
-          </motion.div>
-        </AnimatePresence>
+          {/* Prénom + question */}
+          <h1 className="font-display text-cream leading-[1.2]" style={{ fontSize:'2rem' }}>
+            <span style={{ color:'#C9963A' }} className="italic">{userName},</span>
+            <br/>
+            <span className="text-cream">quelle tresse</span>
+            <br/>
+            <span className="text-cream">aujourd&apos;hui&nbsp;?</span>
+          </h1>
+        </motion.div>
 
-        {/* Badge */}
+        {/* Badge tendance — change avec le slide */}
         <AnimatePresence mode="wait">
           <motion.div
             key={`b-${current}`}
-            initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }}
-            exit={{ opacity:0 }} transition={{ delay:0.1, duration:0.35 }}
+            initial={{ opacity:0, x:-10 }} animate={{ opacity:1, x:0 }}
+            exit={{ opacity:0, x:10 }} transition={{ duration:0.3 }}
             className="mt-4 inline-flex"
           >
             <div className="flex items-center gap-2 px-4 py-2 rounded-full"
               style={{ background:'rgba(255,255,255,0.07)', backdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.1)' }}>
-              <span className="font-body text-xs font-bold tracking-wide" style={{ color:slide.accent }}>
+              <span className="font-body text-xs font-bold" style={{ color:slide.accent }}>
                 {slide.badge}
               </span>
               <span className="w-px h-3 bg-white/20"/>
@@ -138,8 +161,8 @@ export default function Home() {
           </motion.div>
         </AnimatePresence>
 
-        {/* Dots */}
-        <div className="flex gap-1.5 mt-5">
+        {/* Dots pagination */}
+        <div className="flex gap-1.5 mt-4">
           {SLIDES.map((_,i) => (
             <button
               key={i}
