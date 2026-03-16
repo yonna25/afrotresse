@@ -8,18 +8,17 @@ const SLIDES = [
   { id:3, image:'/Afrotresse3.jpg', style:'Cornrows',        badge:'✨ COUP DE CŒUR',accent:'#C9963A' },
   { id:4, image:'/Afrotresse4.jpg', style:'Fulani Braids',   badge:'👑 PREMIUM',     accent:'#E8B96A' },
   { id:5, image:'/Afrotresse5.jpg', style:'Senegalese Twist',badge:'💛 CLASSIQUE',   accent:'#C9963A' },
-  { id:6, image:'/Afrotresse6.jpg', style:'Ghana Braids',    badge:'🌟 NOUVEAUTÉ',   accent:'#E8B96A' },
+  { id:6, image:'/Afrotresse6.jpg', style:'Ghana Braids',    badge:'🌟 NOUVEAUTE',   accent:'#E8B96A' },
 ]
 
 const INTERVAL = 3500
 
 export default function Home() {
-  const navigate = useNavigate()
+  const navigate  = useNavigate()
   const [current, setCurrent] = useState(0)
   const [dir,     setDir]     = useState(1)
   const timerRef  = useRef(null)
-
-  const userName = localStorage.getItem('afrotresse_user_name') || 'Reine'
+  const userName  = localStorage.getItem('afrotresse_user_name') || 'Reine'
 
   const goTo = useCallback((idx, d=1) => { setDir(d); setCurrent(idx) }, [])
   const next  = useCallback(() => goTo((current+1) % SLIDES.length, 1), [current, goTo])
@@ -51,74 +50,56 @@ export default function Home() {
   }
 
   return (
-    <div
-      className="relative w-full overflow-hidden bg-brown"
+    <div className="relative w-full overflow-hidden bg-brown"
       style={{ height:'100dvh' }}
-      onTouchStart={onTouchStart}
-      onTouchEnd={onTouchEnd}
-    >
-      {/* ── Photos carousel ───────────────────────────── */}
+      onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+
+      {/* Photos */}
       <AnimatePresence initial={false} custom={dir}>
-        <motion.div
-          key={slide.id} custom={dir} variants={variants}
+        <motion.div key={slide.id} custom={dir} variants={variants}
           initial="enter" animate="center" exit="exit"
           transition={{ duration:0.65, ease:[0.32,0.72,0,1] }}
-          className="absolute inset-0"
-        >
-          <img
-            src={slide.image} alt={slide.style}
+          className="absolute inset-0">
+          <img src={slide.image} alt={slide.style}
             className="w-full h-full object-cover object-top select-none"
-            draggable={false}
-          />
+            draggable={false}/>
         </motion.div>
       </AnimatePresence>
 
-      {/* ── Dégradé haut ──────────────────────────────── */}
+      {/* Degrade haut */}
       <div className="absolute inset-x-0 top-0 h-40 pointer-events-none z-10"
         style={{ background:'linear-gradient(to bottom, rgba(44,26,14,0.85) 0%, rgba(44,26,14,0.4) 70%, transparent 100%)' }}/>
 
-      {/* ── Dégradé bas ───────────────────────────────── */}
+      {/* Degrade bas */}
       <div className="absolute inset-x-0 bottom-0 pointer-events-none z-10"
         style={{ height:'50%', background:'linear-gradient(to top, rgba(44,26,14,0.98) 0%, rgba(44,26,14,0.82) 50%, transparent 100%)' }}/>
 
-      {/* ── LOGO + SLOGAN ─────────────────────────────── */}
+      {/* LOGO + SLOGAN — sans clochette */}
       <div className="absolute inset-x-0 top-0 z-30 px-5 pt-12">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-2 mb-0.5">
-              <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs"
-                style={{ background:'rgba(201,150,58,0.25)', border:'1px solid rgba(201,150,58,0.5)' }}>
-                🌿
-              </div>
-              <span className="font-display text-2xl leading-none">
-                <span style={{ color:'#FAF4EC' }} className="font-bold">Afro</span>
-                <span style={{ color:'#C9963A' }} className="font-bold">Tresse</span>
-              </span>
-            </div>
-            <p className="font-body text-xs tracking-widest ml-9"
-              style={{ color:'rgba(232,185,106,0.75)', letterSpacing:'0.15em' }}>
-              Trouve la tresse parfaite
-            </p>
+        <div className="flex items-center gap-2 mb-1">
+          <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs"
+            style={{ background:'rgba(201,150,58,0.25)', border:'1px solid rgba(201,150,58,0.5)' }}>
+            🌿
           </div>
-
-          <button className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
-            style={{ background:'rgba(92,51,23,0.5)', backdropFilter:'blur(8px)', border:'1px solid rgba(201,150,58,0.2)' }}>
-            <svg viewBox="0 0 24 24" className="w-4 h-4" style={{ color:'#FAF4EC' }} fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-            </svg>
-          </button>
+          <span className="font-display text-2xl leading-none">
+            <span style={{ color:'#FAF4EC' }} className="font-bold">Afro</span>
+            <span style={{ color:'#C9963A' }} className="font-bold">Tresse</span>
+          </span>
         </div>
+        <p className="font-body text-xs ml-9"
+          style={{ color:'#FAF4EC', letterSpacing:'0.12em', opacity:0.80 }}>
+          Trouve ta tresse parfaite
+        </p>
       </div>
 
-      {/* ── GREETING FIXE ─────────────────────────────── */}
+      {/* GREETING FIXE */}
       <div className="absolute inset-x-0 bottom-0 z-30 px-5 pb-24">
         <motion.div
           initial={{ opacity:0, y:20 }}
           animate={{ opacity:1, y:0 }}
-          transition={{ duration:0.5 }}
-        >
-          {/* Badge Bonjour — texte blanc, contour doré */}
+          transition={{ duration:0.5 }}>
+
+          {/* Badge Bonjour */}
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-4"
             style={{ background:'rgba(201,150,58,0.15)', border:'1px solid rgba(201,150,58,0.4)' }}>
             <span className="text-sm">👋</span>
@@ -128,24 +109,22 @@ export default function Home() {
             </span>
           </div>
 
-          {/* Ligne 1 : Reine, (blanc) + quelle tresse (gold) — même ligne */}
+          {/* Ligne 1 : Reine, (blanc) + quelle tresse (gold) */}
           {/* Ligne 2 : aujourd'hui ? (blanc) */}
           <h1 className="font-display leading-[1.25]" style={{ fontSize:'2rem' }}>
             <span style={{ color:'#FAF4EC' }} className="italic">{userName},&nbsp;</span>
             <span style={{ color:'#C9963A' }}>quelle tresse</span>
             <br/>
-            <span style={{ color:'#FAF4EC' }}>aujourd&apos;hui&nbsp;?</span>
+            <span style={{ color:'#FAF4EC' }}>aujourd'hui ?</span>
           </h1>
         </motion.div>
 
         {/* Badge tendance — change avec le slide */}
         <AnimatePresence mode="wait">
-          <motion.div
-            key={`b-${current}`}
+          <motion.div key={current}
             initial={{ opacity:0, x:-10 }} animate={{ opacity:1, x:0 }}
             exit={{ opacity:0, x:10 }} transition={{ duration:0.3 }}
-            className="mt-4 inline-flex"
-          >
+            className="mt-4 inline-flex">
             <div className="flex items-center gap-2 px-4 py-2 rounded-full"
               style={{ background:'rgba(255,255,255,0.07)', backdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.1)' }}>
               <span className="font-body text-xs font-bold" style={{ color:slide.accent }}>
@@ -162,15 +141,13 @@ export default function Home() {
         {/* Dots */}
         <div className="flex gap-1.5 mt-4">
           {SLIDES.map((_,i) => (
-            <button
-              key={i}
+            <button key={i}
               onClick={() => { clearInterval(timerRef.current); goTo(i, i>=current?1:-1) }}
               style={{
                 height:'4px', borderRadius:'2px', transition:'all 0.35s ease',
                 width: i===current ? '28px' : '8px',
                 background: i===current ? '#C9963A' : 'rgba(255,255,255,0.28)',
-              }}
-            />
+              }}/>
           ))}
         </div>
       </div>
