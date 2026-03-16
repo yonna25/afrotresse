@@ -30,6 +30,9 @@ export default function Analyze() {
     }, 600)
 
     // Actual analysis
+    // Vider les anciens résultats avant chaque nouvelle analyse
+    sessionStorage.removeItem("afrotresse_results")
+
     const run = async () => {
       let blob = null
       if (photoUrl) {
