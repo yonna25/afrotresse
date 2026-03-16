@@ -1,15 +1,77 @@
-/* ── Conteneur mobile centré sur desktop ── */
-#root {
-  max-width: 430px;
-  margin: 0 auto;
-  min-height: 100dvh;
-  position: relative;
-  box-shadow: 0 0 60px rgba(0,0,0,0.5);
-  background-color: #2C1A0E;
-  overflow: hidden;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { -webkit-tap-highlight-color: transparent; }
+  html { height: 100%; overscroll-behavior: none; }
+  body {
+    height: 100%;
+    background-color: #1a0f07;
+    color: #FAF4EC;
+    font-family: 'Nunito', sans-serif;
+    overscroll-behavior: none;
+  }
+  #root { height: 100%; }
 }
 
-/* Fond sombre derrière le conteneur */
-body {
-  background-color: #1a0f07;
+@layer components {
+  .btn-gold {
+    @apply bg-gold text-brown font-display font-semibold rounded-full px-8 py-4
+           shadow-lg transition-all duration-200 active:scale-95
+           hover:bg-goldLight;
+    box-shadow: 0 4px 20px rgba(201,150,58,0.4);
+  }
+  .btn-outline {
+    @apply border border-gold text-gold font-body font-semibold rounded-full px-6 py-3
+           transition-all duration-200 active:scale-95 hover:bg-gold hover:text-brown;
+  }
+  .card {
+    @apply bg-mid/60 backdrop-blur-md rounded-3xl border border-warm/20 overflow-hidden;
+  }
+  .glass {
+    background: rgba(92,51,23,0.4);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(201,150,58,0.15);
+  }
+  .pattern-overlay {
+    background-image: radial-gradient(circle at 20% 80%, rgba(201,150,58,0.08) 0%, transparent 50%),
+                      radial-gradient(circle at 80% 20%, rgba(139,94,60,0.1) 0%, transparent 50%);
+  }
+  .gold-divider {
+    @apply w-16 h-px bg-gradient-to-r from-transparent via-gold to-transparent mx-auto my-4;
+  }
+  .shimmer-text {
+    background: linear-gradient(90deg, #C9963A 0%, #FAF4EC 40%, #E8B96A 60%, #C9963A 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shimmer 3s linear infinite;
+  }
+  .bottom-nav {
+    @apply fixed bottom-0 left-0 right-0 z-50 glass;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .page-container {
+    @apply min-h-screen pb-24 pt-safe;
+  }
+
+  /* ── Conteneur mobile centré sur desktop ── */
+  .app-shell {
+    max-width: 430px;
+    margin: 0 auto;
+    min-height: 100dvh;
+    position: relative;
+    background-color: #2C1A0E;
+    overflow-x: hidden;
+    box-shadow: 0 0 80px rgba(0,0,0,0.6);
+  }
+}
+
+@layer utilities {
+  .pt-safe { padding-top: env(safe-area-inset-top, 16px); }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 }
