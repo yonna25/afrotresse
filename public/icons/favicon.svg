@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="16" fill="#2C1A0E"/>
+  <circle cx="32" cy="28" r="10" fill="none" stroke="#C9963A" strokeWidth="2"/>
+  <circle cx="32" cy="28" r="4" fill="#C9963A"/>
+  <line x1="32" y1="12" x2="32" y2="18" stroke="#C9963A" strokeWidth="2" strokeLinecap="round"/>
+  <line x1="32" y1="38" x2="32" y2="44" stroke="#C9963A" strokeWidth="2" strokeLinecap="round"/>
+  <line x1="16" y1="28" x2="22" y2="28" stroke="#C9963A" strokeWidth="2" strokeLinecap="round"/>
+  <line x1="42" y1="28" x2="48" y2="28" stroke="#C9963A" strokeWidth="2" strokeLinecap="round"/>
+  <!-- Braids hint -->
+  <path d="M26 48 Q28 52 26 56" stroke="#E8B96A" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+  <path d="M32 48 Q34 52 32 56" stroke="#E8B96A" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+  <path d="M38 48 Q40 52 38 56" stroke="#E8B96A" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+</svg>
