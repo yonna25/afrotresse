@@ -120,17 +120,16 @@ export async function analyzeFace(photoBlob) {
     const res = await fetch('/api/analyze', { method: 'POST', body: formData })
     if (!res.ok) throw new Error('API error')
     const data = await res.json()
-    return buildRecommendations(data.faceShape)
+    return buildRecommendations(data.faceShape, data.reason, data.confidence)
   } catch {
-    // Fallback: simulate analysis
     await new Promise(r => setTimeout(r, 2800))
     const shapes = ['oval', 'round', 'square', 'heart', 'long', 'diamond']
     const faceShape = shapes[Math.floor(Math.random() * shapes.length)]
-    return buildRecommendations(faceShape)
+    return buildRecommendations(faceShape, '', 0.75)
   }
 }
 
-function buildRecommendations(faceShape) {
+function buildRecommendations(faceShape, reason = '', confidence = 0.85) {
   const matching = BRAIDS_DB
     .filter(b => b.faceShapes.includes(faceShape))
     .sort((a, b) => b.matchScore - a.matchScore)
@@ -141,6 +140,8 @@ function buildRecommendations(faceShape) {
     faceShape,
     faceShapeName: FACE_SHAPE_NAMES[faceShape] || faceShape,
     faceShapeDescription: FACE_SHAPE_DESCRIPTIONS[faceShape] || '',
+    aiReason: reason,
+    confidence: Math.round((confidence || 0.85) * 100),
     recommendations: matching,
   }
 }
