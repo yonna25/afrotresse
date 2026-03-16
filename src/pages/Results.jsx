@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { getCredits, hasCredits, useOneTest } from '../services/credits.js'
 
 export default function Results() {
@@ -13,27 +13,23 @@ export default function Results() {
     const raw = sessionStorage.getItem('afrotresse_results')
     if (raw) setData(JSON.parse(raw))
     else navigate('/camera')
-    const s = JSON.parse(localStorage.getItem('afrotresse_saved') || '[]')
-    setSaved(s)
+    setSaved(JSON.parse(localStorage.getItem('afrotresse_saved') || '[]'))
     setCredits(getCredits())
   }, [navigate])
 
   const handleSave = (style) => {
     setSaved(prev => {
-      const exists = prev.find(b => b.id === style.id)
-      const next   = exists ? prev.filter(b => b.id !== style.id) : [...prev, style]
+      const exists = prev.find(s => s.id === style.id)
+      const next   = exists ? prev.filter(s => s.id !== style.id) : [...prev, style]
       localStorage.setItem('afrotresse_saved', JSON.stringify(next))
       return next
     })
   }
 
-  const handleRetry = () => {
-    if (!hasCredits()) {
-      navigate('/credits')
-      return
-    }
+  const handleNewTest = () => {
+    if (!hasCredits()) { navigate('/credits'); return }
     useOneTest()
-    setCredits(getCredits())
+    sessionStorage.removeItem('afrotresse_results')
     navigate('/camera')
   }
 
@@ -56,7 +52,6 @@ export default function Results() {
             </svg>
           </button>
           <h1 className="font-display text-xl text-cream flex-1">Tes résultats</h1>
-          {/* Solde crédits */}
           <button onClick={() => navigate('/credits')}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full"
             style={{ background:'rgba(201,150,58,0.15)', border:'1px solid rgba(201,150,58,0.3)' }}>
@@ -67,46 +62,45 @@ export default function Results() {
       </div>
 
       {/* Bandeau forme du visage */}
-      <motion.div
-        initial={{ opacity:0, y:-10 }} animate={{ opacity:1, y:0 }}
+      <motion.div initial={{ opacity:0, y:-10 }} animate={{ opacity:1, y:0 }}
         className="mx-4 mt-4 rounded-3xl p-4 flex items-center gap-4"
         style={{ background:'rgba(92,51,23,0.4)', border:'1px solid rgba(201,150,58,0.15)' }}>
         {photoUrl && (
-          <div className="w-14 h-14 rounded-2xl overflow-hidden flex-shrink-0"
+          <div className="w-12 h-12 rounded-2xl overflow-hidden flex-shrink-0"
             style={{ border:'1px solid rgba(201,150,58,0.3)' }}>
             <img src={photoUrl} alt="Selfie" className="w-full h-full object-cover"/>
           </div>
         )}
         <div className="flex-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-body text-xs text-warm">Forme du visage</span>
+            <span className="font-body text-xs text-warm">Visage</span>
             <span className="font-body text-xs font-bold px-2 py-0.5 rounded-full"
               style={{ background:'rgba(201,150,58,0.2)', color:'#C9963A', border:'1px solid rgba(201,150,58,0.3)' }}>
               {data.faceShapeName}
             </span>
             {data.confidence && (
               <span className="font-body text-xs px-2 py-0.5 rounded-full"
-                style={{ background:'rgba(26,102,64,0.2)', color:'#4CAF50', border:'1px solid rgba(26,102,64,0.3)' }}>
+                style={{ background:'rgba(26,102,64,0.2)', color:'#4CAF50' }}>
                 IA {data.confidence}%
               </span>
             )}
           </div>
-          {data.aiReason && (
-            <p className="font-body text-xs text-warm mt-1 italic">"{data.aiReason}"</p>
+          {data.reason && (
+            <p className="font-body text-xs text-warm mt-0.5 italic">"{data.reason}"</p>
           )}
         </div>
       </motion.div>
 
       {/* Titre */}
-      <div className="px-5 mt-5 mb-3">
+      <div className="px-5 mt-4 mb-2">
         <p className="font-body text-warm text-xs uppercase tracking-widest">
-          2 styles générés sur ton visage
+          2 styles sélectionnés pour toi
         </p>
       </div>
 
-      {/* Cartes résultats */}
-      <div className="px-4 space-y-5">
-        {data.recommendations?.map((style, i) => (
+      {/* Les 2 cartes — strictement 2 */}
+      <div className="px-4 space-y-6">
+        {(data.recommendations || []).slice(0, 2).map((style, i) => (
           <ResultCard
             key={style.id}
             style={style}
@@ -117,25 +111,20 @@ export default function Results() {
         ))}
       </div>
 
-      {/* Actions bas */}
+      {/* Actions */}
       <div className="px-4 mt-6 space-y-3">
-        {/* Relancer */}
-        <button onClick={handleRetry}
-          className="w-full py-4 rounded-full font-display font-semibold text-brown"
+        <button onClick={handleNewTest}
+          className="w-full py-4 rounded-full font-display font-semibold"
           style={{
-            background: hasCredits()
-              ? 'linear-gradient(135deg, #C9963A, #E8B96A)'
-              : 'rgba(92,51,23,0.4)',
-            color: hasCredits() ? '#2C1A0E' : '#8B5E3C',
-            boxShadow: hasCredits() ? '0 4px 20px rgba(201,150,58,0.4)' : 'none',
-            border: hasCredits() ? 'none' : '1px solid rgba(201,150,58,0.2)',
+            background: hasCredits() ? 'linear-gradient(135deg,#C9963A,#E8B96A)' : 'rgba(92,51,23,0.4)',
+            color:      hasCredits() ? '#2C1A0E' : '#8B5E3C',
+            boxShadow:  hasCredits() ? '0 4px 20px rgba(201,150,58,0.4)' : 'none',
+            border:     hasCredits() ? 'none' : '1px solid rgba(201,150,58,0.2)',
           }}>
           {hasCredits()
             ? `📸 Nouveau test (${getCredits()} restant${getCredits() > 1 ? 's' : ''})`
             : '💳 Acheter des tests'}
         </button>
-
-        {/* Bibliothèque */}
         <button onClick={() => navigate('/library')}
           className="w-full py-3 rounded-full font-body text-sm font-semibold"
           style={{ border:'1px solid rgba(201,150,58,0.3)', color:'#C9963A' }}>
@@ -147,31 +136,49 @@ export default function Results() {
 }
 
 function ResultCard({ style, index, isSaved, onSave }) {
-  const [imgError, setImgError] = useState(false)
+  const [showGenerated, setShowGenerated] = useState(true)
+  const hasGenerated = !!style.generatedImage
 
   return (
     <motion.div
-      initial={{ opacity:0, y:30 }}
-      animate={{ opacity:1, y:0 }}
+      initial={{ opacity:0, y:30 }} animate={{ opacity:1, y:0 }}
       transition={{ delay: index * 0.15, type:'spring', stiffness:180 }}
       className="rounded-3xl overflow-hidden"
       style={{ border:'1px solid rgba(201,150,58,0.2)', background:'rgba(92,51,23,0.3)' }}>
 
-      {/* Image générée */}
+      {/* Image principale */}
       <div className="relative aspect-[3/4] bg-mid overflow-hidden">
-        {style.generatedImage && !imgError ? (
-          <img
-            src={style.generatedImage}
-            alt={style.name}
+
+        {/* Photo générée par Fal.ai (son visage avec la tresse) */}
+        {hasGenerated && showGenerated ? (
+          <img src={style.generatedImage} alt={style.name}
             className="w-full h-full object-cover"
-            onError={() => setImgError(true)}
-          />
+            onError={() => setShowGenerated(false)}/>
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center gap-3"
-            style={{ background:'linear-gradient(135deg, #5C3317, #2C1A0E)' }}>
-            <span className="text-5xl">💆🏾‍♀️</span>
-            <span className="font-body text-warm text-sm text-center px-4">{style.name}</span>
-          </div>
+          /* Photo de référence de ta bibliothèque */
+          <img src={style.localImage} alt={style.name}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.target.style.display = 'none'
+              e.target.nextSibling.style.display = 'flex'
+            }}/>
+        )}
+
+        {/* Fallback si aucune image */}
+        <div className="w-full h-full items-center justify-center flex-col gap-3 hidden"
+          style={{ background:'linear-gradient(135deg,#5C3317,#2C1A0E)' }}>
+          <span className="text-5xl">💆🏾‍♀️</span>
+          <span className="font-body text-warm text-sm">{style.name}</span>
+        </div>
+
+        {/* Toggle : voir photo générée / photo de référence */}
+        {hasGenerated && (
+          <button
+            onClick={() => setShowGenerated(!showGenerated)}
+            className="absolute bottom-3 left-3 px-3 py-1.5 rounded-full font-body text-xs font-semibold"
+            style={{ background:'rgba(44,26,14,0.85)', color:'#E8B96A', backdropFilter:'blur(8px)', border:'1px solid rgba(201,150,58,0.3)' }}>
+            {showGenerated ? '📷 Voir le style' : '🪞 Sur mon visage'}
+          </button>
         )}
 
         {/* Badge match */}
@@ -180,7 +187,7 @@ function ResultCard({ style, index, isSaved, onSave }) {
           ✦ {style.matchScore}% match
         </div>
 
-        {/* Bouton save */}
+        {/* Sauvegarder */}
         <button onClick={() => onSave(style)}
           className="absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center"
           style={{ background:'rgba(44,26,14,0.7)', backdropFilter:'blur(8px)', border:'1px solid rgba(201,150,58,0.3)' }}>
@@ -192,7 +199,7 @@ function ResultCard({ style, index, isSaved, onSave }) {
         </button>
 
         {/* Région */}
-        <div className="absolute bottom-3 left-3 px-3 py-1 rounded-full font-body text-xs"
+        <div className="absolute bottom-3 right-3 px-3 py-1 rounded-full font-body text-xs"
           style={{ background:'rgba(44,26,14,0.8)', color:'rgba(232,185,106,0.8)', backdropFilter:'blur(8px)' }}>
           🌍 {style.region}
         </div>
@@ -201,10 +208,18 @@ function ResultCard({ style, index, isSaved, onSave }) {
       {/* Infos */}
       <div className="p-4">
         <h3 className="font-display text-cream text-lg">{style.name}</h3>
-        {style.duration && (
-          <div className="flex gap-3 mt-2">
-            <span className="font-body text-xs text-warm">⏱ {style.duration}</span>
-            {style.difficulty && <span className="font-body text-xs text-warm">⭐ {style.difficulty}</span>}
+        <div className="flex gap-3 mt-1.5">
+          {style.duration   && <span className="font-body text-xs text-warm">⏱ {style.duration}</span>}
+          {style.difficulty && <span className="font-body text-xs text-warm">⭐ {style.difficulty}</span>}
+        </div>
+        {style.tags?.length > 0 && (
+          <div className="flex gap-1.5 mt-2 flex-wrap">
+            {style.tags.slice(0,3).map(tag => (
+              <span key={tag} className="font-body text-xs px-2 py-0.5 rounded-full"
+                style={{ background:'rgba(201,150,58,0.1)', color:'#C9963A', border:'1px solid rgba(201,150,58,0.2)' }}>
+                {tag}
+              </span>
+            ))}
           </div>
         )}
       </div>
