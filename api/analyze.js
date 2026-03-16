@@ -3,37 +3,38 @@ import fs from 'fs'
 
 export const config = { api: { bodyParser: false } }
 
+// ─── Bibliothèque 25 styles — photos dans public/styles/ ─────────
 const BRAIDS_LIBRARY = [
-  { id:'box-braids',       name:'Box Braids',       region:'Afrique de l\'Ouest', prompt:'box braids hairstyle, long black braids, neat sections',                    faceShapes:['oval','round','square','heart','diamond'] },
-  { id:'knotless-braids',  name:'Knotless Braids',  region:'Afrique de l\'Ouest', prompt:'knotless box braids hairstyle, natural black hair, shoulder length',        faceShapes:['oval','round','square','heart','diamond','long'] },
-  { id:'cornrows',         name:'Cornrows',          region:'Afrique de l\'Ouest', prompt:'cornrow braids hairstyle, neat rows close to scalp, black hair',            faceShapes:['oval','long','square','diamond'] },
-  { id:'fulani-braids',    name:'Fulani Braids',     region:'Afrique de l\'Ouest', prompt:'fulani braids hairstyle, center braid with gold beads, black hair',         faceShapes:['oval','heart','diamond'] },
-  { id:'ghana-braids',     name:'Ghana Braids',      region:'Ghana',               prompt:'ghana braids hairstyle, thick cornrows going back, black hair',             faceShapes:['oval','long','diamond'] },
-  { id:'senegalese-twist', name:'Senegalese Twist',  region:'Sénégal',             prompt:'senegalese twist hairstyle, rope twists, long voluminous black hair',       faceShapes:['round','square','heart','oval'] },
-  { id:'lemonade-braids',  name:'Lemonade Braids',   region:'Afrique de l\'Ouest', prompt:'lemonade braids hairstyle, side cornrows sweeping to one side',             faceShapes:['round','square','heart'] },
-  { id:'micro-braids',     name:'Micro Braids',      region:'Afrique de l\'Ouest', prompt:'micro braids hairstyle, tiny thin braids, full head, long black hair',      faceShapes:['oval','long','heart'] },
-  { id:'bantu-knots',      name:'Bantu Knots',       region:'Afrique Centrale',    prompt:'bantu knots hairstyle, small coiled knots all over head, black hair',       faceShapes:['oval','round','heart'] },
-  { id:'goddess-braids',   name:'Goddess Braids',    region:'Afrique Centrale',    prompt:'goddess braids hairstyle, large thick cornrows, black hair',                faceShapes:['oval','square','long'] },
-  { id:'dreadlocks',       name:'Dreadlocks',        region:'Afrique de l\'Est',   prompt:'dreadlocks hairstyle, thin neat locs, medium length, natural black hair',   faceShapes:['oval','square','diamond','long'] },
-  { id:'ethiopian-braids', name:'Ethiopian Braids',  region:'Éthiopie',            prompt:'ethiopian braids hairstyle, tigrayan cornrows, geometric pattern',          faceShapes:['oval','long','square'] },
-  { id:'jumbo-braids',     name:'Jumbo Braids',      region:'Pan-Africain',        prompt:'jumbo box braids hairstyle, extra large thick braids, black hair',          faceShapes:['long','square','diamond'] },
-  { id:'passion-twist',    name:'Passion Twist',     region:'Pan-Africain',        prompt:'passion twist hairstyle, spring twists, bohemian texture, black hair',      faceShapes:['round','heart','oval'] },
-  { id:'faux-locs',        name:'Faux Locs',         region:'Pan-Africain',        prompt:'faux locs hairstyle, distressed loc extensions, bohemian style',            faceShapes:['oval','square','diamond','long'] },
-  { id:'feed-in-braids',   name:'Feed-in Braids',    region:'Pan-Africain',        prompt:'feed-in braids hairstyle, natural cornrows with gradual extensions',        faceShapes:['oval','round','long','heart'] },
-  { id:'tribal-braids',    name:'Tribal Braids',     region:'Pan-Africain',        prompt:'tribal braids hairstyle, mixed cornrow and box braid pattern, black hair',  faceShapes:['oval','square','diamond'] },
-  { id:'spring-twist',     name:'Spring Twist',      region:'Pan-Africain',        prompt:'spring twist hairstyle, curly textured twists, natural bouncy look',        faceShapes:['round','heart','oval','square'] },
-  { id:'butterfly-locs',   name:'Butterfly Locs',    region:'Pan-Africain',        prompt:'butterfly locs hairstyle, wavy locs with looped texture, bohemian style',   faceShapes:['oval','heart','round'] },
-  { id:'stitch-braids',    name:'Stitch Braids',     region:'Pan-Africain',        prompt:'stitch braids hairstyle, horizontal stitch pattern cornrows, black hair',   faceShapes:['oval','long','square','diamond'] },
-  { id:'boho-braids',      name:'Boho Braids',       region:'Pan-Africain',        prompt:'boho knotless braids hairstyle, bohemian curly ends, natural look',         faceShapes:['oval','heart','round','diamond'] },
-  { id:'havana-twist',     name:'Havana Twist',      region:'Pan-Africain',        prompt:'havana twist hairstyle, thick chunky twists, voluminous, black hair',       faceShapes:['long','square','diamond','oval'] },
-  { id:'crochet-braids',   name:'Crochet Braids',    region:'Afrique Centrale',    prompt:'crochet braids hairstyle, voluminous curly afro on cornrow base',           faceShapes:['oval','round','heart','square'] },
-  { id:'maasai-braids',    name:'Maasai Braids',     region:'Kenya',               prompt:'maasai braids hairstyle, thin braids with beaded accessories, black hair',  faceShapes:['oval','heart','diamond'] },
-  { id:'berber-braids',    name:'Berber Braids',     region:'Maroc / Algérie',     prompt:'berber braids hairstyle, colorful threads woven in, north african style',   faceShapes:['oval','heart','round'] },
+  { id:'box-braids',       name:'Box Braids',       region:'Afrique de l\'Ouest', duration:'4-6h', difficulty:'Intermédiaire', tags:['Classique','Protectrice'],  faceShapes:['oval','round','square','heart','diamond'],        localImage:'/styles/box-braids.jpg' },
+  { id:'knotless-braids',  name:'Knotless Braids',  region:'Afrique de l\'Ouest', duration:'6-8h', difficulty:'Intermédiaire', tags:['Moderne','Naturelle'],      faceShapes:['oval','round','square','heart','diamond','long'],  localImage:'/styles/knotless-braids.jpg' },
+  { id:'cornrows',         name:'Cornrows',          region:'Afrique de l\'Ouest', duration:'2-4h', difficulty:'Avancée',       tags:['Sport','Légère'],           faceShapes:['oval','long','square','diamond'],                  localImage:'/styles/cornrows.jpg' },
+  { id:'fulani-braids',    name:'Fulani Braids',     region:'Afrique de l\'Ouest', duration:'3-5h', difficulty:'Avancée',       tags:['Perles','Unique'],          faceShapes:['oval','heart','diamond'],                          localImage:'/styles/fulani-braids.jpg' },
+  { id:'ghana-braids',     name:'Ghana Braids',      region:'Ghana',               duration:'3-4h', difficulty:'Intermédiaire', tags:['Bold','Structurée'],        faceShapes:['oval','long','diamond'],                           localImage:'/styles/ghana-braids.jpg' },
+  { id:'senegalese-twist', name:'Senegalese Twist',  region:'Sénégal',             duration:'5-7h', difficulty:'Intermédiaire', tags:['Volume','Élégante'],        faceShapes:['round','square','heart','oval'],                   localImage:'/styles/senegalese-twist.jpg' },
+  { id:'lemonade-braids',  name:'Lemonade Braids',   region:'Afrique de l\'Ouest', duration:'4-6h', difficulty:'Avancée',       tags:['Tendance','Glamour'],       faceShapes:['round','square','heart'],                          localImage:'/styles/lemonade-braids.jpg' },
+  { id:'micro-braids',     name:'Micro Braids',      region:'Afrique de l\'Ouest', duration:'8-12h',difficulty:'Expert',        tags:['Délicate','Versatile'],     faceShapes:['oval','long','heart'],                             localImage:'/styles/micro-braids.jpg' },
+  { id:'bantu-knots',      name:'Bantu Knots',       region:'Afrique Centrale',    duration:'2-3h', difficulty:'Intermédiaire', tags:['Naturelle','Culturelle'],   faceShapes:['oval','round','heart'],                            localImage:'/styles/bantu-knots.jpg' },
+  { id:'goddess-braids',   name:'Goddess Braids',    region:'Afrique Centrale',    duration:'4-5h', difficulty:'Avancée',       tags:['Majestueuse','Bold'],       faceShapes:['oval','square','long'],                            localImage:'/styles/goddess-braids.jpg' },
+  { id:'dreadlocks',       name:'Dreadlocks',        region:'Afrique de l\'Est',   duration:'3-4h', difficulty:'Intermédiaire', tags:['Naturelle','Authentique'],  faceShapes:['oval','square','diamond','long'],                  localImage:'/styles/dreadlocks.jpg' },
+  { id:'ethiopian-braids', name:'Ethiopian Braids',  region:'Éthiopie',            duration:'3-4h', difficulty:'Avancée',       tags:['Géométrique','Culturelle'], faceShapes:['oval','long','square'],                            localImage:'/styles/ethiopian-braids.jpg' },
+  { id:'jumbo-braids',     name:'Jumbo Braids',      region:'Pan-Africain',        duration:'3-5h', difficulty:'Intermédiaire', tags:['XXL','Moderne'],            faceShapes:['long','square','diamond'],                         localImage:'/styles/jumbo-braids.jpg' },
+  { id:'passion-twist',    name:'Passion Twist',     region:'Pan-Africain',        duration:'4-6h', difficulty:'Intermédiaire', tags:['Bohème','Romantique'],      faceShapes:['round','heart','oval'],                            localImage:'/styles/passion-twist.jpg' },
+  { id:'faux-locs',        name:'Faux Locs',         region:'Pan-Africain',        duration:'5-7h', difficulty:'Intermédiaire', tags:['Bohème','Longue durée'],    faceShapes:['oval','square','diamond','long'],                  localImage:'/styles/faux-locs.jpg' },
+  { id:'feed-in-braids',   name:'Feed-in Braids',    region:'Pan-Africain',        duration:'2-4h', difficulty:'Intermédiaire', tags:['Naturelle','Discrète'],     faceShapes:['oval','round','long','heart'],                     localImage:'/styles/feed-in-braids.jpg' },
+  { id:'tribal-braids',    name:'Tribal Braids',     region:'Pan-Africain',        duration:'5-7h', difficulty:'Avancée',       tags:['Tribal','Unique'],          faceShapes:['oval','square','diamond'],                         localImage:'/styles/tribal-braids.jpg' },
+  { id:'spring-twist',     name:'Spring Twist',      region:'Pan-Africain',        duration:'4-5h', difficulty:'Intermédiaire', tags:['Légère','Rebond'],          faceShapes:['round','heart','oval','square'],                   localImage:'/styles/spring-twist.jpg' },
+  { id:'butterfly-locs',   name:'Butterfly Locs',    region:'Pan-Africain',        duration:'5-7h', difficulty:'Avancée',       tags:['Bohème','Ondulé'],          faceShapes:['oval','heart','round'],                            localImage:'/styles/butterfly-locs.jpg' },
+  { id:'stitch-braids',    name:'Stitch Braids',     region:'Pan-Africain',        duration:'3-5h', difficulty:'Avancée',       tags:['Précise','Géométrique'],    faceShapes:['oval','long','square','diamond'],                  localImage:'/styles/stitch-braids.jpg' },
+  { id:'boho-braids',      name:'Boho Braids',       region:'Pan-Africain',        duration:'6-8h', difficulty:'Intermédiaire', tags:['Bohème','Naturelle'],       faceShapes:['oval','heart','round','diamond'],                  localImage:'/styles/boho-braids.jpg' },
+  { id:'havana-twist',     name:'Havana Twist',      region:'Pan-Africain',        duration:'4-6h', difficulty:'Intermédiaire', tags:['Volume','Épais'],           faceShapes:['long','square','diamond','oval'],                  localImage:'/styles/havana-twist.jpg' },
+  { id:'crochet-braids',   name:'Crochet Braids',    region:'Afrique Centrale',    duration:'2-3h', difficulty:'Intermédiaire', tags:['Rapide','Volume'],          faceShapes:['oval','round','heart','square'],                   localImage:'/styles/crochet-braids.jpg' },
+  { id:'maasai-braids',    name:'Maasai Braids',     region:'Kenya',               duration:'4-6h', difficulty:'Avancée',       tags:['Perles','Est-Africain'],    faceShapes:['oval','heart','diamond'],                          localImage:'/styles/maasai-braids.jpg' },
+  { id:'berber-braids',    name:'Berber Braids',     region:'Maroc / Algérie',     duration:'3-5h', difficulty:'Avancée',       tags:['Bijoux','Nord-Africain'],   faceShapes:['oval','heart','round'],                            localImage:'/styles/berber-braids.jpg' },
 ]
 
 const FACE_SHAPE_NAMES = {
-  oval:'Ovale', round:'Ronde', square:'Carree',
-  heart:'Coeur', long:'Longue', diamond:'Diamant',
+  oval:'Ovale', round:'Ronde', square:'Carrée',
+  heart:'Cœur', long:'Longue', diamond:'Diamant',
 }
 
 function parseForm(req) {
@@ -46,74 +47,71 @@ function parseForm(req) {
   })
 }
 
-function pickRandomStyles(faceShape, count = 2) {
+// Pioche exactement 2 styles compatibles
+function pickTwoStyles(faceShape) {
   const compatible = BRAIDS_LIBRARY.filter(s => s.faceShapes.includes(faceShape))
   const shuffled   = [...compatible].sort(() => Math.random() - 0.5)
-  return shuffled.slice(0, count)
+  return shuffled.slice(0, 2)
 }
 
-// Upload image vers fal.ai et récupérer une URL publique
-async function uploadImageToFal(imageBuffer, mimeType, falApiKey) {
+// Upload une image vers fal.ai storage → retourne l'URL publique
+async function uploadToFalStorage(buffer, mimeType, falApiKey) {
   try {
-    // Créer un Blob et l'envoyer comme form-data
     const formData = new FormData()
-    const blob     = new Blob([imageBuffer], { type: mimeType })
-    formData.append('file', blob, 'selfie.jpg')
+    const blob     = new Blob([buffer], { type: mimeType })
+    formData.append('file', blob, 'image.jpg')
 
     const res = await fetch('https://fal.run/fal-ai/storage/upload', {
       method:  'POST',
       headers: { 'Authorization': `Key ${falApiKey}` },
       body:    formData,
     })
-
-    if (!res.ok) throw new Error(`Upload failed: ${await res.text()}`)
+    if (!res.ok) throw new Error(`Storage upload failed: ${await res.text()}`)
     const data = await res.json()
     return data.url || data.file_url || null
-  } catch (err) {
-    console.error('Upload error:', err)
+  } catch (e) {
+    console.error('uploadToFalStorage error:', e)
     return null
   }
 }
 
-// Appel fal-ai/image-editing/hair-change
-async function applyHairChange(imageUrl, hairPrompt, falApiKey) {
+// Applique le style de tresse sur le selfie
+// Utilise image-apps-v2/hair-change avec selfie + image de référence
+async function applyHairStyle(selfieUrl, styleImageUrl, falApiKey) {
   try {
-    const res = await fetch('https://fal.run/fal-ai/image-editing/hair-change', {
+    const res = await fetch('https://fal.run/fal-ai/image-apps-v2/hair-change', {
       method:  'POST',
       headers: {
         'Authorization': `Key ${falApiKey}`,
         'Content-Type':  'application/json',
       },
       body: JSON.stringify({
-        image_url:   imageUrl,
-        hair_prompt: hairPrompt,
+        image_url:           selfieUrl,      // selfie de l'utilisatrice
+        reference_image_url: styleImageUrl, // photo du style dans ta bibliothèque
       }),
     })
 
     if (!res.ok) {
-      console.error('hair-change error:', await res.text())
+      console.error('hair-change error:', res.status, await res.text())
       return null
     }
 
     const data = await res.json()
-    // Différents formats de réponse possibles
     return (
-      data?.image?.url        ||
-      data?.images?.[0]?.url  ||
-      data?.output?.image_url ||
-      data?.result?.url       ||
+      data?.image?.url       ||
+      data?.images?.[0]?.url ||
+      data?.output?.url      ||
+      data?.result           ||
       null
     )
-  } catch (err) {
-    console.error('hair-change exception:', err)
+  } catch (e) {
+    console.error('applyHairStyle error:', e)
     return null
   }
 }
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' })
-  }
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   const anthropicKey = process.env.ANTHROPIC_API_KEY
   const falKey       = process.env.FAL_API_KEY
@@ -121,28 +119,22 @@ export default async function handler(req, res) {
   if (!falKey)       return res.status(500).json({ error: 'FAL_API_KEY manquante' })
 
   try {
-    // 1. Récupérer la photo
+    // 1. Récupérer le selfie
     const { files }  = await parseForm(req)
     const photoFile  = files.photo?.[0] || files.photo
-    if (!photoFile)  return res.status(400).json({ error: 'Aucune photo recue.' })
+    if (!photoFile)  return res.status(400).json({ error: 'Aucune photo reçue.' })
 
-    const imageBuffer = fs.readFileSync(photoFile.filepath || photoFile.path)
-    const base64Image = imageBuffer.toString('base64')
-    const mimeType    = photoFile.mimetype || photoFile.type || 'image/jpeg'
+    const selfieBuffer = fs.readFileSync(photoFile.filepath || photoFile.path)
+    const base64Image  = selfieBuffer.toString('base64')
+    const mimeType     = photoFile.mimetype || photoFile.type || 'image/jpeg'
 
-    // 2. Upload le selfie sur fal.ai storage
-    const selfieUrl = await uploadImageToFal(imageBuffer, mimeType, falKey)
-    if (!selfieUrl) {
-      return res.status(500).json({ error: 'Echec upload photo vers Fal.ai' })
-    }
-
-    // 3. Claude analyse la forme du visage
+    // 2. Claude analyse la forme du visage
     let faceShape  = 'oval'
     let confidence = 0.85
     let reason     = ''
 
     try {
-      const claudeRes  = await fetch('https://api.anthropic.com/v1/messages', {
+      const cRes = await fetch('https://api.anthropic.com/v1/messages', {
         method:  'POST',
         headers: {
           'Content-Type':      'application/json',
@@ -150,59 +142,76 @@ export default async function handler(req, res) {
           'anthropic-version': '2023-06-01',
         },
         body: JSON.stringify({
-          model:      'claude-sonnet-4-20250514',
-          max_tokens: 150,
-          system: `Expert morphologie visage. Reponds UNIQUEMENT en JSON :
+          model: 'claude-sonnet-4-20250514', max_tokens: 150,
+          system: `Expert morphologie visage. JSON uniquement :
 {"faceShape":"oval","confidence":0.92,"reason":"front large, machoire douce"}
 Formes : oval, round, square, heart, long, diamond`,
-          messages: [{
-            role: 'user',
-            content: [
-              { type:'image', source:{ type:'base64', media_type:mimeType, data:base64Image } },
-              { type:'text',  text:'Forme du visage en JSON uniquement.' },
-            ],
-          }],
+          messages: [{ role:'user', content:[
+            { type:'image', source:{ type:'base64', media_type:mimeType, data:base64Image }},
+            { type:'text',  text:'Forme du visage en JSON uniquement.' }
+          ]}],
         }),
       })
-      if (claudeRes.ok) {
-        const d      = await claudeRes.json()
-        const parsed = JSON.parse((d.content?.[0]?.text || '{}').replace(/```json|```/g,'').trim())
-        faceShape    = parsed.faceShape?.toLowerCase() || 'oval'
-        confidence   = parsed.confidence || 0.85
-        reason       = parsed.reason     || ''
+      if (cRes.ok) {
+        const d   = await cRes.json()
+        const txt = (d.content?.[0]?.text || '{}').replace(/```json|```/g,'').trim()
+        const p   = JSON.parse(txt)
+        faceShape  = p.faceShape?.toLowerCase() || 'oval'
+        confidence = p.confidence || 0.85
+        reason     = p.reason     || ''
         if (!FACE_SHAPE_NAMES[faceShape]) faceShape = 'oval'
       }
     } catch(e) { console.error('Claude error:', e) }
 
-    // 4. Piocher exactement 2 styles
-    const selectedStyles = pickRandomStyles(faceShape, 2)
+    // 3. Piocher exactement 2 styles compatibles
+    const selected = pickTwoStyles(faceShape)
 
-    // 5. Générer les 2 essayages en parallèle
+    // 4. Uploader le selfie une seule fois sur Fal.ai storage
+    const selfieUrl = await uploadToFalStorage(selfieBuffer, mimeType, falKey)
+
+    // 5. Pour chaque style :
+    //    - Uploader la photo du style depuis public/styles/
+    //    - Appeler hair-change avec selfie + photo du style
+    const baseUrl = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : 'https://mon-afrotresse-6eaco8ut9-yonna25s-projects.vercel.app'
+
     const recommendations = await Promise.all(
-      selectedStyles.map(async (style) => {
-        const generatedImage = await applyHairChange(selfieUrl, style.prompt, falKey)
+      selected.map(async (style) => {
+        let generatedImage = null
+
+        if (selfieUrl) {
+          // URL publique de la photo du style dans ta bibliothèque
+          const stylePublicUrl = `${baseUrl}${style.localImage}`
+          generatedImage = await applyHairStyle(selfieUrl, stylePublicUrl, falKey)
+        }
+
         return {
           id:             style.id,
           name:           style.name,
           region:         style.region,
-          generatedImage: generatedImage, // photo d'elle avec la tresse
+          duration:       style.duration,
+          difficulty:     style.difficulty,
+          tags:           style.tags,
+          localImage:     style.localImage,
+          generatedImage, // photo d'elle avec la tresse (null si échec)
           matchScore:     Math.floor(Math.random() * 15) + 83,
         }
       })
     )
 
-    // 6. Répondre — toujours exactement 2 styles
+    // 6. Retourner exactement 2 résultats
     return res.status(200).json({
       faceShape,
       faceShapeName:   FACE_SHAPE_NAMES[faceShape],
       confidence:      Math.round(confidence * 100),
       reason,
       analysisId:      Date.now().toString(36),
-      recommendations: recommendations.slice(0, 2), // sécurité : max 2
+      recommendations: recommendations.slice(0, 2),
     })
 
   } catch (error) {
     console.error('Handler error:', error)
-    return res.status(500).json({ error: 'Analyse echouee. Reessaie.' })
+    return res.status(500).json({ error: 'Analyse échouée. Réessaie.' })
   }
 }
