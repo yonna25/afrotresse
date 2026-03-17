@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { getCredits, hasCredits, useOneTest } from "../services/credits.js";
@@ -13,6 +13,7 @@ export default function Results() {
   const [isFallback, setIsFallback]   = useState(false);
   const [errorMsg, setErrorMsg]       = useState("");
   const [credits, setCredits]         = useState(0);
+  const resultRef = useRef(null);
 
   useEffect(() => {
     const raw = sessionStorage.getItem('afrotresse_results');
@@ -61,6 +62,11 @@ export default function Results() {
 
       setResultImage(data.imageUrl);
       setIsFallback(data.fallback || false);
+
+      // Scroller jusqu'au résultat
+      setTimeout(() => {
+        resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
 
     } catch (err) {
       console.error(err);
@@ -141,6 +147,7 @@ export default function Results() {
       <AnimatePresence>
         {resultImage && (
           <motion.div
+            ref={resultRef}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
@@ -213,6 +220,17 @@ export default function Results() {
                     {tag}
                   </span>
                 ))}
+              </div>
+
+              {/* Message incitatif */}
+              <div className="flex items-center gap-2 px-3 py-2 rounded-xl"
+                style={{ background:'rgba(201,150,58,0.08)', border:'1px solid rgba(201,150,58,0.2)' }}>
+                <span className="text-lg">🪞</span>
+                <p className="font-body text-xs" style={{ color:'#E8B96A' }}>
+                  {hasCredits()
+                    ? 'Curieuse de voir ce style sur TON visage ? Lance l\'essai !'
+                    : 'Imagine ce style sur ta tête — 1 crédit pour le découvrir'}
+                </p>
               </div>
 
               <button
