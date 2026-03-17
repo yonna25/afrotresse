@@ -1,12 +1,11 @@
-[{"name": "Nattes coll\u00e9es", 
-  "localImage": "napi1.jpg", 
-  "description": "Style classique et \u00e9l\u00e9gant."}, 
-  
-  {"name": "Tresse africaine", 
-    "localImage": "napi2.jpg", 
-    "description": "Look moderne et chic."}]
-{
-  "name": "Tresse zigzag",
-  "localImage": "napi2.jpg",
-  "description": "Style audacieux et moderne."
-}
+[
+  { "name": "Nattes collées", "localImage": "napi1.jpg", "description": "Style classique et élégant." },
+  { "name": "Tresse africaine", "localImage": "napi2.jpg", "description": "Look moderne et chic." },
+  { "name": "Tresse ondulée", "localImage": "napi3.jpg", "description": "Look doux et naturel." },
+  { "name": "Tresse en épi", "localImage": "napi4.jpg", "description": "Style moderne et audacieux." },
+  { "name": "Tresse couronne", "localImage": "napi5.jpg", "description": "Élégance et sophistication." },
+  { "name": "Tresse en queue de poisson", "localImage": "napi6.jpg", "description": "Look original et chic." },
+  { "name": "Tresse africaine large", "localImage": "napi7.jpg", "description": "Style traditionnel revisité." },
+  { "name": "Tresse en cornrows", "localImage": "napi8.jpg", "description": "Look street et moderne." },
+  { "name": "Tresse Akoto", "localImage": "akoto.jpg", "description": "Style unique et créatif." }
+]
