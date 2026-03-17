@@ -1,14 +1,16 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
 export default function Results() {
   const navigate = useNavigate();
-  const [styles, setStyles]     = useState([]);
-  const [selfieUrl, setSelfieUrl] = useState(null);
+  const [styles, setStyles]         = useState([]);
+  const [selfieUrl, setSelfieUrl]   = useState(null);
+  const [loadingIdx, setLoadingIdx] = useState(null);
+  const [resultImage, setResultImage] = useState(null);
+  const [errorMsg, setErrorMsg]     = useState("");
 
   useEffect(() => {
-    // Lire les résultats depuis sessionStorage
     const raw = sessionStorage.getItem('afrotresse_results');
     if (raw) {
       const parsed = JSON.parse(raw);
@@ -17,6 +19,43 @@ export default function Results() {
     const photo = sessionStorage.getItem('afrotresse_photo');
     if (photo) setSelfieUrl(photo);
   }, []);
+
+  const handleTryStyle = async (style, index) => {
+    if (!selfieUrl) {
+      setErrorMsg("Prends d'abord un selfie.");
+      return;
+    }
+    setErrorMsg("");
+    setResultImage(null);
+    setLoadingIdx(index);
+
+    try {
+      // Extraire base64 depuis data URL  (ex: "data:image/jpeg;base64,/9j/...")
+      const [meta, base64] = selfieUrl.split(',');
+      const selfieType = meta.match(/:(.*?);/)?.[1] || 'image/jpeg';
+
+      // URL absolue de l'image de référence
+      const styleImageUrl = style.image
+        ? `${window.location.origin}${style.image}`
+        : `${window.location.origin}/styles/${style.localImage}`;
+
+      const res = await fetch('/api/falGenerate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ selfieBase64: base64, selfieType, styleImageUrl }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erreur inconnue');
+      setResultImage(data.imageUrl);
+
+    } catch (err) {
+      console.error(err);
+      setErrorMsg("La génération a échoué. Réessaie.");
+    } finally {
+      setLoadingIdx(null);
+    }
+  };
 
   if (!styles.length) return (
     <div className="min-h-screen bg-[#2b1810] flex items-center justify-center">
@@ -51,9 +90,41 @@ export default function Results() {
         </div>
       )}
 
+      {/* Message erreur */}
+      {errorMsg && (
+        <div className="bg-red-900 border border-red-500 text-red-200 text-sm px-4 py-3 rounded-xl">
+          {errorMsg}
+        </div>
+      )}
+
+      {/* Résultat Fal.ai */}
+      <AnimatePresence>
+        {resultImage && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            className="bg-[#3a2118] rounded-2xl overflow-hidden border-2 border-yellow-400"
+          >
+            <div className="px-4 pt-4 pb-2">
+              <h3 className="text-yellow-400 font-semibold text-lg">Ton essai virtuel ✨</h3>
+              <p className="text-gray-400 text-sm">Voici à quoi tu ressemblerais</p>
+            </div>
+            <img src={resultImage} alt="Essai virtuel" className="w-full object-cover"/>
+            <div className="p-4">
+              <button onClick={() => setResultImage(null)}
+                className="w-full py-2 rounded-xl text-sm text-gray-400 border border-gray-600">
+                Fermer
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Cartes */}
       {styles.map((style, index) => {
         const imgSrc = style.generatedImage || style.image || `/styles/${style.localImage}`;
+        const isLoading = loadingIdx === index;
 
         return (
           <motion.div
@@ -87,15 +158,32 @@ export default function Results() {
                   </span>
                 ))}
               </div>
-              <button className="w-full bg-[#FFC000] text-black py-3 rounded-xl font-semibold mt-2">
-                Essayer ce style
+
+              <button
+                onClick={() => handleTryStyle(style, index)}
+                disabled={loadingIdx !== null}
+                className="w-full py-3 rounded-xl font-semibold mt-2 transition-all"
+                style={{
+                  background: isLoading ? '#a08000' : '#FFC000',
+                  color: '#000',
+                  opacity: (loadingIdx !== null && !isLoading) ? 0.5 : 1,
+                }}
+              >
+                {isLoading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                    </svg>
+                    Transformation...
+                  </span>
+                ) : "Essayer ce style ✨"}
               </button>
             </div>
           </motion.div>
         );
       })}
 
-      {/* Nouveau test */}
       <button onClick={() => navigate('/camera')}
         className="w-full py-3 rounded-xl text-sm font-semibold text-[#FFC000] border border-[#FFC000]">
         Nouveau test
