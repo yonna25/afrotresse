@@ -1,1 +1,12 @@
-[{"name": "Nattes coll\u00e9es", "localImage": "napi1.jpg", "description": "Style classique et \u00e9l\u00e9gant."}, {"name": "Tresse africaine", "localImage": "napi2.jpg", "description": "Look moderne et chic."}]
+[{"name": "Nattes coll\u00e9es", 
+  "localImage": "napi1.jpg", 
+  "description": "Style classique et \u00e9l\u00e9gant."}, 
+  
+  {"name": "Tresse africaine", 
+    "localImage": "napi2.jpg", 
+    "description": "Look moderne et chic."}]
+{
+  "name": "Tresse zigzag",
+  "localImage": "napi2.jpg",
+  "description": "Style audacieux et moderne."
+}
