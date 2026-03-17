@@ -1,233 +1,51 @@
-import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { getCredits, hasCredits, useOneTest } from '../services/credits.js'
+import { motion } from "framer-motion";
 
-export default function Results() {
-  const navigate  = useNavigate()
-  const [data,    setData]    = useState(null)
-  const [saved,   setSaved]   = useState([])
-  const [credits, setCredits] = useState(0)
-
-  useEffect(() => {
-    const raw = sessionStorage.getItem('afrotresse_results')
-    if (raw) {
-      const parsed = JSON.parse(raw)
-      setData(parsed)
-    } else {
-      navigate('/camera')
-    }
-    setSaved(JSON.parse(localStorage.getItem('afrotresse_saved') || '[]'))
-    setCredits(getCredits())
-  }, [navigate])
-
-  const handleSave = (style) => {
-    setSaved(prev => {
-      const exists = prev.find(s => s.id === style.id)
-      const next   = exists ? prev.filter(s => s.id !== style.id) : [...prev, style]
-      localStorage.setItem('afrotresse_saved', JSON.stringify(next))
-      return next
-    })
+export default function Results({ styles = [] }) {
+  if (!styles.length) {
+    return (
+      <div className="text-center mt-10 text-gray-500">
+        Aucun style trouvé...
+      </div>
+    );
   }
-
-  const handleNewTest = () => {
-    if (!hasCredits()) { navigate('/credits'); return }
-    useOneTest()
-    sessionStorage.removeItem('afrotresse_results')
-    navigate('/camera')
-  }
-
-  if (!data) return (
-    <div className="min-h-screen bg-brown flex items-center justify-center">
-      <p className="text-warm font-body">Chargement...</p>
-    </div>
-  )
-
-  const photoUrl = sessionStorage.getItem('afrotresse_photo')
-  const recs     = (data.recommendations || []).slice(0, 2)
 
   return (
-    <div className="min-h-screen bg-brown pb-28">
+    <div className="px-4 py-6 space-y-6">
+      {styles.map((style, index) => {
+        console.log("STYLE:", style);
 
-      {/* Header */}
-      <div className="sticky top-0 z-30 px-5 pt-12 pb-4"
-        style={{ background:'rgba(44,26,14,0.95)', backdropFilter:'blur(12px)', borderBottom:'1px solid rgba(201,150,58,0.1)' }}>
-        <div className="flex items-center gap-3">
-          <button onClick={() => navigate('/')}
-            className="w-9 h-9 rounded-full flex items-center justify-center"
-            style={{ background:'rgba(92,51,23,0.5)', border:'1px solid rgba(201,150,58,0.2)' }}>
-            <svg viewBox="0 0 24 24" className="w-4 h-4 text-cream" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="15 18 9 12 15 6"/>
-            </svg>
-          </button>
-          <h1 className="font-display text-xl text-cream flex-1">Tes résultats</h1>
-          <button onClick={() => navigate('/credits')}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full"
-            style={{ background:'rgba(201,150,58,0.15)', border:'1px solid rgba(201,150,58,0.3)' }}>
-            <span className="font-display text-gold text-sm font-bold">{credits}</span>
-            <span className="font-body text-warm text-xs">test{credits > 1 ? 's' : ''}</span>
-          </button>
-        </div>
-      </div>
+        const imgSrc = style.generatedImage
+          ? style.generatedImage
+          : `/styles/${style.localImage}`;
 
-      {/* Bandeau visage */}
-      <div className="mx-4 mt-4 rounded-3xl p-4 flex items-center gap-3"
-        style={{ background:'rgba(92,51,23,0.4)', border:'1px solid rgba(201,150,58,0.15)' }}>
-        {photoUrl && (
-          <div className="w-12 h-12 rounded-2xl overflow-hidden flex-shrink-0"
-            style={{ border:'1px solid rgba(201,150,58,0.3)' }}>
-            <img src={photoUrl} alt="Selfie" className="w-full h-full object-cover"/>
-          </div>
-        )}
-        <div className="flex-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-body text-xs text-warm">Visage</span>
-            <span className="font-body text-xs font-bold px-2 py-0.5 rounded-full"
-              style={{ background:'rgba(201,150,58,0.2)', color:'#C9963A', border:'1px solid rgba(201,150,58,0.3)' }}>
-              {data.faceShapeName}
-            </span>
-            {data.confidence && (
-              <span className="font-body text-xs px-2 py-0.5 rounded-full"
-                style={{ background:'rgba(26,102,64,0.2)', color:'#4CAF50' }}>
-                IA {data.confidence}%
-              </span>
-            )}
-          </div>
-          {data.reason && (
-            <p className="font-body text-xs text-warm mt-0.5 italic">"{data.reason}"</p>
-          )}
-        </div>
-      </div>
+        console.log("IMG SRC:", imgSrc);
 
-      {/* Sous-titre */}
-      <div className="px-5 mt-4 mb-2">
-        <p className="font-body text-warm text-xs uppercase tracking-widest">
-          {recs.length} style{recs.length > 1 ? 's' : ''} sélectionné{recs.length > 1 ? 's' : ''} pour toi
-        </p>
-      </div>
-
-      {/* Cartes */}
-      <div className="px-4 space-y-5">
-        {recs.length === 0 ? (
-          <div className="rounded-3xl p-8 text-center"
-            style={{ background:'rgba(92,51,23,0.3)', border:'1px solid rgba(201,150,58,0.2)' }}>
-            <p className="text-3xl mb-3">🔍</p>
-            <p className="font-display text-cream">Aucun résultat</p>
-            <p className="font-body text-warm text-sm mt-2">Réessaie en te prenant en pleine lumière</p>
-          </div>
-        ) : (
-          recs.map((style, i) => (
-            <StyleCard
-              key={style.id || i}
-              style={style}
-              index={i}
-              isSaved={saved.some(s => s.id === style.id)}
-              onSave={handleSave}
+        return (
+          <motion.div
+            key={index}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white rounded-2xl shadow-md overflow-hidden"
+          >
+            <img
+              src={imgSrc}
+              alt={style.name}
+              className="w-full h-72 object-cover"
+              onError={(e) => {
+                console.log("ERREUR IMAGE → fallback");
+                e.target.src = "/styles/napi1.jpg";
+              }}
             />
-          ))
-        )}
-      </div>
 
-      {/* Actions */}
-      <div className="px-4 mt-6 space-y-3">
-        <button onClick={handleNewTest}
-          className="w-full py-4 rounded-full font-display font-semibold"
-          style={{
-            background: hasCredits() ? 'linear-gradient(135deg,#C9963A,#E8B96A)' : 'rgba(92,51,23,0.4)',
-            color:      hasCredits() ? '#2C1A0E' : '#8B5E3C',
-            boxShadow:  hasCredits() ? '0 4px 20px rgba(201,150,58,0.4)' : 'none',
-            border:     hasCredits() ? 'none' : '1px solid rgba(201,150,58,0.2)',
-          }}>
-          {hasCredits()
-            ? `📸 Nouveau test (${getCredits()} restant${getCredits() > 1 ? 's' : ''})`
-            : '💳 Acheter des tests'}
-        </button>
-        <button onClick={() => navigate('/library')}
-          className="w-full py-3 rounded-full font-body text-sm font-semibold"
-          style={{ border:'1px solid rgba(201,150,58,0.3)', color:'#C9963A' }}>
-          Voir tous les styles →
-        </button>
-      </div>
+            <div className="p-4">
+              <h3 className="text-lg font-semibold">{style.name}</h3>
+              <p className="text-sm text-gray-500 mt-1">
+                {style.description || "Style tendance adapté à ton visage"}
+              </p>
+            </div>
+          </motion.div>
+        );
+      })}
     </div>
-  )
-}
-
-function StyleCard({ style, index, isSaved, onSave }) {
-  const [imgError, setImgError] = useState(false)
-
-  // Choisir quelle image afficher
-  // 1. Photo générée par IA (si disponible)
-  // 2. Photo locale de ta bibliothèque
-  const imgSrc = (!imgError && style.generatedImage)
-    ? style.generatedImage
-    : style.localImage || style.image || null
-
-  return (
-    <motion.div
-      initial={{ opacity:0, y:30 }} animate={{ opacity:1, y:0 }}
-      transition={{ delay: index * 0.15, type:'spring', stiffness:180 }}
-      className="rounded-3xl overflow-hidden"
-      style={{ border:'1px solid rgba(201,150,58,0.25)', background:'rgba(92,51,23,0.3)' }}>
-
-      {/* Image */}
-      <div className="relative bg-mid overflow-hidden" style={{ aspectRatio:'3/4' }}>
-        {imgSrc ? (
-          <img
-            src={imgSrc}
-            alt={style.name}
-            className="w-full h-full object-cover object-top"
-            onError={() => setImgError(true)}
-          />
-        ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center gap-4"
-            style={{ background:'linear-gradient(160deg, #5C3317 0%, #2C1A0E 100%)' }}>
-            <span className="text-5xl">💆🏾‍♀️</span>
-            <p className="font-display text-cream text-base px-4 text-center">{style.name}</p>
-          </div>
-        )}
-
-        {/* Badge match */}
-        <div className="absolute top-3 left-3 px-3 py-1 rounded-full font-body text-xs font-bold"
-          style={{ background:'#C9963A', color:'#2C1A0E' }}>
-          ✦ {style.matchScore}% match
-        </div>
-
-        {/* Sauvegarder */}
-        <button onClick={() => onSave(style)}
-          className="absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center"
-          style={{ background:'rgba(44,26,14,0.75)', backdropFilter:'blur(8px)', border:'1px solid rgba(201,150,58,0.3)' }}>
-          <svg viewBox="0 0 24 24" className="w-5 h-5"
-            fill={isSaved ? '#C9963A' : 'none'}
-            stroke={isSaved ? '#C9963A' : '#8B5E3C'} strokeWidth="2">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-          </svg>
-        </button>
-
-        {/* Région */}
-        <div className="absolute bottom-3 right-3 px-2.5 py-1 rounded-full font-body text-xs"
-          style={{ background:'rgba(44,26,14,0.85)', color:'rgba(232,185,106,0.85)', backdropFilter:'blur(8px)' }}>
-          🌍 {style.region}
-        </div>
-      </div>
-
-      {/* Infos */}
-      <div className="p-4">
-        <h3 className="font-display text-cream text-lg leading-tight">{style.name}</h3>
-        <div className="flex gap-3 mt-1">
-          {style.duration   && <span className="font-body text-xs text-warm">⏱ {style.duration}</span>}
-          {style.difficulty && <span className="font-body text-xs text-warm">⭐ {style.difficulty}</span>}
-        </div>
-        {style.tags?.length > 0 && (
-          <div className="flex gap-1.5 mt-2 flex-wrap">
-            {style.tags.slice(0,3).map(tag => (
-              <span key={tag} className="font-body text-xs px-2 py-0.5 rounded-full"
-                style={{ background:'rgba(201,150,58,0.1)', color:'#C9963A', border:'1px solid rgba(201,150,58,0.2)' }}>
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-    </motion.div>
-  )
+  );
 }
