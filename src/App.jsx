@@ -8,6 +8,9 @@ import Results  from './pages/Results.jsx'
 import Library  from './pages/Library.jsx'
 import Profile  from './pages/Profile.jsx'
 import Credits  from './pages/Credits.jsx'
+import PrivacyPolicy  from './pages/PrivacyPolicy.jsx'
+import TermsOfService from './pages/TermsOfService.jsx'
+import CookiePolicy   from './pages/CookiePolicy.jsx'
 import BottomNav from './components/BottomNav.jsx'
 
 // ─── Popup de bienvenue ───
@@ -92,7 +95,7 @@ function WelcomePopup({ onDone }) {
 
 function AnimatedRoutes() {
   const location = useLocation()
-  const hideNav  = ['/camera', '/analyze', '/credits'].includes(location.pathname)
+  const hideNav  = ['/camera', '/analyze', '/credits', '/privacy-policy', '/terms-of-service', '/cookie-policy'].includes(location.pathname)
 
   return (
     <>
@@ -104,7 +107,10 @@ function AnimatedRoutes() {
           <Route path="/results" element={<Results />} />
           <Route path="/library" element={<Library />} />
           <Route path="/profile" element={<Profile />} />
-          <Route path="/credits" element={<Credits />} />
+          <Route path="/credits"         element={<Credits />} />
+          <Route path="/privacy-policy"  element={<PrivacyPolicy />} />
+          <Route path="/terms-of-service" element={<TermsOfService />} />
+          <Route path="/cookie-policy"   element={<CookiePolicy />} />
         </Routes>
       </AnimatePresence>
       {!hideNav && <BottomNav />}
