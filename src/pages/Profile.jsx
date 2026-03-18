@@ -265,6 +265,29 @@ export default function Profile() {
           <ReferralTab code={REFERRAL_CODE} copied={copied} onCopy={handleCopy} />
         )}
       </div>
+
+      {/* ── Liens légaux ── */}
+      <div className="px-4 mt-4 pb-4">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, transparent, rgba(201,150,58,0.2), transparent)' }}/>
+        </div>
+        <div className="flex flex-wrap justify-center gap-x-5 gap-y-2">
+          {[
+            { label: 'Confidentialité', to: '/privacy-policy' },
+            { label: 'Conditions', to: '/terms-of-service' },
+            { label: 'Cookies', to: '/cookie-policy' },
+          ].map(({ label, to }) => (
+            <button key={to} onClick={() => navigate(to)}
+              className="font-body text-xs"
+              style={{ color: 'rgba(201,150,58,0.45)' }}>
+              {label}
+            </button>
+          ))}
+        </div>
+        <p className="font-body text-xs text-center mt-2" style={{ color: 'rgba(201,150,58,0.25)' }}>
+          © 2026 AfroTresse
+        </p>
+      </div>
     </div>
   )
 }
