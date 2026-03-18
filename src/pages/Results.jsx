@@ -228,7 +228,7 @@ export default function Results() {
                 <span className="text-lg">🪞</span>
                 <p className="font-body text-xs" style={{ color:'#E8B96A' }}>
                   {hasCredits()
-                    ? 'Curieuse de voir ce style sur TON visage ? Lance l\'essai !'
+                    ? 'Imagine-toi avec cette tresse… Tu veux essayer ? Appuie sur le bouton !'
                     : 'Imagine ce style sur ta tête — 1 crédit pour le découvrir'}
                 </p>
               </div>
