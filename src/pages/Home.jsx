@@ -119,7 +119,7 @@ export default function Home() {
 
         <div className="absolute inset-x-0 top-0 z-30 px-5 pt-4">
           <div className="flex items-center gap-2 mb-0.5">
-            <img src="/logo.png" alt="AfroTresse" className="w-7 h-7 rounded-full object-cover"/>
+            <img src="/logo.png" alt="AfroTresse" className="w-10 h-10 rounded-full object-cover"/>
             <span className="font-display text-3xl leading-none">
               <span style={{ color:'#FAF4EC' }} className="font-bold">Afro</span>
               <span style={{ color:'#C9963A' }} className="font-bold">Tresse</span>
