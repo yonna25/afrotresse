@@ -117,13 +117,9 @@ export default function Home() {
         <div className="absolute inset-x-0 bottom-0 pointer-events-none z-10"
           style={{ height:'50%', background:'linear-gradient(to top, rgba(44,26,14,0.98) 0%, rgba(44,26,14,0.82) 50%, transparent 100%)' }}/>
 
-        {/* LOGO + SLOGAN */}
         <div className="absolute inset-x-0 top-0 z-30 px-5 pt-4">
           <div className="flex items-center gap-2 mb-0.5">
-            <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs"
-              style={{ background:'rgba(201,150,58,0.25)', border:'1px solid rgba(201,150,58,0.5)' }}>
-              🌿
-            </div>
+            <img src="/logo.png" alt="AfroTresse" className="w-7 h-7 rounded-full object-cover"/>
             <span className="font-display text-3xl leading-none">
               <span style={{ color:'#FAF4EC' }} className="font-bold">Afro</span>
               <span style={{ color:'#C9963A' }} className="font-bold">Tresse</span>
@@ -131,7 +127,7 @@ export default function Home() {
           </div>
           <p className="font-body text-xs ml-9"
             style={{ color:'#FAF4EC', letterSpacing:'0.12em', opacity:0.80 }}>
-            L'art de la tresse, ta signature
+            Chaque visage a sa tresse
           </p>
         </div>
 
