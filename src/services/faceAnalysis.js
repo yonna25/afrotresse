@@ -65,6 +65,39 @@ export const BRAIDS_DB = [
     image: '/Afrotresse6.jpg',
     matchScore: 90,
   },
+  {
+    id: 'lemonade-braids',
+    name: 'Lemonade Braids',
+    description: 'Popularisees par Beyonce, ces tresses laterales sont glamour et tendance.',
+    tags: ['Tendance', 'Glamour', 'Audacieuse'],
+    faceShapes: ['round', 'square', 'heart', 'oval'],
+    duration: '4-6h',
+    difficulty: 'Avancee',
+    image: '/Afrotresse1.jpg',
+    matchScore: 85,
+  },
+  {
+    id: 'butterfly-locs',
+    name: 'Butterfly Locs',
+    description: 'Des locs bohemes et romantiques qui encadrent le visage avec elegance.',
+    tags: ['Boheme', 'Romantique', 'Ondule'],
+    faceShapes: ['oval', 'heart', 'round', 'diamond'],
+    duration: '5-7h',
+    difficulty: 'Avancee',
+    image: '/Afrotresse2.jpg',
+    matchScore: 87,
+  },
+  {
+    id: 'bantu-knots',
+    name: 'Bantu Knots',
+    description: 'Des petits noeuds spirales qui celebrent la beaute africaine avec fierté.',
+    tags: ['Naturelle', 'Culturelle', 'Unique'],
+    faceShapes: ['oval', 'round', 'heart'],
+    duration: '2-3h',
+    difficulty: 'Intermediaire',
+    image: '/Afrotresse3.jpg',
+    matchScore: 82,
+  },
 ]
 
 const FACE_SHAPE_NAMES = {
@@ -92,7 +125,11 @@ export async function analyzeFace(photoBlob) {
     const res = await fetch('/api/analyze', { method: 'POST', body: formData })
     if (!res.ok) throw new Error('API error')
     const data = await res.json()
+
+    // Utiliser Claude pour la forme du visage
+    // mais les recommandations restent LOCALES (0 cout)
     return buildRecommendations(data.faceShape, data.reason, data.confidence)
+
   } catch {
     await new Promise(r => setTimeout(r, 2800))
     const shapes = ['oval', 'round', 'square', 'heart', 'long', 'diamond']
@@ -102,19 +139,19 @@ export async function analyzeFace(photoBlob) {
 }
 
 function buildRecommendations(faceShape, reason = '', confidence = 0.85) {
+  // Tous les styles compatibles — SANS slice(0,3)
   const matching = BRAIDS_DB
     .filter(b => b.faceShapes.includes(faceShape))
     .sort((a, b) => b.matchScore - a.matchScore)
-    .slice(0, 3)
-    .map((b, i) => ({ ...b, matchScore: Math.max(75, b.matchScore - i * 4) }))
+    .map((b, i) => ({ ...b, matchScore: Math.max(75, b.matchScore - i * 3) }))
 
   return {
     faceShape,
-    faceShapeName: FACE_SHAPE_NAMES[faceShape] || faceShape,
+    faceShapeName:        FACE_SHAPE_NAMES[faceShape] || faceShape,
     faceShapeDescription: FACE_SHAPE_DESCRIPTIONS[faceShape] || '',
-    aiReason: reason,
-    confidence: Math.round((confidence || 0.85) * 100),
-    recommendations: matching,
+    aiReason:             reason,
+    confidence:           Math.round((confidence || 0.85) * 100),
+    recommendations:      matching,
   }
 }
 
