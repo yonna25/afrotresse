@@ -4,11 +4,11 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { analyzeFace } from '../services/faceAnalysis.js'
 
 const STEPS = [
-  { text: 'Détection du visage…',         icon: '👁️', pct: 20 },
-  { text: 'Analyse de la morphologie…',   icon: '📐', pct: 45 },
-  { text: 'Consultation des styles…',     icon: '📚', pct: 70 },
-  { text: 'Calcul des recommandations…',  icon: '✨', pct: 88 },
-  { text: 'Finalisation…',                icon: '🌟', pct: 98 },
+  { text: 'Analyse de la structure du visage...',       icon: '👁️', pct: 20 },
+  { text: 'Etude des pommettes et de la machoire...',   icon: '📐', pct: 40 },
+  { text: 'Calcul des proportions...',                  icon: '📏', pct: 60 },
+  { text: 'Selection des styles adaptes...',            icon: '✨', pct: 80 },
+  { text: 'Ta selection sur-mesure est prete !',        icon: '🌟', pct: 98 },
 ]
 
 export default function Analyze() {
