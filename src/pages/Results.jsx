@@ -170,7 +170,7 @@ export default function Results() {
               <div className="space-y-2">
                 <button
                   onClick={() => {
-                    if (navigator.share) navigator.share({ title: 'AfroTresse', text: 'Regarde le style que j'ai choisi !', url: resultImage })
+                    if (navigator.share) navigator.share({ title: 'AfroTresse', text: "Regarde le style que j'ai choisi !", url: resultImage })
                   }}
                   className="w-full py-3 rounded-xl text-sm font-semibold"
                   style={{ background: '#FFC000', color: '#000' }}>
