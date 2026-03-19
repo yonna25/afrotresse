@@ -14,10 +14,39 @@ async function blobUrlToBase64(blobUrl) {
   })
 }
 
+
+// Vérifie la netteté de l'image via détection de contraste
+async function checkImageQuality(dataUrl) {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      const size   = 100
+      canvas.width  = size
+      canvas.height = size
+      const ctx = canvas.getContext('2d')
+      ctx.drawImage(img, 0, 0, size, size)
+      const data = ctx.getImageData(0, 0, size, size).data
+      let sum = 0, sumSq = 0, n = data.length / 4
+      for (let i = 0; i < data.length; i += 4) {
+        const gray = 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2]
+        sum   += gray
+        sumSq += gray * gray
+      }
+      const mean     = sum / n
+      const variance = sumSq / n - mean * mean
+      // Variance < 200 = image trop uniforme = floue ou trop sombre
+      resolve(variance > 200)
+    }
+    img.src = dataUrl
+  })
+}
+
 export default function Camera() {
   const navigate = useNavigate()
   const [photo,   setPhoto]   = useState(null)
   const [showCam, setShowCam] = useState(false)
+  const [photoError, setPhotoError] = useState("")
 
   const handleCapture = (data) => {
     setPhoto(data)
@@ -26,16 +55,23 @@ export default function Camera() {
 
   const handleAnalyze = async () => {
     let photoData = photo.url
-    // Si c'est une blob URL, convertir en base64 pour survivre à la navigation
     if (photo.url.startsWith('blob:')) {
       photoData = await blobUrlToBase64(photo.url)
     }
+    // Verification de la qualite de la photo
+    const isSharp = await checkImageQuality(photoData)
+    if (!isSharp) {
+      setPhotoError("Photo floue. Assure-toi d'etre face a la lumiere pour un resultat optimal.")
+      return
+    }
+    setPhotoError("")
     sessionStorage.setItem('afrotresse_photo', photoData)
     navigate('/analyze')
   }
 
   const handleRetake = () => {
     setPhoto(null)
+    setPhotoError("")
   }
 
   return (
@@ -114,6 +150,12 @@ export default function Camera() {
               <p className="font-body text-warm text-sm mt-1">Lance l'analyse pour découvrir tes styles</p>
             </div>
 
+            {photoError && (
+              <div className="w-full px-4 py-3 rounded-2xl text-sm text-center"
+                style={{ background: 'rgba(255,80,80,0.15)', border: '1px solid rgba(255,80,80,0.4)', color: '#FF6B6B' }}>
+                📷 {photoError}
+              </div>
+            )}
             <button onClick={handleAnalyze} className="btn-gold w-full">
               🔍 Analyser mon visage
             </button>
