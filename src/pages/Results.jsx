@@ -100,7 +100,10 @@ export default function Results() {
               <polyline points="15 18 9 12 15 6"/>
             </svg>
           </button>
-          <h2 className="text-white text-xl font-semibold">Tes résultats</h2>
+          <div>
+            <h2 className="text-white text-xl font-semibold">Ta sélection sur-mesure</h2>
+            <p className="text-xs mt-0.5" style={{ color: "rgba(232,185,106,0.7)" }}>Voici les styles qui sublimeront naturellement tes traits.</p>
+          </div>
         </div>
         {/* Badge crédits */}
         <button onClick={() => navigate('/credits')}
@@ -115,7 +118,7 @@ export default function Results() {
       {selfieUrl && (
         <div className="flex items-center gap-3 bg-[#3a2118] rounded-xl p-3">
           <img src={selfieUrl} alt="Ton selfie" className="w-12 h-12 rounded-xl object-cover"/>
-          <p className="text-gray-300 text-sm">Styles recommandés pour toi ✦</p>
+          <p className="text-gray-300 text-sm">Ta sélection personnalisée est prête ✦</p>
         </div>
       )}
 
@@ -134,8 +137,8 @@ export default function Results() {
           className="rounded-2xl p-4 text-center"
           style={{ background: 'linear-gradient(135deg, #3a2118, #5a3225)', border: '1px solid rgba(255,192,0,0.3)' }}
         >
-          <p className="text-yellow-400 font-semibold text-sm">✨ Essayage virtuel disponible</p>
-          <p className="text-gray-300 text-xs mt-1">Achète des crédits pour voir ce style sur TON visage</p>
+          <p className="text-yellow-400 font-semibold text-sm">✨ Ne prends plus de risques avant d'aller au salon</p>
+          <p className="text-gray-300 text-xs mt-1">Visualise le rendu final avec une précision incroyable et gagne du temps avec ta coiffeuse.</p>
           <button onClick={() => navigate('/credits')}
             className="mt-3 px-5 py-2 rounded-full text-sm font-semibold text-black"
             style={{ background: '#FFC000' }}>
@@ -156,22 +159,50 @@ export default function Results() {
           >
             <div className="px-4 pt-4 pb-2">
               <h3 className="text-yellow-400 font-semibold text-lg">
-                {isFallback ? 'Style similaire 💆🏾‍♀️' : 'Ton essai virtuel ✨'}
+                {isFallback ? 'Style similaire 💆🏾‍♀️' : 'Magnifique ! ✨'}
               </h3>
               <p className="text-gray-400 text-sm">
-                {isFallback ? 'Aperçu basé sur ta forme de visage' : 'Voici à quoi tu ressemblerais'}
+                {isFallback ? 'Apercu base sur ta forme de visage' : 'Ce style te met vraiment en valeur. Montre-le a ta coiffeuse !'}
               </p>
             </div>
             <img src={resultImage} alt="Résultat" className="w-full object-cover"/>
             <div className="p-4">
-              <button onClick={() => setResultImage(null)}
-                className="w-full py-2 rounded-xl text-sm text-gray-400 border border-gray-600">
-                Fermer
-              </button>
+              <div className="space-y-2">
+                <button
+                  onClick={() => {
+                    if (navigator.share) navigator.share({ title: 'AfroTresse', text: 'Regarde le style que j'ai choisi !', url: resultImage })
+                  }}
+                  className="w-full py-3 rounded-xl text-sm font-semibold"
+                  style={{ background: '#FFC000', color: '#000' }}>
+                  📤 Envoyer a ma coiffeuse
+                </button>
+                <button
+                  onClick={() => navigate('/credits')}
+                  className="w-full py-2 rounded-xl text-sm font-semibold"
+                  style={{ background: 'rgba(255,192,0,0.1)', color: '#FFC000', border: '1px solid rgba(255,192,0,0.3)' }}>
+                  👯‍♀️ Inviter une amie (1 essai offert)
+                </button>
+                <button onClick={() => setResultImage(null)}
+                  className="w-full py-2 rounded-xl text-sm text-gray-400 border border-gray-600">
+                  Fermer
+                </button>
+              </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Labels des 3 positions */}
+      {page === 0 && (
+        <div className="flex gap-2">
+          {['Le Choix Ideal', 'Le Style Structurant', 'La Tendance'].map((label, i) => (
+            <div key={i} className="flex-1 text-center py-1.5 rounded-xl text-xs font-semibold"
+              style={{ background: 'rgba(201,150,58,0.1)', color: '#C9963A', border: '1px solid rgba(201,150,58,0.2)' }}>
+              {label}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Cartes styles — 3 par page */}
       {styles.slice(page * 3, page * 3 + 3).map((style, index) => {
@@ -193,8 +224,16 @@ export default function Results() {
                 className="w-full h-80 object-cover"
                 onError={(e) => { e.target.src = "/styles/napi1.jpg"; }}
               />
-              <div className="absolute top-3 left-3 bg-yellow-400 text-black text-xs px-2 py-1 rounded-full font-semibold">
-                {style.matchScore ? `${style.matchScore}% match` : '+100 vues'}
+              <div className="absolute top-3 left-3 flex flex-col gap-1">
+                <div className="bg-yellow-400 text-black text-xs px-2 py-1 rounded-full font-semibold">
+                  {style.matchScore ? `${style.matchScore}% match` : '+100 vues'}
+                </div>
+                {page === 0 && (
+                  <div className="text-xs px-2 py-0.5 rounded-full font-semibold"
+                    style={{ background: 'rgba(44,26,14,0.85)', color: '#E8B96A', backdropFilter: 'blur(8px)' }}>
+                    {index === 0 ? 'Le Choix Ideal' : index === 1 ? 'Le Style Structurant' : 'La Tendance'}
+                  </div>
+                )}
               </div>
 
               {/* Cadenas si 0 crédits */}
@@ -229,8 +268,8 @@ export default function Results() {
                 <span className="text-lg">🪞</span>
                 <p className="font-body text-xs" style={{ color:'#E8B96A' }}>
                   {hasCredits()
-                    ? 'Imagine-toi avec cette tresse… Tu veux essayer ? Appuie sur le bouton !'
-                    : 'Imagine ce style sur ta tête — 1 crédit pour le découvrir'}
+                    ? 'Imagine-toi avec cette tresse… Visualise le rendu avant d'aller au salon !'
+                    : 'Ne prends plus de risques — 1 crédit pour voir ce style sur toi'}
                 </p>
               </div>
 
@@ -253,8 +292,8 @@ export default function Results() {
                     Transformation...
                   </span>
                 ) : hasCredits()
-                  ? `✨ Essayer ce style (1 crédit)`
-                  : `🔒 Débloquer l'essai virtuel`
+                  ? `👁️ Voir ce style sur moi`
+                  : `🔒 Voir ce style sur moi (1 crédit)`
                 }
               </button>
             </div>
