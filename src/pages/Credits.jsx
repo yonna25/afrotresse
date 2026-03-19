@@ -69,6 +69,16 @@ export default function Credits() {
           <p className="font-body text-xs mt-2" style={{ color:'rgba(232,185,106,0.6)' }}>
             1 test = 2 styles générés sur ton visage
           </p>
+          {/* Bouton securisation credits */}
+          <button
+            onClick={() => navigate('/magic-link')}
+            className="mt-4 w-full py-2.5 rounded-2xl font-body text-xs font-semibold flex items-center justify-center gap-2"
+            style={{ background:'rgba(201,150,58,0.1)', border:'1px solid rgba(201,150,58,0.3)', color:'#C9963A' }}>
+            🔐 Securiser mes credits par email
+          </button>
+          <p className="font-body text-xs mt-1" style={{ color:'rgba(201,150,58,0.45)' }}>
+            Recupere tes credits en cas de perte ou changement de telephone
+          </p>
         </div>
       </div>
 
