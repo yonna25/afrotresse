@@ -46,7 +46,11 @@ export default async function handler(req, res) {
     }
 
     const data = await fedaRes.json()
-    const transactionId = data.v1?.transaction?.id || data.transaction?.id
+    console.log('FedaPay response:', JSON.stringify(data))
+    const transactionId = data?.v1?.transaction?.id
+      || data?.transaction?.id
+      || data?.data?.id
+      || data?.id
 
     // Generer le lien de paiement
     const tokenRes = await fetch(`https://sandbox-api.fedapay.com/v1/transactions/${transactionId}/token`, {
