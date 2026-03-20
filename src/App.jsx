@@ -40,13 +40,13 @@ function WelcomePopup({ onDone }) {
       >
         {/* Logo */}
         <div className="flex justify-center mb-4">
-          <img src="/logo.png" alt="AfroTresse" className="h-20 w-auto object-contain"
+          <img src="/logo.png" alt="AfroTresse" className="h-28 w-auto object-contain"
             onError={e => { e.target.style.display='none' }}/>
         </div>
 
         {/* Titre accrocheur */}
-        <h2 className="font-display text-center text-xl font-bold mb-2"
-          style={{ color: '#FAF4EC' }}>
+        <h2 className="font-display text-center font-bold mb-2"
+          style={{ color: '#FAF4EC', fontSize: 'clamp(1.2rem, 5vw, 1.6rem)', lineHeight: '1.3' }}>
           Tu hesites sur ta prochaine coiffure ?
         </h2>
 
@@ -55,19 +55,6 @@ function WelcomePopup({ onDone }) {
           style={{ color: 'rgba(250,244,236,0.8)' }}>
           Teste sur <strong style={{ color:'#E8B96A' }}>TON visage</strong> et decouvre la tresse qui va te rendre magnifique aujourd'hui
         </p>
-
-        {/* Guide 3 etapes */}
-        <div className="flex justify-center gap-4 mb-4">
-          {[['📸', 'Photo'], ['✨', 'Analyse'], ['👑', 'Resultat']].map(([icon, label]) => (
-            <div key={label} className="flex flex-col items-center gap-1">
-              <div className="w-9 h-9 rounded-full flex items-center justify-center text-base"
-                style={{ background: 'rgba(201,150,58,0.15)', border: '1px solid rgba(201,150,58,0.3)' }}>
-                {icon}
-              </div>
-              <span className="font-body text-xs" style={{ color: 'rgba(250,244,236,0.55)' }}>{label}</span>
-            </div>
-          ))}
-        </div>
 
         {/* Champ prénom */}
         <label className="font-body text-xs uppercase tracking-widest mb-2 block"
