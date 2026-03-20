@@ -47,19 +47,11 @@ export default async function handler(req, res) {
 
     const data = await fedaRes.json()
     console.log('FedaPay response:', JSON.stringify(data))
-    const transactionId = data?.v1?.transaction?.id
-      || data?.transaction?.id
-      || data?.data?.id
-      || data?.id
+    const transaction = data['v1/transaction'] || data?.v1?.transaction || data?.transaction
+    const transactionId = transaction?.id
+    const paymentUrl = transaction?.payment_url
 
-    // Generer le lien de paiement
-    const tokenRes = await fetch(`https://sandbox-api.fedapay.com/v1/transactions/${transactionId}/token`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${secretKey}` },
-    })
-
-    const tokenData = await tokenRes.json()
-    const paymentUrl = tokenData.url || `https://sandbox-checkout.fedapay.com/?id=${transactionId}`
+    if (!paymentUrl) return res.status(500).json({ error: 'URL de paiement introuvable' })
 
     return res.status(200).json({ paymentUrl, transactionId, credits: selectedPack.credits })
 
