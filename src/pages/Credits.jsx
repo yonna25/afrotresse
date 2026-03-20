@@ -158,7 +158,7 @@ export default function Credits() {
               onClick={() => { setShowCelebration(false); navigate('/camera') }}
               className="w-full py-3 rounded-2xl font-display font-bold text-sm mb-2"
               style={{ background: '#2C1A0E', color: '#E8B96A' }}>
-              Lancer mon analyse maintenant →
+              Decouvrir ma tresse parfaite →
             </button>
             <button
               onClick={() => setShowCelebration(false)}
