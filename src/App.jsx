@@ -35,8 +35,8 @@ function WelcomePopup({ onDone }) {
         initial={{ y: 300 }}
         animate={{ y: 0 }}
         transition={{ type: 'spring', stiffness: 200, damping: 25 }}
-        className="w-full max-w-sm rounded-t-3xl p-6 pb-10"
-        style={{ background: '#2C1A0E', border: '1px solid rgba(201,150,58,0.3)' }}
+        className="w-full max-w-sm rounded-t-3xl p-6 pb-10 overflow-y-auto"
+        style={{ background: '#2C1A0E', border: '1px solid rgba(201,150,58,0.3)', maxHeight: '90vh' }}
       >
         {/* Logo */}
         <div className="flex justify-center mb-4">
@@ -53,7 +53,9 @@ function WelcomePopup({ onDone }) {
         {/* Phrase emotionnelle */}
         <p className="font-body text-center text-sm mb-4 leading-relaxed"
           style={{ color: 'rgba(250,244,236,0.8)' }}>
-          Teste sur <strong style={{ color:'#E8B96A' }}>TON visage</strong> et decouvre la tresse qui va te rendre magnifique aujourd'hui
+          Teste sur <strong style={{ color:'#E8B96A' }}>TON visage</strong> et<br/>
+          Decouvre la tresse<br/>
+          qui va te rendre magnifique aujourd'hui
         </p>
 
         {/* Champ prénom */}
