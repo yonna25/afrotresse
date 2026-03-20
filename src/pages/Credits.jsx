@@ -27,6 +27,7 @@ export default function Credits() {
   const [magicLinkSent, setMagicLinkSent] = useState(false)
 
   const packsRef = useRef(null)
+  const tabContentRef = useRef(null)
   const myCode = getMyReferralCode()
 
   useEffect(() => {
@@ -273,7 +274,7 @@ export default function Credits() {
       {/* Tabs */}
       <div className="flex gap-2 px-4 mt-4">
         {['🤝 Parrainer', '🧠 Avis'].map((label, i) => (
-          <button key={label} onClick={() => setTab(i)}
+          <button key={label} onClick={() => { setTab(i); setTimeout(() => tabContentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100) }}
             className="flex-1 py-2.5 rounded-2xl text-xs font-body font-semibold transition-all"
             style={{ background: tab===i ? '#C9963A' : 'rgba(92,51,23,0.4)', color: tab===i ? '#2C1A0E' : '#8B5E3C', border:'1px solid rgba(201,150,58,0.15)' }}>
             {label}
@@ -283,8 +284,7 @@ export default function Credits() {
 
       {/* ── PACKS toujours visibles ── */}
       <div ref={packsRef} className="px-4 mt-4 space-y-3">
-        {true && (
-          <>
+        <>
             {paymentError && (
               <p className="font-body text-red-400 text-xs text-center mb-2">{paymentError}</p>
             )}
@@ -332,9 +332,9 @@ export default function Credits() {
                 </div>
               </motion.div>
             ))}
-          </>
-        )}
+        </>
 
+        <div ref={tabContentRef} />
         {/* ── PARRAINAGE ── */}
         {tab === 0 && (
           <>
