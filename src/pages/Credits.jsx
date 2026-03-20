@@ -10,7 +10,7 @@ import { sendMagicLink, getCurrentUser, getSupabaseCredits, addSupabaseCredits, 
 export default function Credits() {
   const navigate   = useNavigate()
   const [credits,  setCredits]  = useState(0)
-  const [tab,      setTab]      = useState(0) // 0=acheter 1=parrainage 2=avis
+  const [activeView, setActiveView] = useState('credits') // credits | parrainer | avis
   const [copied,   setCopied]   = useState(false)
   const [refInput, setRefInput] = useState('')
   const [refMsg,   setRefMsg]   = useState(null)
@@ -26,7 +26,6 @@ export default function Credits() {
   const [supabaseUser, setSupabaseUser] = useState(null)
   const [magicLinkSent, setMagicLinkSent] = useState(false)
 
-  const packsRef = useRef(null)
   const myCode = getMyReferralCode()
 
   useEffect(() => {
@@ -263,7 +262,7 @@ export default function Credits() {
           📸 Tester ma tresse 👑
         </button>
         <button
-          onClick={() => packsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+          onClick={() => setActiveView('credits')}
           className="w-full py-2.5 rounded-2xl font-body text-sm font-semibold"
           style={{ background: 'rgba(201,150,58,0.08)', border: '1px solid rgba(201,150,58,0.25)', color: '#C9963A' }}>
           ➕ Credits
@@ -272,10 +271,10 @@ export default function Credits() {
 
       {/* Tabs */}
       <div className="flex gap-2 px-4 mt-4">
-        {['🤝 Parrainer', '🧠 Avis'].map((label, i) => (
-          <button key={label} onClick={() => setTab(i)}
+        {[['🤝 Parrainer', 'parrainer'], ['🧠 Avis', 'avis']].map(([label, view]) => (
+          <button key={view} onClick={() => setActiveView(view)}
             className="flex-1 py-2.5 rounded-2xl text-xs font-body font-semibold transition-all"
-            style={{ background: tab===i ? '#C9963A' : 'rgba(92,51,23,0.4)', color: tab===i ? '#2C1A0E' : '#8B5E3C', border:'1px solid rgba(201,150,58,0.15)' }}>
+            style={{ background: activeView === view ? '#C9963A' : 'rgba(92,51,23,0.4)', color: activeView === view ? '#2C1A0E' : '#8B5E3C', border:'1px solid rgba(201,150,58,0.15)' }}>
             {label}
           </button>
         ))}
