@@ -29,7 +29,7 @@ function WelcomePopup({ onDone }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       className="fixed inset-0 z-50 flex items-end justify-center"
-      style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)' }}
+      style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)' }}
     >
       <motion.div
         initial={{ y: 300 }}
@@ -38,31 +38,45 @@ function WelcomePopup({ onDone }) {
         className="w-full max-w-sm rounded-t-3xl p-6 pb-10"
         style={{ background: '#2C1A0E', border: '1px solid rgba(201,150,58,0.3)' }}
       >
-        {/* Logo réduit */}
-        <div className="flex justify-center mb-3">
-          <img src="/logo.png" alt="AfroTresse" className="h-28 w-auto object-contain"
+        {/* Logo */}
+        <div className="flex justify-center mb-4">
+          <img src="/logo.png" alt="AfroTresse" className="h-20 w-auto object-contain"
             onError={e => { e.target.style.display='none' }}/>
         </div>
 
-        {/* Titre */}
-        <h2 className="font-display text-center text-lg mb-2"
+        {/* Titre accrocheur */}
+        <h2 className="font-display text-center text-xl font-bold mb-2"
           style={{ color: '#FAF4EC' }}>
-          Bienvenue chez <span style={{ color: '#C9963A' }}>AfroTresse</span>
+          Tu hesites sur ta prochaine coiffure ?
         </h2>
-        <p className="font-body text-center text-sm mb-6 leading-relaxed"
-          style={{ color: 'rgba(250,244,236,0.75)' }}>
-          Tu ne choisis pas une tresse…<br/>
-          Tu découvres celle qui te révèle comme une <strong style={{ color:'#C9963A' }}>Reine 👑</strong>
+
+        {/* Phrase emotionnelle */}
+        <p className="font-body text-center text-sm mb-4 leading-relaxed"
+          style={{ color: 'rgba(250,244,236,0.8)' }}>
+          Teste sur <strong style={{ color:'#E8B96A' }}>TON visage</strong> et decouvre la tresse qui va te rendre magnifique aujourd'hui
         </p>
+
+        {/* Guide 3 etapes */}
+        <div className="flex justify-center gap-4 mb-4">
+          {[['📸', 'Photo'], ['✨', 'Analyse'], ['👑', 'Resultat']].map(([icon, label]) => (
+            <div key={label} className="flex flex-col items-center gap-1">
+              <div className="w-9 h-9 rounded-full flex items-center justify-center text-base"
+                style={{ background: 'rgba(201,150,58,0.15)', border: '1px solid rgba(201,150,58,0.3)' }}>
+                {icon}
+              </div>
+              <span className="font-body text-xs" style={{ color: 'rgba(250,244,236,0.55)' }}>{label}</span>
+            </div>
+          ))}
+        </div>
 
         {/* Champ prénom */}
         <label className="font-body text-xs uppercase tracking-widest mb-2 block"
           style={{ color: '#C9963A' }}>
-          Comment tu t'appelles, Reine ?
+          Comment tu t'appelles ?
         </label>
         <input
           type="text"
-          placeholder="Ton prénom..."
+          placeholder="Ton prenom..."
           value={name}
           onChange={e => setName(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleSubmit()}
@@ -76,18 +90,25 @@ function WelcomePopup({ onDone }) {
           autoFocus
         />
 
-        {/* Bouton */}
+        {/* Bouton principal */}
         <button
           onClick={handleSubmit}
-          className="w-full py-3 rounded-2xl font-display font-semibold text-sm"
-          style={{ background: 'linear-gradient(135deg,#C9963A,#E8B96A)', color: '#2C1A0E' }}
+          className="w-full py-4 rounded-2xl font-display font-bold text-base"
+          style={{ background: 'linear-gradient(135deg,#C9963A,#E8B96A)', color: '#2C1A0E', boxShadow: '0 4px 20px rgba(201,150,58,0.4)' }}
         >
-          {name.trim() ? `Commencer, ${name.trim()} 👑` : 'Commencer en tant que Reine 👑'}
+          {name.trim() ? `Decouvrir ma tresse parfaite, ${name.trim()} 👑` : 'Decouvrir ma tresse parfaite 👑'}
         </button>
 
-        <p className="font-body text-xs text-center mt-3"
-          style={{ color: 'rgba(250,244,236,0.45)' }}>
-          ✨ Ton prénom reste uniquement sur ton téléphone
+        {/* Urgence */}
+        <p className="font-body text-xs text-center mt-2 font-semibold"
+          style={{ color: '#E8B96A' }}>
+          🎁 3 essais gratuits aujourd'hui seulement !
+        </p>
+
+        {/* Social proof */}
+        <p className="font-body text-xs text-center mt-1"
+          style={{ color: 'rgba(250,244,236,0.4)' }}>
+          Deja +50 femmes ont trouve leur tresse parfaite 🎉
         </p>
       </motion.div>
     </motion.div>
