@@ -151,7 +151,7 @@ export default function Credits() {
               <polyline points="15 18 9 12 15 6"/>
             </svg>
           </button>
-          <h1 className="font-display text-xl text-cream">Mes crédits</h1>
+          <h1 className="font-display text-xl text-cream">Mes crÃ©dits</h1>
         </div>
 
         {/* Solde */}
@@ -163,7 +163,7 @@ export default function Credits() {
             {credits === 0 ? 'Plus de tests disponibles' : `test${credits > 1 ? 's' : ''} disponible${credits > 1 ? 's' : ''}`}
           </p>
           <p className="font-body text-xs mt-2" style={{ color:'rgba(232,185,106,0.6)' }}>
-            1 test = 2 styles générés sur ton visage
+            1 test = 2 styles gÃ©nÃ©rÃ©s sur ton visage
           </p>
         </div>
       </div>
@@ -181,7 +181,7 @@ export default function Credits() {
 
       <div className="px-4 mt-4 space-y-3">
 
-        {/* ── ACHETER ── */}
+        {/* â”€â”€ ACHETER â”€â”€ */}
         {tab === 0 && (
           <>
             {paymentError && (
@@ -199,7 +199,7 @@ export default function Credits() {
                 {pack.popular && (
                   <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full text-xs font-bold font-body"
                     style={{ background:'#C9963A', color:'#2C1A0E' }}>
-                    ⭐ POPULAIRE
+                    â­ POPULAIRE
                   </div>
                 )}
 
@@ -207,7 +207,7 @@ export default function Credits() {
                   <div>
                     <p className="font-display text-cream text-lg">{pack.label}</p>
                     <p className="font-body text-[#D4B896] text-xs mt-0.5">
-                      {pack.monthly ? 'Illimité pendant 30 jours' : `${pack.tests} test${pack.tests > 1 ? 's' : ''} = ${pack.tests * 2} styles`}
+                      {pack.monthly ? 'IllimitÃ© pendant 30 jours' : `${pack.tests} test${pack.tests > 1 ? 's' : ''} = ${pack.tests * 2} styles`}
                     </p>
                   </div>
                   <div className="text-right">
@@ -226,7 +226,7 @@ export default function Credits() {
                       color: '#2C1A0E',
                       opacity: paymentLoading === pack.id ? 0.7 : 1,
                     }}>
-                    {paymentLoading === pack.id ? 'Redirection...' : '📱 Payer via MTN MoMo / Moov Money'}
+                    {paymentLoading === pack.id ? 'Redirection...' : 'ðŸ“± Payer via MTN MoMo / Moov Money'}
                   </button>
                 </div>
               </motion.div>
@@ -234,7 +234,7 @@ export default function Credits() {
           </>
         )}
 
-        {/* ── PARRAINAGE ── */}
+        {/* â”€â”€ PARRAINAGE â”€â”€ */}
         {tab === 1 && (
           <>
             {/* Mon code */}
@@ -243,7 +243,7 @@ export default function Credits() {
               style={{ background:"rgba(255,255,255,0.08)", border:'1px solid rgba(201,150,58,0.2)' }}>
               <p className="font-display text-cream text-sm mb-1">Mon code parrain</p>
               <p className="font-body text-[#D4B896] text-xs mb-3">
-                Partage ce code — tu gagnes <span className="text-gold font-bold">+{PRICING.referral.giver} test</span> par filleule inscrite
+                Partage ce code â€” tu gagnes <span className="text-gold font-bold">+{PRICING.referral.giver} test</span> par filleule inscrite
               </p>
               <div className="flex items-center gap-3 rounded-2xl px-4 py-3"
                 style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(201,150,58,0.3)' }}>
@@ -251,12 +251,12 @@ export default function Credits() {
                 <button onClick={handleCopy}
                   className="text-xs font-body px-3 py-1.5 rounded-xl transition-all"
                   style={{ background: copied ? '#C9963A' : 'transparent', color: copied ? '#2C1A0E' : '#C9963A', border: copied ? 'none' : '1px solid rgba(201,150,58,0.4)' }}>
-                  {copied ? '✓ Copié !' : 'Copier'}
+                  {copied ? 'âœ“ CopiÃ© !' : 'Copier'}
                 </button>
               </div>
               <div className="flex justify-between mt-3 pt-3"
                 style={{ borderTop:'1px solid rgba(201,150,58,0.1)' }}>
-                <span className="font-body text-[#D4B896] text-xs">Filleules parrainées</span>
+                <span className="font-body text-[#D4B896] text-xs">Filleules parrainÃ©es</span>
                 <span className="font-display text-gold">{getReferralCount()}</span>
               </div>
             </motion.div>
@@ -267,7 +267,7 @@ export default function Credits() {
               style={{ background:"rgba(255,255,255,0.08)", border:'1px solid rgba(201,150,58,0.2)' }}>
               <p className="font-display text-cream text-sm mb-1">J'ai un code parrain</p>
               <p className="font-body text-[#D4B896] text-xs mb-3">
-                Entre le code d'une amie et reçois <span className="text-gold font-bold">+{PRICING.referral.receiver} test gratuit</span>
+                Entre le code d'une amie et reÃ§ois <span className="text-gold font-bold">+{PRICING.referral.receiver} test gratuit</span>
               </p>
               <div className="flex gap-2">
                 <input
@@ -287,21 +287,21 @@ export default function Credits() {
               {refMsg && (
                 <p className="font-body text-xs mt-2"
                   style={{ color: refMsg.success ? '#4CAF50' : '#FF6B6B' }}>
-                  {refMsg.success ? '✅' : '❌'} {refMsg.message}
+                  {refMsg.success ? 'âœ…' : 'âŒ'} {refMsg.message}
                 </p>
               )}
             </motion.div>
 
-            {/* Comment ça marche */}
+            {/* Comment Ã§a marche */}
             <div className="rounded-3xl p-5"
               style={{ background:"rgba(255,255,255,0.06)", border:'1px solid rgba(201,150,58,0.1)' }}>
-              <p className="font-display text-cream text-sm mb-3">Comment ça marche ?</p>
+              <p className="font-display text-cream text-sm mb-3">Comment Ã§a marche ?</p>
               {[
-                ['1', 'Copie ton code et partage à une amie', '📤'],
-                ['2', 'Elle s\'inscrit et entre ton code', '📱'],
-                ['3', 'Elle reçoit 1 test gratuit', '🎁'],
-                ['4', 'Toi tu reçois 1 test gratuit', '✨'],
-                ['5', 'Si elle achète, tu gagnes 10% en crédits', '💰'],
+                ['1', 'Copie ton code et partage Ã  une amie', 'ðŸ“¤'],
+                ['2', 'Elle s\'inscrit et entre ton code', 'ðŸ“±'],
+                ['3', 'Elle reÃ§oit 1 test gratuit', 'ðŸŽ'],
+                ['4', 'Toi tu reÃ§ois 1 test gratuit', 'âœ¨'],
+                ['5', 'Si elle achÃ¨te, tu gagnes 10% en crÃ©dits', 'ðŸ’°'],
               ].map(([n, text, icon]) => (
                 <div key={n} className="flex items-start gap-3 mb-2">
                   <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
@@ -316,16 +316,16 @@ export default function Credits() {
           </>
         )}
 
-        {/* ── AVIS GRATUIT ── */}
+        {/* â”€â”€ AVIS GRATUIT â”€â”€ */}
         {tab === 2 && (
           <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }}>
             {reviewDone ? (
               <div className="rounded-3xl p-8 text-center"
                 style={{ background:'rgba(26,102,64,0.2)', border:'1px solid rgba(26,102,64,0.4)' }}>
-                <p className="text-4xl mb-3">✅</p>
+                <p className="text-4xl mb-3">âœ…</p>
                 <p className="font-display text-cream text-lg">Merci pour ton avis !</p>
                 <p className="font-body text-[#D4B896] text-sm mt-2">
-                  Tu as reçu <span className="text-gold font-bold">+{PRICING.reviewBonus} test gratuit</span>
+                  Tu as reÃ§u <span className="text-gold font-bold">+{PRICING.reviewBonus} test gratuit</span>
                 </p>
               </div>
             ) : (
@@ -354,10 +354,10 @@ function ReviewForm({ onSubmit, bonus }) {
   if (sent) return (
     <div className="rounded-3xl p-8 text-center"
       style={{ background:'rgba(26,102,64,0.2)', border:'1px solid rgba(26,102,64,0.4)' }}>
-      <p className="text-4xl mb-3">🌟</p>
+      <p className="text-4xl mb-3">ðŸŒŸ</p>
       <p className="font-display text-cream text-lg">Merci !</p>
       <p className="font-body text-[#D4B896] text-sm mt-2">
-        +{bonus} test gratuit ajouté à ton solde
+        +{bonus} test gratuit ajoutÃ© Ã  ton solde
       </p>
     </div>
   )
@@ -367,16 +367,16 @@ function ReviewForm({ onSubmit, bonus }) {
       style={{ background:"rgba(255,255,255,0.08)", border:'1px solid rgba(201,150,58,0.2)' }}>
       <p className="font-display text-cream text-lg mb-1">Laisse ton avis</p>
       <p className="font-body text-[#D4B896] text-xs mb-4">
-        En échange de ton avis honnête, reçois <span className="text-gold font-bold">+{bonus} test gratuit</span>
+        En Ã©change de ton avis honnÃªte, reÃ§ois <span className="text-gold font-bold">+{bonus} test gratuit</span>
       </p>
 
-      {/* Étoiles */}
+      {/* Ã‰toiles */}
       <div className="flex gap-2 mb-4">
         {[1,2,3,4,5].map(s => (
           <button key={s} onClick={() => setStars(s)}
             className="text-2xl transition-all"
             style={{ opacity: s <= stars ? 1 : 0.3 }}>
-            ⭐
+            â­
           </button>
         ))}
       </div>
@@ -385,7 +385,7 @@ function ReviewForm({ onSubmit, bonus }) {
       <textarea
         value={text}
         onChange={e => setText(e.target.value)}
-        placeholder="Dis-nous ce que tu penses de l'application... (minimum 10 caractères)"
+        placeholder="Dis-nous ce que tu penses de l'application... (minimum 10 caractÃ¨res)"
         rows={4}
         className="w-full rounded-2xl px-4 py-3 font-body text-sm text-cream outline-none resize-none"
         style={{ background:'rgba(255,255,255,0.07)', border:'1px solid rgba(201,150,58,0.3)' }}
