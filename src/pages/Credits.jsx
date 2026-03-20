@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -26,6 +26,7 @@ export default function Credits() {
   const [supabaseUser, setSupabaseUser] = useState(null)
   const [magicLinkSent, setMagicLinkSent] = useState(false)
 
+  const packsRef = useRef(null)
   const myCode = getMyReferralCode()
 
   useEffect(() => {
@@ -248,13 +249,21 @@ export default function Credits() {
       {/* Bouton principal */}
       <div className="px-4 mt-4 space-y-2">
         <button
-          onClick={() => navigate('/camera')}
-          className="w-full py-4 rounded-2xl font-display font-bold text-lg"
-          style={{ background: 'linear-gradient(135deg,#C9963A,#E8B96A)', color: '#2C1A0E', boxShadow: '0 4px 20px rgba(201,150,58,0.4)' }}>
+          onClick={() => credits > 0 && navigate('/camera')}
+          disabled={credits === 0}
+          className="w-full py-4 rounded-2xl font-display font-bold text-lg transition-all"
+          style={{
+            background: credits > 0 ? 'linear-gradient(135deg,#C9963A,#E8B96A)' : 'rgba(92,51,23,0.4)',
+            color: credits > 0 ? '#2C1A0E' : '#8B5E3C',
+            boxShadow: credits > 0 ? '0 4px 20px rgba(201,150,58,0.4)' : 'none',
+            border: credits > 0 ? 'none' : '1px solid rgba(201,150,58,0.2)',
+            cursor: credits === 0 ? 'not-allowed' : 'pointer',
+            opacity: credits === 0 ? 0.6 : 1,
+          }}>
           📸 Tester ma tresse 👑
         </button>
         <button
-          onClick={() => setTab(0)}
+          onClick={() => packsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
           className="w-full py-2.5 rounded-2xl font-body text-sm font-semibold"
           style={{ background: 'rgba(201,150,58,0.08)', border: '1px solid rgba(201,150,58,0.25)', color: '#C9963A' }}>
           ➕ Credits
@@ -263,7 +272,7 @@ export default function Credits() {
 
       {/* Tabs */}
       <div className="flex gap-2 px-4 mt-4">
-        {['🎯 Booster', '🤝 Gagner', '🧠 Avis'].map((label, i) => (
+        {['🤝 Parrainer', '🧠 Avis'].map((label, i) => (
           <button key={label} onClick={() => setTab(i)}
             className="flex-1 py-2.5 rounded-2xl text-xs font-body font-semibold transition-all"
             style={{ background: tab===i ? '#C9963A' : 'rgba(92,51,23,0.4)', color: tab===i ? '#2C1A0E' : '#8B5E3C', border:'1px solid rgba(201,150,58,0.15)' }}>
@@ -272,10 +281,9 @@ export default function Credits() {
         ))}
       </div>
 
-      <div className="px-4 mt-4 space-y-3">
-
-        {/* ── ACHETER ── */}
-        {tab === 0 && (
+      {/* ── PACKS toujours visibles ── */}
+      <div ref={packsRef} className="px-4 mt-4 space-y-3">
+        {true && (
           <>
             {paymentError && (
               <p className="font-body text-red-400 text-xs text-center mb-2">{paymentError}</p>
@@ -328,7 +336,7 @@ export default function Credits() {
         )}
 
         {/* ── PARRAINAGE ── */}
-        {tab === 1 && (
+        {tab === 0 && (
           <>
             {/* Mon code */}
             <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }}
@@ -410,7 +418,7 @@ export default function Credits() {
         )}
 
         {/* ── AVIS GRATUIT ── */}
-        {tab === 2 && (
+        {tab === 1 && (
           <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }}>
             {reviewDone ? (
               <div className="rounded-3xl p-8 text-center"
