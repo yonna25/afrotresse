@@ -5,6 +5,7 @@ import {
   PRICING, getCredits, addCredits, hasGivenReview,
   submitReview, getMyReferralCode, applyReferralCode, getReferralCount
 } from '../services/credits.js'
+import { sendMagicLink, getCurrentUser, getSupabaseCredits, addSupabaseCredits, ensureUserExists } from '../services/useSupabaseCredits.js'
 
 export default function Credits() {
   const navigate   = useNavigate()
@@ -20,6 +21,10 @@ export default function Credits() {
   const [pendingPackId, setPendingPackId] = useState(null)
   const [emailInput, setEmailInput] = useState('')
   const [emailSent, setEmailSent] = useState(false)
+  const [showCelebration, setShowCelebration] = useState(false)
+  const [creditsEarned, setCreditsEarned] = useState(0)
+  const [supabaseUser, setSupabaseUser] = useState(null)
+  const [magicLinkSent, setMagicLinkSent] = useState(false)
 
   const myCode = getMyReferralCode()
 
@@ -29,6 +34,23 @@ export default function Credits() {
   }, [])
 
   const refresh = () => setCredits(getCredits())
+
+  // Verifier si utilisatrice connectee via magic link
+  useEffect(() => {
+    getCurrentUser().then(async (user) => {
+      if (user) {
+        setSupabaseUser(user)
+        await ensureUserExists(user.id, user.email)
+        // Synchroniser credits Supabase vers localStorage
+        const supaCredits = await getSupabaseCredits(user.id)
+        const localCredits = getCredits()
+        if (supaCredits > localCredits) {
+          addCredits(supaCredits - localCredits)
+          refresh()
+        }
+      }
+    })
+  }, [])
 
   const handleCopy = () => {
     navigator.clipboard.writeText(myCode)
@@ -80,20 +102,75 @@ export default function Credits() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     if (params.get('payment') === 'success') {
-      const credits = parseInt(params.get('credits') || '0')
-      if (credits > 0) {
-        addCredits(credits)
+      const earned = parseInt(params.get('credits') || '0')
+      if (earned > 0) {
+        addCredits(earned)
+        setCreditsEarned(earned)
+        setShowCelebration(true)
         refresh()
+        setTimeout(() => setShowCelebration(false), 8000)
+
+        // Sauvegarder dans Supabase + envoyer magic link
+        const savedEmail = localStorage.getItem('afrotresse_email')
+        if (savedEmail) {
+          getCurrentUser().then(async (user) => {
+            if (user) {
+              await ensureUserExists(user.id, user.email)
+              await addSupabaseCredits(user.id, earned)
+            }
+          })
+          // Envoyer magic link pour securiser les credits
+          sendMagicLink(savedEmail).then(() => {
+            setMagicLinkSent(true)
+          }).catch(console.error)
+        }
       }
-      // Proposer magic link si email sauvegarde
-      const savedEmail = localStorage.getItem('afrotresse_email')
-      if (savedEmail) setEmailSent(true)
       window.history.replaceState({}, '', '/credits')
     }
   }, [])
 
   return (
     <>
+    {/* Banniere celebration apres paiement */}
+    <AnimatePresence>
+      {showCelebration && (
+        <motion.div
+          initial={{ opacity: 0, y: -80 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -80 }}
+          transition={{ type: 'spring', stiffness: 200, damping: 20 }}
+          className="fixed top-0 left-0 right-0 z-50 px-4 pt-12 pb-5"
+          style={{ background: 'linear-gradient(135deg,#C9963A,#E8B96A)', maxWidth: '430px', margin: '0 auto' }}>
+          <div className="text-center">
+            <p className="text-3xl mb-1">🎉</p>
+            <p className="font-display font-bold text-lg" style={{ color: '#2C1A0E' }}>
+              Felicitations Reine !
+            </p>
+            <p className="font-body text-sm mb-1" style={{ color: 'rgba(44,26,14,0.75)' }}>
+              Tes {creditsEarned} credits sont prets !
+            </p>
+            {magicLinkSent && (
+              <p className="font-body text-xs mb-3" style={{ color: 'rgba(44,26,14,0.6)' }}>
+                Un lien de securite a ete envoye a ton email.
+              </p>
+            )}
+            <button
+              onClick={() => { setShowCelebration(false); navigate('/camera') }}
+              className="w-full py-3 rounded-2xl font-display font-bold text-sm mb-2"
+              style={{ background: '#2C1A0E', color: '#E8B96A' }}>
+              Lancer mon analyse maintenant →
+            </button>
+            <button
+              onClick={() => setShowCelebration(false)}
+              className="font-body text-xs"
+              style={{ color: 'rgba(44,26,14,0.5)' }}>
+              Fermer
+            </button>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+
     {/* Popup email avant paiement */}
     <AnimatePresence>
       {showEmailPopup && (
