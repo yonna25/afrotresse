@@ -47,14 +47,13 @@ function WelcomePopup({ onDone }) {
         {/* Titre accrocheur */}
         <h2 className="font-display text-center font-bold mb-2"
           style={{ color: '#FAF4EC', fontSize: 'clamp(1.2rem, 5vw, 1.6rem)', lineHeight: '1.3' }}>
-          Tu hesites sur<br/>ta prochaine coiffure ?
+          Stop a l'hesitation ! ✋
         </h2>
 
         {/* Phrase emotionnelle */}
         <p className="font-body text-center text-sm mb-4 leading-relaxed"
           style={{ color: 'rgba(250,244,236,0.8)' }}>
-          Teste sur <strong style={{ color:'#E8B96A' }}>TON visage</strong> et decouvre<br/>
-          la tresse qui va te rendre magnifique aujourd'hui.
+          Trouve ta tresse ideale en 10 secondes.
         </p>
 
         {/* Champ prénom */}
@@ -64,7 +63,7 @@ function WelcomePopup({ onDone }) {
         </label>
         <input
           type="text"
-          placeholder="Ton prenom..."
+          placeholder="Ton prenom, Reine..."
           value={name}
           onChange={e => setName(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleSubmit()}
@@ -84,7 +83,7 @@ function WelcomePopup({ onDone }) {
           className="w-full py-4 rounded-2xl font-display font-bold text-base"
           style={{ background: 'linear-gradient(135deg,#C9963A,#E8B96A)', color: '#2C1A0E', boxShadow: '0 4px 20px rgba(201,150,58,0.4)' }}
         >
-          Decouvrir ma tresse parfaite 👑
+          C'est parti ! 🚀
         </button>
 
         {/* Urgence */}
