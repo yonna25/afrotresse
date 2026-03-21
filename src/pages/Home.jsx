@@ -150,7 +150,7 @@ export default function Home() {
         </div>
 
         {/* GREETING + BADGE + DOTS */}
-        <div className="absolute inset-x-0 bottom-0 z-30 px-5 pb-36">
+        <div className="absolute inset-x-0 bottom-0 z-30 px-5 pb-24">
           <motion.div
             initial={{ opacity:0, y:20 }}
             animate={{ opacity:1, y:0 }}
