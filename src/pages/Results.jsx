@@ -35,6 +35,21 @@ export default function Results() {
   const [errorMsg, setErrorMsg]       = useState("");
   const [credits, setCredits]         = useState(0);
   const resultRef = useRef(null);
+  const [waitingMsgIdx, setWaitingMsgIdx] = useState(0);
+  const [resultMsg, setResultMsg] = useState('');
+  const waitingIntervalRef = useRef(null);
+
+  const WAITING_MSGS = [
+    "Preparation de ton nouveau look... ✨",
+    "On ajuste la tresse a ton visage... 👑",
+    "Presque la... Prepare-toi a briller ! 😍",
+  ];
+
+  const RESULT_MSGS = [
+    "Waouh 😍, tu es splendide !",
+    "Regarde cette Reine ! ✨",
+    "Le style parfait pour toi. 👑",
+  ];
 
   useEffect(() => {
     const raw = sessionStorage.getItem('afrotresse_results');
@@ -60,6 +75,14 @@ export default function Results() {
     setResultImage(null);
     setIsFallback(false);
     setLoadingIdx(index);
+    setWaitingMsgIdx(0);
+    setResultMsg('');
+    // Rotation messages d'attente
+    let idx = 0;
+    waitingIntervalRef.current = setInterval(() => {
+      idx = (idx + 1) % 3;
+      setWaitingMsgIdx(idx);
+    }, 3000);
 
     try {
       const selfieBase64 = selfieUrl?.split(',')[1] || null;
@@ -71,19 +94,22 @@ export default function Results() {
       const res = await fetch('/api/falGenerate', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ selfieBase64, selfieType, styleImageUrl, faceShape, styleId: style.id }),
+        body: JSON.stringify({ selfieBase64, selfieType, styleImageUrl, faceShape, styleId: style.id, paid: true }),
       });
 
       const data = await res.json();
       if (res.status === 429) { setErrorMsg(data.error); return; }
+      clearInterval(waitingIntervalRef.current);
       useOneTest();
       setCredits(getCredits());
       setResultImage(data.imageUrl);
+      setResultMsg(RESULT_MSGS[Math.floor(Math.random() * RESULT_MSGS.length)]);
       setIsFallback(data.fallback || false);
       setTimeout(() => {
         resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
     } catch (err) {
+      clearInterval(waitingIntervalRef.current);
       console.error(err);
       setErrorMsg("Connexion impossible. Reessaie.");
     } finally {
@@ -203,7 +229,7 @@ export default function Results() {
             className="bg-[#3a2118] rounded-2xl overflow-hidden border-2 border-yellow-400">
             <div className="px-4 pt-4 pb-2">
               <h3 className="text-yellow-400 font-bold text-xl">
-                {isFallback ? 'Style similaire pour toi' : 'Magnifique !'}
+                {isFallback ? 'Style similaire pour toi' : (resultMsg || 'Magnifique !')}
               </h3>
               <p className="text-sm mt-1 font-medium" style={{ color: '#FAF4EC' }}>
                 {isFallback
@@ -325,7 +351,7 @@ export default function Results() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
                     </svg>
-                    Transformation...
+                    {WAITING_MSGS[waitingMsgIdx]}
                   </span>
                 ) : !hasCredits()
                   ? "Plus de credits"
