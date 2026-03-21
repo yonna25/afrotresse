@@ -156,8 +156,8 @@ export default function Home() {
             animate={{ opacity:1, y:0 }}
             transition={{ duration:0.5 }}>
 
-            <h1 className="font-display leading-[1.2]" style={{ fontSize:'1.7rem' }}>
-              <span style={{ color:'#FAF4EC' }} className="font-bold">Prete pour ton nouveau look,</span>
+            <h1 className="font-display leading-[1.2]" style={{ fontSize:'clamp(1.3rem, 5.5vw, 1.8rem)' }}>
+              <span style={{ color:'#FAF4EC' }} className="font-bold">{"Pr\u00eate pour ton nouveau look,"}</span>
               <br/>
               <span style={{ color:'#C9963A' }} className="font-bold">{userName} ? ✨</span>
             </h1>
