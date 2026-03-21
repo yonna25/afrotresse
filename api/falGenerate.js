@@ -31,10 +31,11 @@ export default async function handler(req, res) {
   }
   lastCallTime = now
 
-  const { selfieBase64, selfieType, styleImageUrl, faceShape, styleId } = req.body || {}
+  const { selfieBase64, selfieType, styleImageUrl, faceShape, styleId, paid } = req.body || {}
 
-  // Bouclier 4 : Pas de cle -> preset
+  // Bouclier 4 : Pas de cle -> preset (mode gratuit uniquement)
   if (!falKey) {
+    if (paid) return res.status(500).json({ error: 'Service indisponible. Reessaie.' })
     return res.status(200).json({ fallback: true, imageUrl: getPreset(faceShape) })
   }
 
@@ -66,7 +67,9 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('Fal.ai error:', error)
-    // Bouclier 2 : Fallback si Fal.ai plante
+    // Si credit payant -> erreur, pas de fallback
+    if (paid) return res.status(500).json({ error: 'Generation echouee. Reessaie dans quelques secondes.' })
+    // Bouclier 2 : Fallback si mode gratuit
     return res.status(200).json({ fallback: true, imageUrl: getPreset(faceShape) })
   }
 }
