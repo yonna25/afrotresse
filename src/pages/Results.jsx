@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { getCredits, hasCredits, useOneTest } from "../services/credits.js";
+import { getCredits, hasCredits, useOneTest, PRICING } from "../services/credits.js";
 
 const FACE_SHAPE_TEXTS = {
   oval:    "Ton visage est de forme Ovale. C'est une structure tres equilibree qui s'adapte a presque tous les styles. Pour accentuer ton regard, les tresses degagees vers l'arriere sont ideales.",
@@ -51,14 +51,15 @@ export default function Results() {
     setCredits(getCredits());
   }, []);
 
+  const hasPaidCredits = () => getCredits() > (PRICING.freeTests || 2)
+
   const handleTryStyle = async (style, index) => {
     if (!hasCredits()) { navigate('/credits'); return; }
+    if (!hasPaidCredits()) { navigate('/credits'); return; }
     setErrorMsg("");
     setResultImage(null);
     setIsFallback(false);
     setLoadingIdx(index);
-    useOneTest();
-    setCredits(getCredits());
 
     try {
       const selfieBase64 = selfieUrl?.split(',')[1] || null;
@@ -75,6 +76,8 @@ export default function Results() {
 
       const data = await res.json();
       if (res.status === 429) { setErrorMsg(data.error); return; }
+      useOneTest();
+      setCredits(getCredits());
       setResultImage(data.imageUrl);
       setIsFallback(data.fallback || false);
       setTimeout(() => {
@@ -298,9 +301,11 @@ export default function Results() {
                 style={{ background:'rgba(201,150,58,0.15)', border:'2px solid rgba(201,150,58,0.4)' }}>
                 <span className="text-xl">🪞</span>
                 <p className="font-semibold text-sm" style={{ color:'#FAF4EC' }}>
-                  {hasCredits()
+                  {!hasCredits()
+                    ? "Ne prends plus de risques - achete un pack pour te voir transformee !"
+                    : hasPaidCredits()
                     ? "Imagine-toi avec cette tresse... Visualise le rendu avant d'aller au salon !"
-                    : "Ne prends plus de risques - 1 credit pour voir ce style sur toi"}
+                    : "Tes credits gratuits sont pour decouvrir les styles. Achete un pack pour te voir transformee !"}
                 </p>
               </div>
 
@@ -309,9 +314,13 @@ export default function Results() {
                 disabled={isLoading}
                 className="w-full py-3 rounded-xl font-bold text-sm mt-2 transition-all"
                 style={{
-                  background: hasCredits() ? (isLoading ? '#a08000' : '#FFC000') : '#5a3225',
-                  color: hasCredits() ? '#000' : '#FFC000',
-                  border: hasCredits() ? 'none' : '1px solid rgba(255,192,0,0.4)',
+                  background: !hasCredits()
+                    ? '#5a3225'
+                    : hasPaidCredits()
+                    ? (isLoading ? '#a08000' : '#FFC000')
+                    : 'rgba(92,51,23,0.6)',
+                  color: !hasCredits() ? '#FFC000' : hasPaidCredits() ? '#000' : '#E8B96A',
+                  border: hasPaidCredits() && hasCredits() ? 'none' : '1px solid rgba(255,192,0,0.4)',
                 }}>
                 {isLoading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -321,9 +330,11 @@ export default function Results() {
                     </svg>
                     Transformation...
                   </span>
-                ) : hasCredits()
-                  ? "Voir ce style sur moi"
-                  : "Voir ce style sur moi (1 credit)"
+                ) : !hasCredits()
+                  ? "Plus de credits"
+                  : hasPaidCredits()
+                  ? "Me transformer"
+                  : "Essayer sur moi"
                 }
               </button>
             </div>
