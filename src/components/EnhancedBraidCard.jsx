@@ -1,7 +1,8 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState } from 'react'
+import { PRICING } from '../services/credits.js'
 
-export default function EnhancedBraidCard({ braid, index = 0, onTryStyle, isLoading = false, hasCredits = true }) {
+export default function EnhancedBraidCard({ braid, index = 0, onTryStyle, isLoading = false, canDiscover = true, canTransform = true, credits = 0 }) {
   const [zoomedImage, setZoomedImage] = useState(null)
   const [imgErrors, setImgErrors] = useState({})
 
@@ -13,6 +14,30 @@ export default function EnhancedBraidCard({ braid, index = 0, onTryStyle, isLoad
 
   const handleImageError = (view) => {
     setImgErrors(prev => ({ ...prev, [view]: true }))
+  }
+
+  // Déterminer l'état du bouton
+  const getButtonState = () => {
+    if (!canDiscover && !canTransform) {
+      return { label: 'Plus de credits', disabled: true, type: 'empty' }
+    }
+    if (canDiscover) {
+      return { label: 'Decouvrir sur moi', disabled: false, type: 'discover' }
+    }
+    if (canTransform) {
+      return { label: 'Me transformer ✨', disabled: false, type: 'transform' }
+    }
+    return { label: '🔒 Essayer sur moi', disabled: true, type: 'locked' }
+  }
+
+  const buttonState = getButtonState()
+
+  const handleClick = () => {
+    if (buttonState.type === 'discover') {
+      onTryStyle?.(braid, index, 'discover')
+    } else if (buttonState.type === 'transform') {
+      onTryStyle?.(braid, index, 'transform')
+    }
   }
 
   return (
@@ -109,22 +134,25 @@ export default function EnhancedBraidCard({ braid, index = 0, onTryStyle, isLoad
             style={{ background: 'rgba(201,150,58,0.15)', border: '2px solid rgba(201,150,58,0.4)' }}>
             <span className="text-xl">🪞</span>
             <p className="font-semibold text-sm" style={{ color: '#FAF4EC' }}>
-              {!hasCredits
+              {buttonState.type === 'empty'
                 ? "Ne prends plus de risques - achete un pack pour te voir transformee !"
+                : buttonState.type === 'discover'
+                ? "Decouvre si ce style te va vraiment. Analyse gratuite !"
                 : "Imagine-toi avec cette tresse... Visualise le rendu avant d'aller au salon !"}
             </p>
           </div>
 
           {/* Bouton */}
           <button
-            onClick={() => onTryStyle?.(braid, index)}
-            disabled={isLoading || !hasCredits}
+            onClick={handleClick}
+            disabled={isLoading || buttonState.disabled}
             className="w-full py-3 rounded-xl font-bold text-sm mt-2 transition-all"
             style={{
-              background: isLoading ? '#a08000' : '#FFC000',
+              background: isLoading ? '#a08000' : buttonState.disabled ? '#666' : '#FFC000',
               color: '#000',
               border: 'none',
-              opacity: isLoading ? 0.7 : 1,
+              opacity: isLoading ? 0.7 : buttonState.disabled ? 0.5 : 1,
+              cursor: buttonState.disabled ? 'not-allowed' : 'pointer',
             }}>
             {isLoading ? (
               <span className="flex items-center justify-center gap-2">
@@ -134,10 +162,12 @@ export default function EnhancedBraidCard({ braid, index = 0, onTryStyle, isLoad
                 </svg>
                 Preparation en cours...
               </span>
-            ) : !hasCredits
-              ? "Plus de credits"
-              : "Me transformer ✨"
-            }
+            ) : (
+              <span>
+                {buttonState.label}
+                {buttonState.type === 'transform' && ` (${PRICING.transformCost} credits)`}
+              </span>
+            )}
           </button>
         </div>
       </motion.div>
