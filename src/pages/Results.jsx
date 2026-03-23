@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { getCredits, hasCredits, useOneTest, PRICING } from "../services/credits.js";
+import EnhancedBraidCard from "../components/EnhancedBraidCard";
 
 const FACE_SHAPE_TEXTS = {
   oval:    "Ton visage est de forme Ovale. C'est une structure tres equilibree qui s'adapte a presque tous les styles. Pour accentuer ton regard, les tresses degagees vers l'arriere sont ideales.",
@@ -176,45 +177,32 @@ export default function Results() {
       {selfieUrl && (
         <div className="bg-[#3a2118] rounded-2xl p-4"
           style={{ border: '1px solid rgba(201,150,58,0.2)' }}>
-          <div className="flex items-center gap-3 mb-3">
-            <img src={selfieUrl} alt="Ton selfie" className="w-14 h-14 rounded-xl object-cover flex-shrink-0"
-              style={{ border: '2px solid rgba(201,150,58,0.4)' }}/>
-            <div>
-              <p className="text-white font-semibold text-base">Ta selection est prete ✦</p>
-              {faceShapeName && (
-                <p className="text-xs mt-0.5" style={{ color: '#C9963A' }}>
-                  Visage {faceShapeName} detecte
-                </p>
-              )}
+          <div className="flex gap-4">
+            <img src={selfieUrl} alt="Ton selfie" className="w-20 h-20 rounded-xl object-cover" />
+            <div className="flex-1">
+              <p className="text-white text-sm font-semibold mb-1">Ton visage : <span style={{ color: '#FFC000' }}>{faceShapeName}</span></p>
+              <p className="text-xs text-gray-400 leading-relaxed">{faceText}</p>
             </div>
           </div>
-          {faceText && (
-            <div className="rounded-xl px-3 py-2.5"
-              style={{ background: 'rgba(201,150,58,0.08)', border: '1px solid rgba(201,150,58,0.2)' }}>
-              <p className="text-sm leading-relaxed" style={{ color: '#FAF4EC' }}>
-                {faceText}
-              </p>
-            </div>
-          )}
         </div>
       )}
 
-      {/* Message erreur */}
+      {/* Erreur */}
       {errorMsg && (
-        <div className="bg-red-900 border border-red-500 text-red-200 text-sm px-4 py-3 rounded-xl">
-          {errorMsg}
-        </div>
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+          className="bg-red-900/30 border border-red-500/50 rounded-lg p-3">
+          <p className="text-red-200 text-sm">{errorMsg}</p>
+        </motion.div>
       )}
 
-      {/* Bannière freemium */}
+      {/* Credites epuises */}
       {!hasCredits() && (
-        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-          className="rounded-2xl p-4 text-center"
-          style={{ background: 'linear-gradient(135deg, #3a2118, #5a3225)', border: '1px solid rgba(255,192,0,0.3)' }}>
-          <p className="text-yellow-400 font-bold text-base">Ne prends plus de risques avant d'aller au salon</p>
-          <p className="text-gray-300 text-sm mt-1">Visualise le rendu final et gagne du temps avec ta coiffeuse.</p>
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+          className="bg-[#3a2118] rounded-2xl p-4 border-2 border-yellow-400">
+          <p className="text-white font-semibold mb-2">Plus de credits gratuits 💭</p>
+          <p className="text-sm text-gray-300 mb-3">Achete un pack pour continuer a explorer et transformer tes photos !</p>
           <button onClick={() => navigate('/credits')}
-            className="mt-3 px-5 py-2 rounded-full text-sm font-semibold text-black"
+            className="w-full py-3 rounded-xl font-bold text-sm"
             style={{ background: '#FFC000' }}>
             Obtenir des credits
           </button>
@@ -272,98 +260,17 @@ export default function Results() {
         </div>
       )}
 
-      {/* Cartes styles */}
-      {shuffledStyles.slice(page * 3, page * 3 + 3).map((style, index) => {
-        const imgSrc    = style.generatedImage || style.image || `/styles/${style.localImage}`;
-        const isLoading = loadingIdx === index;
-
-        return (
-          <motion.div key={style.id || index}
-            initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            className="bg-[#3a2118] rounded-2xl shadow-lg overflow-hidden">
-            <div className="relative">
-              <img src={imgSrc} alt={style.name}
-                className="w-full h-80 object-cover"
-                onError={(e) => { e.target.src = "/styles/napi1.jpg"; }}/>
-              <div className="absolute top-3 left-3 flex flex-col gap-1">
-                <div className="bg-yellow-400 text-black text-xs px-2 py-1 rounded-full font-semibold">
-                  {style.matchScore ? `${style.matchScore}% match` : '+100 vues'}
-                </div>
-                {page === 0 && (
-                  <div className="text-xs px-2 py-0.5 rounded-full font-semibold"
-                    style={{ background: 'rgba(44,26,14,0.85)', color: '#E8B96A', backdropFilter: 'blur(8px)' }}>
-                    {index === 0 ? 'Le Choix Ideal' : index === 1 ? 'Le Style Structurant' : 'La Tendance'}
-                  </div>
-                )}
-              </div>
-              {!hasCredits() && (
-                <div className="absolute inset-0 flex items-center justify-center"
-                  style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(2px)' }}>
-                  <div className="text-center">
-                    <p className="text-3xl">🔒</p>
-                    <p className="text-white text-xs font-semibold mt-1">Essai virtuel</p>
-                    <p className="text-yellow-400 text-xs">1 credit</p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="p-4 space-y-3">
-              <h3 className="text-white text-lg font-semibold">{style.name}</h3>
-              <p className="text-sm text-gray-300">
-                {style.description || "Style tendance adapte a ton visage"}
-              </p>
-              <div className="flex gap-2 flex-wrap">
-                {(style.tags || ["Moderne", "Chic", "Populaire"]).slice(0,3).map((tag, i) => (
-                  <span key={i} className="bg-[#5a3225] text-xs px-3 py-1 rounded-full text-white">
-                    {tag}
-                  </span>
-                ))}
-              </div>
-
-              {/* Message incitatif */}
-              <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl"
-                style={{ background:'rgba(201,150,58,0.15)', border:'2px solid rgba(201,150,58,0.4)' }}>
-                <span className="text-xl">🪞</span>
-                <p className="font-semibold text-sm" style={{ color:'#FAF4EC' }}>
-                  {!hasCredits()
-                    ? "Ne prends plus de risques - achete un pack pour te voir transformee !"
-                    : hasPaidCredits()
-                    ? "Imagine-toi avec cette tresse... Visualise le rendu avant d'aller au salon !"
-                    : "Tes credits gratuits sont pour decouvrir les styles. Achete un pack pour te voir transformee !"}
-                </p>
-              </div>
-
-              <button
-                onClick={() => handleTryStyle(style, index)}
-                disabled={isLoading}
-                className="w-full py-3 rounded-xl font-bold text-sm mt-2 transition-all"
-                style={{
-                  background: isLoading ? '#a08000' : '#FFC000',
-                  color: '#000',
-                  border: 'none',
-                  opacity: isLoading ? 0.7 : 1,
-                }}>
-                {isLoading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-                    </svg>
-                    {WAITING_MSGS[waitingMsgIdx]}
-                  </span>
-                ) : !hasCredits()
-                  ? "Plus de credits"
-                  : hasPaidCredits()
-                  ? "Me transformer ✨"
-                  : "🔒 Essayer sur moi"
-                }
-              </button>
-            </div>
-          </motion.div>
-        );
-      })}
+      {/* Cartes styles - ENHANCED */}
+      {shuffledStyles.slice(page * 3, page * 3 + 3).map((style, index) => (
+        <EnhancedBraidCard
+          key={style.id || index}
+          braid={style}
+          index={index}
+          onTryStyle={handleTryStyle}
+          isLoading={loadingIdx === index}
+          hasCredits={hasCredits()}
+        />
+      ))}
 
       {/* Navigation */}
       <div className="flex gap-3 mt-2">
