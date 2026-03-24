@@ -1,93 +1,98 @@
-export async function useFaceAnalysis(photoBlob, timeoutMs = 12000) {
-  try {
-    // Lazy load MediaPipe - importation correcte
-    const module = await import('@mediapipe/face_mesh')
-    const FaceMesh = module.FaceMesh
+export async function useFaceAnalysis(photoBlob, timeoutMs = 15000) {
+  return new Promise((resolve, reject) => {
+    let timeoutId
 
-    return new Promise((resolve, reject) => {
-      let timeoutId
-      const startTime = Date.now()
+    try {
+      // Lazy load MediaPipe
+      import('@mediapipe/face_mesh').then(({ FaceMesh }) => {
+        const startTime = Date.now()
 
-      // Créer canvas pour MediaPipe
-      const canvas = document.createElement('canvas')
-      const ctx = canvas.getContext('2d')
-
-      // Créer image à partir du blob
-      const img = new Image()
-      img.onload = () => {
+        // Canvas pour traiter l'image
+        const canvas = document.createElement('canvas')
+        const ctx = canvas.getContext('2d')
         canvas.width = 640
         canvas.height = 480
 
-        // Redimensionner et centrer l'image
-        const aspectRatio = img.width / img.height
-        let drawWidth, drawHeight, offsetX = 0, offsetY = 0
+        // Charger l'image
+        const img = new Image()
+        img.crossOrigin = 'anonymous'
 
-        if (aspectRatio > 640 / 480) {
-          drawWidth = 640
-          drawHeight = 640 / aspectRatio
-          offsetY = (480 - drawHeight) / 2
-        } else {
-          drawHeight = 480
-          drawWidth = 480 * aspectRatio
-          offsetX = (640 - drawWidth) / 2
+        img.onload = () => {
+          // Redimensionner l'image
+          const ratio = img.width / img.height
+          let w = 640, h = 480, x = 0, y = 0
+
+          if (ratio > 640 / 480) {
+            h = 640 / ratio
+            y = (480 - h) / 2
+          } else {
+            w = 480 * ratio
+            x = (640 - w) / 2
+          }
+
+          ctx.drawImage(img, x, y, w, h)
+
+          // Initialiser FaceMesh
+          const faceMesh = new FaceMesh({
+            locateFile: (file) =>
+              `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
+          })
+
+          faceMesh.setOptions({
+            maxNumFaces: 1,
+            refineLandmarks: true,
+            minDetectionConfidence: 0.65,
+            minTrackingConfidence: 0.65,
+          })
+
+          // Handler résultats
+          let detected = false
+          faceMesh.onResults((results) => {
+            if (!detected && results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+              detected = true
+              if (timeoutId) clearTimeout(timeoutId)
+
+              const landmarks = results.multiFaceLandmarks[0]
+              faceMesh.close()
+
+              resolve({
+                landmarks,
+                width: 640,
+                height: 480,
+                confidence: 0.85,
+                processingTime: Date.now() - startTime,
+              })
+            }
+          })
+
+          // Envoyer l'image
+          faceMesh.send({ image: canvas })
+
+          // Timeout de sécurité
+          timeoutId = setTimeout(() => {
+            faceMesh.close()
+            reject(new Error(`Timeout: MediaPipe n'a pas détecté de visage après ${timeoutMs}ms`))
+          }, timeoutMs)
         }
 
-        ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight)
+        img.onerror = () => {
+          reject(new Error('Impossible de charger l\'image'))
+        }
 
-        // Initialiser MediaPipe
-        const faceMesh = new FaceMesh({
-          locateFile: (file) =>
-            `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
-        })
-
-        faceMesh.setOptions({
-          maxNumFaces: 1,
-          refineLandmarks: true,
-          minDetectionConfidence: 0.7,
-          minTrackingConfidence: 0.7,
-        })
-
-        faceMesh.onResults((results) => {
-          const elapsed = Date.now() - startTime
-
-          // Annuler le timeout si détection OK
-          if (timeoutId) clearTimeout(timeoutId)
-
-          if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
-            const landmarks = results.multiFaceLandmarks[0]
-            resolve({
-              landmarks,
-              width: canvas.width,
-              height: canvas.height,
-              confidence: results.multiFaceDetections?.[0]?.detectionScore || 0.85,
-              processingTime: elapsed,
-            })
-          } else {
-            reject(new Error('Aucun visage détecté'))
-          }
-        })
-
-        // Process image
-        faceMesh.send({ image: canvas })
-
-        // Timeout fallback
-        timeoutId = setTimeout(() => {
-          faceMesh.close()
-          reject(new Error(`Timeout après ${timeoutMs}ms`))
-        }, timeoutMs)
-      }
-
-      img.onerror = () => reject(new Error('Erreur chargement image'))
-
-      // Charger image
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        img.src = e.target.result
-      }
-      reader.onerror = () => reject(new Error('Erreur FileReader'))
-      reader.readAsDataURL(photoBlob)
-    })
-  } catch (err) {
-    throw new Error(`MediaPipe error: ${err.message}`)
-  }
+        // Convertir blob en URL
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          img.src = e.target.result
+        }
+        reader.onerror = () => {
+          reject(new Error('Erreur lecture du fichier'))
+        }
+        reader.readAsDataURL(photoBlob)
+      }).catch((err) => {
+        reject(new Error(`Impossible de charger MediaPipe: ${err.message}`))
+      })
+    } catch (err) {
+      reject(new Error(`Erreur: ${err.message}`))
+    }
+  })
 }
