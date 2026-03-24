@@ -1,3 +1,6 @@
+import { useFaceAnalysis } from '../hooks/useFaceAnalysis.js'
+import { detectFaceShape, calculateConfidence } from '../utils/faceShapeDetector.js'
+
 export const BRAIDS_DB = [
   {
     id: 'box-braids',
@@ -201,13 +204,18 @@ const FACE_SHAPE_DESCRIPTIONS = {
 
 export async function analyzeFace(photoBlob) {
   try {
-    const formData = new FormData()
-    formData.append('photo', photoBlob, 'selfie.jpg')
-    const res = await fetch('/api/analyze', { method: 'POST', body: formData })
-    if (!res.ok) throw new Error('API error')
-    const data = await res.json()
-    return buildRecommendations(data.faceShape, data.reason, data.confidence)
-  } catch {
+    // Appeler MediaPipe local au lieu d'Anthropic
+    const result = await useFaceAnalysis(photoBlob, 8000)
+    
+    // Détecter la forme du visage à partir des landmarks
+    const faceShape = detectFaceShape(result.landmarks)
+    const confidence = calculateConfidence(result.landmarks)
+    
+    return buildRecommendations(faceShape, '', confidence)
+  } catch (err) {
+    console.error('Face analysis error:', err)
+    
+    // Fallback : attendre 2.8s puis retourner une forme aléatoire
     await new Promise(r => setTimeout(r, 2800))
     const shapes = ['oval', 'round', 'square', 'heart', 'long', 'diamond']
     const faceShape = shapes[Math.floor(Math.random() * shapes.length)]
