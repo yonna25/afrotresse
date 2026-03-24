@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { getCredits, consumeCredits, canDiscover, canTransform, PRICING, addSeenStyleId, getSeenStyleIds } from "../services/credits.js";
+import { getCredits, consumeAnalysis, consumeTransform, canAnalyze, canTransform, addSeenStyleId, getSeenStyleIds, isPaidCredit } from "../services/credits.js";
+import { addShare } from "../services/stats.js";
 import EnhancedBraidCard from "../components/EnhancedBraidCard";
 
 const FACE_SHAPE_TEXTS = {
@@ -32,6 +33,7 @@ export default function Results() {
   const [selfieUrl, setSelfieUrl]     = useState(null);
   const [loadingIdx, setLoadingIdx]   = useState(null);
   const [resultImage, setResultImage] = useState(null);
+  const [resultStyleId, setResultStyleId] = useState(null);
   const [isFallback, setIsFallback]   = useState(false);
   const [errorMsg, setErrorMsg]       = useState("");
   const [credits, setCredits]         = useState(0);
@@ -72,14 +74,15 @@ export default function Results() {
 
   const handleTryStyle = async (style, index, type = 'transform') => {
     // Vérifier les crédits selon le type
-    if (type === 'discover') {
-      if (!canDiscover()) { navigate('/credits'); return; }
+    if (type === 'analyze') {
+      if (!canAnalyze()) { navigate('/credits'); return; }
     } else if (type === 'transform') {
       if (!canTransform()) { navigate('/credits'); return; }
     }
 
     setErrorMsg("");
     setResultImage(null);
+    setResultStyleId(null);
     setIsFallback(false);
     setLoadingIdx(index);
     setWaitingMsgIdx(0);
@@ -108,7 +111,7 @@ export default function Results() {
           styleImageUrl, 
           faceShape, 
           styleId: style.id, 
-          type: type // 'discover' ou 'transform'
+          type: type // 'analyze' ou 'transform'
         }),
       });
 
@@ -117,13 +120,18 @@ export default function Results() {
 
       clearInterval(waitingIntervalRef.current);
 
-      // Consommer les crédits
-      const creditsCost = type === 'discover' ? PRICING.discoverCost : PRICING.transformCost;
-      consumeCredits(creditsCost);
+      // Consommer les crédits selon le type
+      if (type === 'analyze') {
+        consumeAnalysis()
+      } else if (type === 'transform') {
+        consumeTransform()
+      }
+      
       addSeenStyleId(style.id);
       
       setCredits(getCredits());
       setResultImage(data.imageUrl);
+      setResultStyleId(style.id);
       setResultMsg(RESULT_MSGS[Math.floor(Math.random() * RESULT_MSGS.length)]);
       setIsFallback(data.fallback || false);
 
@@ -139,13 +147,18 @@ export default function Results() {
     }
   };
 
-  const handleShare = async (text, url) => {
+  const handleShare = async (text, url, styleId) => {
     try {
       if (navigator.share) {
         await navigator.share({ title: 'AfroTresse', text, url: url || window.location.href })
       } else {
         await navigator.clipboard.writeText(text)
         alert('Lien copie dans le presse-papier !')
+      }
+      
+      // Compter le partage
+      if (styleId) {
+        addShare(styleId)
       }
     } catch (e) {
       console.log('Share cancelled or failed')
@@ -216,8 +229,8 @@ export default function Results() {
         </motion.div>
       )}
 
-      {/* Credits epuises */}
-      {!canDiscover() && (
+      {/* Credites epuises */}
+      {!canAnalyze() && !canTransform() && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
           className="bg-[#3a2118] rounded-2xl p-4 border-2 border-yellow-400">
           <p className="text-white font-semibold mb-2">Plus de credits gratuits 💭</p>
@@ -249,13 +262,13 @@ export default function Results() {
             <img src={resultImage} alt="Resultat" className="w-full object-cover"/>
             <div className="p-4 space-y-2">
               <button
-                onClick={() => handleShare("Regarde le style que j'ai choisi avec AfroTresse !", resultImage)}
+                onClick={() => handleShare("Regarde le style que j'ai choisi avec AfroTresse !", resultImage, resultStyleId)}
                 className="w-full py-3 rounded-xl text-sm font-bold"
                 style={{ background: '#FFC000', color: '#000' }}>
                 Envoyer a ma coiffeuse
               </button>
               <button
-                onClick={() => handleShare("Rejoins AfroTresse et trouve ta tresse parfaite !", window.location.origin)}
+                onClick={() => handleShare("Rejoins AfroTresse et trouve ta tresse parfaite !", window.location.origin, resultStyleId)}
                 className="w-full py-2 rounded-xl text-sm font-semibold"
                 style={{ background: 'rgba(255,192,0,0.1)', color: '#FFC000', border: '1px solid rgba(255,192,0,0.3)' }}>
                 Inviter une amie (1 essai offert)
@@ -289,7 +302,7 @@ export default function Results() {
           index={index}
           onTryStyle={handleTryStyle}
           isLoading={loadingIdx === index}
-          canDiscover={canDiscover()}
+          canAnalyze={canAnalyze()}
           canTransform={canTransform()}
           credits={credits}
         />
@@ -315,7 +328,7 @@ export default function Results() {
             onClick={() => { setPage(0); setResultImage(null); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
             className="flex-1 py-3 rounded-xl text-sm font-semibold"
             style={{ border:'1px solid rgba(255,192,0,0.3)', color:'#FFC000' }}>
-            Revoir les premiers
+            3 styles precedents
           </button>
         )}
       </div>
