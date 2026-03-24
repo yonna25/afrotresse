@@ -1,10 +1,14 @@
 import { motion, AnimatePresence } from 'framer-motion'
-import { useState } from 'react'
-import { PRICING } from '../services/credits.js'
+import { useState, useEffect } from 'react'
+import { PRICING, isPaidCredit, saveStyle, unsaveStyle, isStyleSaved } from '../services/credits.js'
+import { getStyleStats, addView, downloadStyleImage, formatNumber } from '../services/stats.js'
 
-export default function EnhancedBraidCard({ braid, index = 0, onTryStyle, isLoading = false, canDiscover = true, canTransform = true, credits = 0 }) {
+export default function EnhancedBraidCard({ braid, index = 0, onTryStyle, isLoading = false, canAnalyze = true, canTransform = true, credits = 0 }) {
   const [zoomedImage, setZoomedImage] = useState(null)
   const [imgErrors, setImgErrors] = useState({})
+  const [isSaved, setIsSaved] = useState(() => isStyleSaved(braid.id))
+  const [stats, setStats] = useState(getStyleStats(braid.id))
+  const [isDownloading, setIsDownloading] = useState(false)
 
   // Construire les noms des images
   const styleKey = braid.id?.replace(/-/g, '') || braid.name?.toLowerCase().replace(/\s+/g, '')
@@ -12,17 +16,46 @@ export default function EnhancedBraidCard({ braid, index = 0, onTryStyle, isLoad
   const backImg = `/styles/${styleKey}-back.jpg`
   const topImg = `/styles/${styleKey}-top.jpg`
 
+  // Compter la vue au montage
+  useEffect(() => {
+    addView(braid.id)
+    setStats(getStyleStats(braid.id))
+  }, [braid.id])
+
   const handleImageError = (view) => {
     setImgErrors(prev => ({ ...prev, [view]: true }))
   }
 
-  // Déterminer l'état du bouton
+  // Gérer la sauvegarde
+  const handleSaveStyle = () => {
+    if (!isPaidCredit()) return
+
+    if (isSaved) {
+      unsaveStyle(braid.id)
+      setIsSaved(false)
+    } else {
+      saveStyle(braid)
+      setIsSaved(true)
+    }
+  }
+
+  // Gérer le téléchargement
+  const handleDownload = () => {
+    setIsDownloading(true)
+    const success = downloadStyleImage(braid.id, braid.name, faceImg)
+    if (success) {
+      setStats(getStyleStats(braid.id))
+    }
+    setIsDownloading(false)
+  }
+
+  // Déterminer l'état du bouton Essayer
   const getButtonState = () => {
-    if (!canDiscover && !canTransform) {
+    if (!canAnalyze && !canTransform) {
       return { label: 'Plus de credits', disabled: true, type: 'empty' }
     }
-    if (canDiscover) {
-      return { label: 'Decouvrir sur moi', disabled: false, type: 'discover' }
+    if (canAnalyze) {
+      return { label: 'Decouvrir sur moi', disabled: false, type: 'analyze' }
     }
     if (canTransform) {
       return { label: 'Me transformer ✨', disabled: false, type: 'transform' }
@@ -33,8 +66,8 @@ export default function EnhancedBraidCard({ braid, index = 0, onTryStyle, isLoad
   const buttonState = getButtonState()
 
   const handleClick = () => {
-    if (buttonState.type === 'discover') {
-      onTryStyle?.(braid, index, 'discover')
+    if (buttonState.type === 'analyze') {
+      onTryStyle?.(braid, index, 'analyze')
     } else if (buttonState.type === 'transform') {
       onTryStyle?.(braid, index, 'transform')
     }
@@ -111,13 +144,35 @@ export default function EnhancedBraidCard({ braid, index = 0, onTryStyle, isLoad
           </div>
         </div>
 
+        {/* Badge Stats */}
+        <div className="px-4 pt-3 pb-1 flex items-center justify-between text-[10px] text-gray-400">
+          <div className="flex gap-3">
+            <span>👁️ {formatNumber(stats.views)}</span>
+            <span>📤 {formatNumber(stats.shares)}</span>
+            <span>⬇️ {formatNumber(stats.downloads)}</span>
+          </div>
+        </div>
+
         {/* Info */}
         <div className="p-4 space-y-3">
-          <div>
-            <h3 className="text-white text-lg font-semibold">{braid.name}</h3>
-            <p className="text-sm text-gray-300 mt-1">
-              {braid.description || "Style tendance adapte a ton visage"}
-            </p>
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1">
+              <h3 className="text-white text-lg font-semibold">{braid.name}</h3>
+              <p className="text-sm text-gray-300 mt-1">
+                {braid.description || "Style tendance adapte a ton visage"}
+              </p>
+            </div>
+            {/* Bouton Sauvegarder sur chaque carte */}
+            {isPaidCredit() && (
+              <motion.button
+                onClick={handleSaveStyle}
+                whileTap={{ scale: 0.9 }}
+                className="flex-shrink-0 p-2 text-2xl transition"
+                title={isSaved ? "Retirer de mes styles" : "Sauvegarder ce style"}
+              >
+                {isSaved ? '❤️' : '🤍'}
+              </motion.button>
+            )}
           </div>
 
           {/* Tags */}
@@ -134,41 +189,61 @@ export default function EnhancedBraidCard({ braid, index = 0, onTryStyle, isLoad
             style={{ background: 'rgba(201,150,58,0.15)', border: '2px solid rgba(201,150,58,0.4)' }}>
             <span className="text-xl">🪞</span>
             <p className="font-semibold text-sm" style={{ color: '#FAF4EC' }}>
-              {buttonState.type === 'empty'
+              {!canAnalyze && !canTransform
                 ? "Ne prends plus de risques - achete un pack pour te voir transformee !"
-                : buttonState.type === 'discover'
+                : canAnalyze
                 ? "Decouvre si ce style te va vraiment. Analyse gratuite !"
                 : "Imagine-toi avec cette tresse... Visualise le rendu avant d'aller au salon !"}
             </p>
           </div>
 
-          {/* Bouton */}
-          <button
-            onClick={handleClick}
-            disabled={isLoading || buttonState.disabled}
-            className="w-full py-3 rounded-xl font-bold text-sm mt-2 transition-all"
-            style={{
-              background: isLoading ? '#a08000' : buttonState.disabled ? '#666' : '#FFC000',
-              color: '#000',
-              border: 'none',
-              opacity: isLoading ? 0.7 : buttonState.disabled ? 0.5 : 1,
-              cursor: buttonState.disabled ? 'not-allowed' : 'pointer',
-            }}>
-            {isLoading ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                </svg>
-                Preparation en cours...
-              </span>
-            ) : (
-              <span>
-                {buttonState.label}
-                {buttonState.type === 'transform' && ` (${PRICING.transformCost} credits)`}
-              </span>
-            )}
-          </button>
+          {/* Boutons Essayer + Télécharger */}
+          <div className="flex gap-2">
+            <button
+              onClick={handleClick}
+              disabled={isLoading || buttonState.disabled}
+              className="flex-1 py-3 rounded-xl font-bold text-sm transition-all"
+              style={{
+                background: isLoading ? '#a08000' : buttonState.disabled ? '#666' : '#FFC000',
+                color: '#000',
+                border: 'none',
+                opacity: isLoading ? 0.7 : buttonState.disabled ? 0.5 : 1,
+                cursor: buttonState.disabled ? 'not-allowed' : 'pointer',
+              }}>
+              {isLoading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                  </svg>
+                  Preparation en cours...
+                </span>
+              ) : (
+                <span>
+                  {buttonState.label}
+                  {buttonState.type === 'transform' && ` (${PRICING.transformCost} credits)`}
+                </span>
+              )}
+            </button>
+
+            {/* Bouton Télécharger */}
+            <motion.button
+              onClick={handleDownload}
+              disabled={isDownloading}
+              whileTap={{ scale: 0.95 }}
+              className="px-4 py-3 rounded-xl font-bold text-sm transition-all"
+              style={{
+                background: 'rgba(201,150,58,0.2)',
+                color: '#FFC000',
+                border: '1px solid rgba(201,150,58,0.4)',
+                opacity: isDownloading ? 0.6 : 1,
+                cursor: isDownloading ? 'not-allowed' : 'pointer',
+              }}
+              title="Télécharger l'image du style"
+            >
+              {isDownloading ? '...' : '⬇️'}
+            </motion.button>
+          </div>
         </div>
       </motion.div>
 
