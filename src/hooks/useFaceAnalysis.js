@@ -5,9 +5,18 @@ export async function useFaceAnalysis(photoBlob, timeoutMs = 15000) {
     console.log('[useFaceAnalysis] Démarrage, timeout:', timeoutMs)
 
     try {
-      // Lazy load MediaPipe
-      import('@mediapipe/face_mesh').then(({ FaceMesh }) => {
-        console.log('[useFaceAnalysis] FaceMesh chargé avec succès')
+      // Lazy load MediaPipe - essayer différentes façons d'importer
+      import('@mediapipe/face_mesh').then((module) => {
+        console.log('[useFaceAnalysis] Module chargé:', Object.keys(module))
+        
+        // MediaPipe exporte en .default
+        const FaceMesh = module.default || module.FaceMesh
+        
+        if (!FaceMesh) {
+          throw new Error('FaceMesh non trouvé dans le module')
+        }
+
+        console.log('[useFaceAnalysis] FaceMesh obtenu, type:', typeof FaceMesh)
         const startTime = Date.now()
 
         // Canvas pour traiter l'image
@@ -42,56 +51,61 @@ export async function useFaceAnalysis(photoBlob, timeoutMs = 15000) {
 
           // Initialiser FaceMesh
           console.log('[useFaceAnalysis] Initialisation FaceMesh...')
-          const faceMesh = new FaceMesh({
-            locateFile: (file) =>
-              `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
-          })
-
-          faceMesh.setOptions({
-            maxNumFaces: 1,
-            refineLandmarks: true,
-            minDetectionConfidence: 0.65,
-            minTrackingConfidence: 0.65,
-          })
-
-          console.log('[useFaceAnalysis] FaceMesh options définies')
-
-          // Handler résultats
-          let detected = false
-          faceMesh.onResults((results) => {
-            console.log('[useFaceAnalysis] Résultats reçus', {
-              hasLandmarks: !!results.multiFaceLandmarks,
-              count: results.multiFaceLandmarks?.length || 0,
+          try {
+            const faceMesh = new FaceMesh({
+              locateFile: (file) =>
+                `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
             })
 
-            if (!detected && results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
-              detected = true
-              if (timeoutId) clearTimeout(timeoutId)
+            faceMesh.setOptions({
+              maxNumFaces: 1,
+              refineLandmarks: true,
+              minDetectionConfidence: 0.65,
+              minTrackingConfidence: 0.65,
+            })
 
-              const landmarks = results.multiFaceLandmarks[0]
-              console.log('[useFaceAnalysis] ✅ Visage détecté! Landmarks:', landmarks.length)
-              faceMesh.close()
+            console.log('[useFaceAnalysis] FaceMesh initialisé')
 
-              resolve({
-                landmarks,
-                width: 640,
-                height: 480,
-                confidence: 0.85,
-                processingTime: Date.now() - startTime,
+            // Handler résultats
+            let detected = false
+            faceMesh.onResults((results) => {
+              console.log('[useFaceAnalysis] Résultats reçus', {
+                hasLandmarks: !!results.multiFaceLandmarks,
+                count: results.multiFaceLandmarks?.length || 0,
               })
-            }
-          })
 
-          console.log('[useFaceAnalysis] Envoi de l\'image à FaceMesh...')
-          // Envoyer l'image
-          faceMesh.send({ image: canvas })
+              if (!detected && results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+                detected = true
+                if (timeoutId) clearTimeout(timeoutId)
 
-          // Timeout de sécurité
-          timeoutId = setTimeout(() => {
-            console.error('[useFaceAnalysis] ❌ TIMEOUT après', timeoutMs, 'ms')
-            faceMesh.close()
-            reject(new Error(`Timeout: MediaPipe n'a pas détecté de visage après ${timeoutMs}ms`))
-          }, timeoutMs)
+                const landmarks = results.multiFaceLandmarks[0]
+                console.log('[useFaceAnalysis] ✅ Visage détecté! Landmarks:', landmarks.length)
+                faceMesh.close()
+
+                resolve({
+                  landmarks,
+                  width: 640,
+                  height: 480,
+                  confidence: 0.85,
+                  processingTime: Date.now() - startTime,
+                })
+              }
+            })
+
+            console.log('[useFaceAnalysis] Envoi de l\'image à FaceMesh...')
+            // Envoyer l'image
+            faceMesh.send({ image: canvas })
+
+            // Timeout de sécurité
+            timeoutId = setTimeout(() => {
+              console.error('[useFaceAnalysis] ❌ TIMEOUT après', timeoutMs, 'ms')
+              faceMesh.close()
+              reject(new Error(`Timeout: MediaPipe n'a pas détecté de visage après ${timeoutMs}ms`))
+            }, timeoutMs)
+          } catch (initErr) {
+            console.error('[useFaceAnalysis] ❌ Erreur initialisation FaceMesh:', initErr)
+            reject(new Error(`Erreur FaceMesh: ${initErr.message}`))
+          }
         }
 
         img.onerror = (err) => {
