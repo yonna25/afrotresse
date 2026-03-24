@@ -50,8 +50,8 @@ function pushSessionHistory(entry) {
 export default function Results() {
   const navigate = useNavigate();
 
-  const [shuffledStyles, setShuffledStyles] = useState([]);
-  const [page, setPage]                     = useState(0);
+  // currentStyles = les 3 styles de l'analyse affich\u00e9e
+  const [currentStyles, setCurrentStyles]   = useState([]);
   const [faceShape, setFaceShape]           = useState("oval");
   const [faceShapeName, setFaceShapeName]   = useState("");
   const [selfieUrl, setSelfieUrl]           = useState(null);
@@ -63,8 +63,9 @@ export default function Results() {
   const [credits, setCredits]               = useState(0);
   const [resultMsg, setResultMsg]           = useState("");
   const [savedMap, setSavedMap]             = useState({});
-  const [sessionHistory, setSessionHistory] = useState([]);
-  const [historyIdx, setHistoryIdx]         = useState(-1);
+  // analysisPage = index base-0 de l'analyse affich\u00e9e
+  const [analysisPage, setAnalysisPage]     = useState(0);
+  const [totalAnalyses, setTotalAnalyses]   = useState(1);
 
   const resultRef          = useRef(null);
   const waitingIntervalRef = useRef(null);
@@ -75,6 +76,21 @@ export default function Results() {
     "Le style parfait pour toi. \uD83D\uDC51",
   ];
 
+  // Charger une entr\u00e9e d'historique dans la vue
+  const loadEntry = (entry, idx, total) => {
+    const styles3 = (entry.shuffled || shuffleArray(entry.recommendations || [])).slice(0, 3);
+    setCurrentStyles(styles3);
+    setFaceShape(entry.faceShape || "oval");
+    setFaceShapeName(entry.faceShapeName || "");
+    const map = {};
+    styles3.forEach(s => { map[s.id] = isStyleSaved(s.id) });
+    setSavedMap(map);
+    setAnalysisPage(idx);
+    setTotalAnalyses(total);
+    setResultImage(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   useEffect(() => {
     const raw = sessionStorage.getItem("afrotresse_results");
     if (raw) {
@@ -83,10 +99,7 @@ export default function Results() {
       const seen     = getSeenStyleIds();
       const filtered = recs.filter(r => !seen.includes(r.id));
       const shuffled = shuffleArray(filtered);
-
-      setShuffledStyles(shuffled);
-      setFaceShape(parsed.faceShape || "oval");
-      setFaceShapeName(parsed.faceShapeName || "");
+      const styles3  = shuffled.slice(0, 3);
 
       const entry = {
         ts:            Date.now(),
@@ -95,10 +108,19 @@ export default function Results() {
         shuffled,
       };
       pushSessionHistory(entry);
-      setSessionHistory(getSessionHistory());
+
+      const hist  = getSessionHistory();
+      const total = hist.length;
+      const idx   = total - 1; // toujours pointer sur la derni\u00e8re analyse
+
+      setCurrentStyles(styles3);
+      setFaceShape(entry.faceShape);
+      setFaceShapeName(entry.faceShapeName);
+      setAnalysisPage(idx);
+      setTotalAnalyses(total);
 
       const map = {};
-      shuffled.forEach(s => { map[s.id] = isStyleSaved(s.id) });
+      styles3.forEach(s => { map[s.id] = isStyleSaved(s.id) });
       setSavedMap(map);
     }
     const photo = sessionStorage.getItem("afrotresse_photo");
@@ -108,49 +130,21 @@ export default function Results() {
 
   const handleSaveStyle = (style) => {
     if (!isPaidCredit()) return;
-    const ok = saveStyle(style);
-    if (ok) setSavedMap(prev => ({ ...prev, [style.id]: true }));
-  };
-
-  const totalHistory = sessionHistory.length;
-  const totalPages   = Math.ceil(shuffledStyles.length / 3) || 1;
-  const historyPos   = historyIdx === -1 ? totalHistory : historyIdx + 1;
-  const isOnFirst    = historyIdx === 0 || (historyIdx === -1 && totalHistory <= 1);
-  const isOnLatest   = historyIdx === -1;
-
-  const loadEntry = (entry) => {
-    const shuffled = entry.shuffled || shuffleArray(entry.recommendations || []);
-    setShuffledStyles(shuffled);
-    setFaceShape(entry.faceShape);
-    setFaceShapeName(entry.faceShapeName);
-    const map = {};
-    shuffled.forEach(s => { map[s.id] = isStyleSaved(s.id) });
-    setSavedMap(map);
-    setPage(0);
-    setResultImage(null);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    if (saveStyle(style)) setSavedMap(prev => ({ ...prev, [style.id]: true }));
   };
 
   const goToPrev = () => {
-    const hist = getSessionHistory();
-    const cur  = historyIdx === -1 ? hist.length - 1 : historyIdx;
-    const prev = cur - 1;
-    if (prev < 0) return;
-    loadEntry(hist[prev]);
-    setHistoryIdx(prev);
+    if (analysisPage <= 0) return;
+    const hist   = getSessionHistory();
+    const newIdx = analysisPage - 1;
+    loadEntry(hist[newIdx], newIdx, hist.length);
   };
 
   const goToNext = () => {
-    const hist = getSessionHistory();
-    const cur  = historyIdx === -1 ? hist.length - 1 : historyIdx;
-    const next = cur + 1;
-    if (next >= hist.length) {
-      loadEntry(hist[hist.length - 1]);
-      setHistoryIdx(-1);
-      return;
-    }
-    loadEntry(hist[next]);
-    setHistoryIdx(next);
+    const hist   = getSessionHistory();
+    if (analysisPage >= hist.length - 1) return;
+    const newIdx = analysisPage + 1;
+    loadEntry(hist[newIdx], newIdx, hist.length);
   };
 
   const handleTryStyle = async (style, index, type = "transform") => {
@@ -161,9 +155,7 @@ export default function Results() {
     setIsFallback(false); setLoadingIdx(index); setResultMsg("");
 
     let idx = 0;
-    waitingIntervalRef.current = setInterval(() => {
-      idx = (idx + 1) % 3;
-    }, 3000);
+    waitingIntervalRef.current = setInterval(() => { idx = (idx + 1) % 3; }, 3000);
 
     try {
       const selfieBase64  = selfieUrl?.split(",")[1] || null;
@@ -213,7 +205,7 @@ export default function Results() {
 
   const faceText = FACE_SHAPE_TEXTS[faceShape] || "";
 
-  if (!shuffledStyles.length) return (
+  if (!currentStyles.length) return (
     <div className="min-h-screen bg-[#2b1810] flex items-center justify-center">
       <div className="text-center px-6">
         <p className="text-4xl mb-4">\uD83D\uDC86\uD83C\uDFFE\u200D\u2640\uFE0F</p>
@@ -253,36 +245,6 @@ export default function Results() {
         </button>
       </div>
 
-      {/* Navigation historique — visible si 2+ analyses dans la session */}
-      {totalHistory > 1 && (
-        <div className="flex items-center justify-between bg-[#3a2118] rounded-xl px-3 py-2"
-          style={{ border: "1px solid rgba(201,150,58,0.3)" }}>
-          <button
-            onClick={goToPrev}
-            disabled={isOnFirst}
-            className="flex items-center gap-1 px-3 py-2 rounded-lg font-bold disabled:opacity-30"
-            style={{ color: "#FFC000", background: "rgba(255,192,0,0.12)", fontSize: 14, minWidth: 110 }}>
-            <svg viewBox="0 0 24 24" style={{ width: 16, height: 16, flexShrink: 0 }} fill="none" stroke="currentColor" strokeWidth="2.5">
-              <polyline points="15 18 9 12 15 6"/>
-            </svg>
-            <span>Pr\u00e9c\u00e9dent</span>
-          </button>
-          <span style={{ color: "rgba(232,185,106,0.9)", fontSize: 13, fontWeight: 600 }}>
-            {historyPos} / {totalHistory}
-          </span>
-          <button
-            onClick={goToNext}
-            disabled={isOnLatest}
-            className="flex items-center gap-1 px-3 py-2 rounded-lg font-bold disabled:opacity-30"
-            style={{ color: "#FFC000", background: "rgba(255,192,0,0.12)", fontSize: 14, minWidth: 110, justifyContent: "flex-end" }}>
-            <span>Suivant</span>
-            <svg viewBox="0 0 24 24" style={{ width: 16, height: 16, flexShrink: 0 }} fill="none" stroke="currentColor" strokeWidth="2.5">
-              <polyline points="9 18 15 12 9 6"/>
-            </svg>
-          </button>
-        </div>
-      )}
-
       {/* Selfie + analyse visage */}
       {selfieUrl && (
         <div className="bg-[#3a2118] rounded-2xl p-4"
@@ -296,6 +258,36 @@ export default function Results() {
               <p className="text-xs text-gray-400 leading-relaxed">{faceText}</p>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Barre navigation analyses — juste sous le bloc visage, visible si 2+ analyses */}
+      {totalAnalyses > 1 && (
+        <div className="flex items-center justify-between bg-[#3a2118] rounded-xl px-3 py-2"
+          style={{ border: "1px solid rgba(201,150,58,0.3)" }}>
+          <button
+            onClick={goToPrev}
+            disabled={analysisPage === 0}
+            className="flex items-center gap-1 px-3 py-2 rounded-lg font-bold disabled:opacity-30"
+            style={{ color: "#FFC000", background: "rgba(255,192,0,0.12)", fontSize: 14, minWidth: 110 }}>
+            <svg viewBox="0 0 24 24" style={{ width: 16, height: 16, flexShrink: 0 }} fill="none" stroke="currentColor" strokeWidth="2.5">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+            <span>Retour</span>
+          </button>
+          <span style={{ color: "rgba(232,185,106,0.9)", fontSize: 14, fontWeight: 700 }}>
+            {analysisPage + 1} / {totalAnalyses}
+          </span>
+          <button
+            onClick={goToNext}
+            disabled={analysisPage >= totalAnalyses - 1}
+            className="flex items-center gap-1 px-3 py-2 rounded-lg font-bold disabled:opacity-30"
+            style={{ color: "#FFC000", background: "rgba(255,192,0,0.12)", fontSize: 14, minWidth: 110, justifyContent: "flex-end" }}>
+            <span>Suivant</span>
+            <svg viewBox="0 0 24 24" style={{ width: 16, height: 16, flexShrink: 0 }} fill="none" stroke="currentColor" strokeWidth="2.5">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
         </div>
       )}
 
@@ -360,20 +352,18 @@ export default function Results() {
         )}
       </AnimatePresence>
 
-      {/* Labels page 0 */}
-      {page === 0 && (
-        <div className="flex gap-2">
-          {["Le Choix Id\u00e9al", "Le Style Structurant", "La Tendance"].map((label, i) => (
-            <div key={i} className="flex-1 text-center py-1.5 rounded-xl text-xs font-semibold"
-              style={{ background: "rgba(201,150,58,0.1)", color: "#C9963A", border: "1px solid rgba(201,150,58,0.2)" }}>
-              {label}
-            </div>
-          ))}
-        </div>
-      )}
+      {/* Labels */}
+      <div className="flex gap-2">
+        {["Le Choix Id\u00e9al", "Le Style Structurant", "La Tendance"].map((label, i) => (
+          <div key={i} className="flex-1 text-center py-1.5 rounded-xl text-xs font-semibold"
+            style={{ background: "rgba(201,150,58,0.1)", color: "#C9963A", border: "1px solid rgba(201,150,58,0.2)" }}>
+            {label}
+          </div>
+        ))}
+      </div>
 
-      {/* Cartes styles */}
-      {shuffledStyles.slice(page * 3, page * 3 + 3).map((style, index) => (
+      {/* Cartes styles — toujours 3 fixes */}
+      {currentStyles.map((style, index) => (
         <div key={style.id || index}>
           <EnhancedBraidCard
             braid={style}
@@ -407,29 +397,6 @@ export default function Results() {
           )}
         </div>
       ))}
-
-      {/* Pagination styles — visible si plusieurs pages */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-4 pt-1">
-          <button
-            onClick={() => { setPage(p => p - 1); setResultImage(null); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-            disabled={page === 0}
-            className="px-4 py-2 rounded-xl text-sm font-bold disabled:opacity-30"
-            style={{ color: "#FFC000", background: "rgba(255,192,0,0.1)", border: "1px solid rgba(255,192,0,0.25)" }}>
-            &laquo; Retour
-          </button>
-          <span style={{ color: "rgba(232,185,106,0.8)", fontSize: 13, fontWeight: 600 }}>
-            Page {page + 1} / {totalPages}
-          </span>
-          <button
-            onClick={() => { setPage(p => p + 1); setResultImage(null); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-            disabled={page >= totalPages - 1}
-            className="px-4 py-2 rounded-xl text-sm font-bold disabled:opacity-30"
-            style={{ color: "#FFC000", background: "rgba(255,192,0,0.1)", border: "1px solid rgba(255,192,0,0.25)" }}>
-            Suite &raquo;
-          </button>
-        </div>
-      )}
 
     </div>
   );
