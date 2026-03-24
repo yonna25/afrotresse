@@ -11,7 +11,7 @@ const STEPS = [
   { text: 'Voici tes tresses ideales...', icon: '😍', pct: 98 },
 ]
 
-const MEDIAPIPE_STEP = { text: 'Initialisation MediaPipe en cours...', icon: '⚙️', pct: 10 }
+const MEDIAPIPE_STEP = { text: 'Voici tes tresses idéales...', icon: '⚙️', pct: 10 }
 
 export default function Analyze() {
   const navigate  = useNavigate()
