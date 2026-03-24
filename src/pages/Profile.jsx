@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import BraidCard from '../components/BraidCard.jsx'
 import { useProfile } from '../hooks/useProfile.js'
+import { getTotalUsed, getSavedStyles } from '../services/credits.js'
 
 const AVATARS = ['👩🏾','👩🏿','👩🏽','👸🏾','👸🏿','💁🏾‍♀️','💆🏾‍♀️','🧕🏾']
 
@@ -58,6 +59,7 @@ export default function Profile() {
   const navigate = useNavigate()
   const { name, displayName, setName, avatar, setAvatar } = useProfile()
   const [saved,       setSaved]       = useState([])
+  const [totalUsed,   setTotalUsed]   = useState(0)
   const [tab,         setTab]         = useState(0)
   const [copied,      setCopied]      = useState(false)
   const [editingName, setEditingName] = useState(false)
@@ -73,9 +75,10 @@ export default function Profile() {
   )[0]
 
   useEffect(() => {
-    const s = JSON.parse(localStorage.getItem('afrotresse_saved') || '[]')
+    const s = getSavedStyles()
     setSaved(s)
     setNameInput(name)
+    setTotalUsed(getTotalUsed())
   }, [name])
 
   const handleSaveName = () => {
@@ -146,6 +149,9 @@ export default function Profile() {
                 </p>
                 <p className="font-body text-xs mt-0.5 tracking-widest uppercase" style={{ color: LUXURY_STYLE.goldText }}>
                   Membre AfroTresse ✦
+                </p>
+                <p className="font-body text-xs mt-1" style={{ color: 'rgba(232,185,106,0.6)' }}>
+                  {totalUsed} analyse{totalUsed > 1 ? 's' : ''} réalisée{totalUsed > 1 ? 's' : ''}
                 </p>
               </button>
             )}
