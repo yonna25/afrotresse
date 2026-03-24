@@ -2,8 +2,8 @@
 export const PRICING = {
   currency:     'FCFA',
   packs: [
-    { id: 'starter', label: '3 essais',         credits: 6,  price: 500,  popular: false },
-    { id: 'plus',    label: '10 essais',        credits: 20, price: 1500, popular: true  },
+    { id: 'starter', label: '3 essais',         credits: 3,  price: 500,  popular: false },
+    { id: 'plus',    label: '10 essais',        credits: 10, price: 1500, popular: true  },
     { id: 'pro',     label: 'Abonnement mensuel',credits: 99, price: 2500, popular: false, monthly: true },
   ],
   referral: {
@@ -13,8 +13,8 @@ export const PRICING = {
   },
   freeCredits:    2,    // crédits gratuits à l'inscription
   reviewBonus:    2,    // crédits offerts après avis
-  discoverCost:   1,    // 1 crédit = Anthropic (analyse + recommandations)
-  transformCost:  2,    // 2 crédits = Fal.ai (voir coiffure sur moi)
+  analysisCost:   1,    // 1 crédit = Analyse visage + 3 styles
+  transformCost:  2,    // 2 crédits = Transformation Fal.ai
 }
 
 // ─── Clés localStorage ───────────────────────────────────────────
@@ -25,6 +25,7 @@ const KEY_REF_CODE      = 'afrotresse_ref_code'
 const KEY_REF_BY        = 'afrotresse_ref_by'
 const KEY_REFERRALS     = 'afrotresse_referrals'
 const KEY_SEEN_STYLES   = 'afrotresse_seen_styles'
+const KEY_SAVED_STYLES  = 'afrotresse_saved_styles' // localStorage permanent
 
 // ─── Lecture / écriture crédits ──────────────────────────────────
 export function getCredits() {
@@ -50,16 +51,31 @@ export function consumeCredits(amount) {
   return true
 }
 
-export function hasCredits() {
-  return getCredits() > 0
-}
-
-export function canDiscover() {
-  return getCredits() >= PRICING.discoverCost
+// ─── Vérifications capacités ────────────────────────────────────
+export function canAnalyze() {
+  return getCredits() >= PRICING.analysisCost
 }
 
 export function canTransform() {
   return getCredits() >= PRICING.transformCost
+}
+
+export function hasCredits() {
+  return getCredits() > 0
+}
+
+// ─── Consommation spécifique ────────────────────────────────────
+export function consumeAnalysis() {
+  return consumeCredits(PRICING.analysisCost)
+}
+
+export function consumeTransform() {
+  return consumeCredits(PRICING.transformCost)
+}
+
+// ─── Vérifier si c'est un crédit payant ────────────────────────
+export function isPaidCredit() {
+  return getCredits() > PRICING.freeCredits
 }
 
 export function getTotalUsed() {
@@ -82,6 +98,39 @@ export function addSeenStyleId(styleId) {
 
 export function resetSeenStyles() {
   localStorage.removeItem(KEY_SEEN_STYLES)
+}
+
+// ─── Gestion styles sauvegardés (localStorage permanent) ─────────
+export function getSavedStyles() {
+  const raw = localStorage.getItem(KEY_SAVED_STYLES)
+  return raw ? JSON.parse(raw) : []
+}
+
+export function saveStyle(style) {
+  // Sauvegarder seulement si crédit payant
+  if (!isPaidCredit()) return false
+
+  const saved = getSavedStyles()
+  const exists = saved.find(s => s.id === style.id)
+  
+  if (!exists) {
+    saved.push({
+      ...style,
+      savedAt: new Date().toISOString(),
+    })
+    localStorage.setItem(KEY_SAVED_STYLES, JSON.stringify(saved))
+  }
+  return true
+}
+
+export function unsaveStyle(styleId) {
+  const saved = getSavedStyles()
+  const filtered = saved.filter(s => s.id !== styleId)
+  localStorage.setItem(KEY_SAVED_STYLES, JSON.stringify(filtered))
+}
+
+export function isStyleSaved(styleId) {
+  return getSavedStyles().some(s => s.id === styleId)
 }
 
 // ─── Avis / témoignage ───────────────────────────────────────────
