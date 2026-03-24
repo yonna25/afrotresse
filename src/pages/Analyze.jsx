@@ -68,6 +68,7 @@ export default function Analyze() {
         const stamped = { ...result, _ts: Date.now() }
         sessionStorage.setItem('afrotresse_results', JSON.stringify(stamped))
         consumeAnalysis()
+        localStorage.setItem('afrotresse_used_tests', String(parseInt(localStorage.getItem('afrotresse_used_tests') || '0', 10) + 1))
         setTimeout(() => navigate('/results'), 400)
       } catch (err) {
         console.error('Analysis failed:', err)
@@ -79,6 +80,7 @@ export default function Analyze() {
         const stamped2 = { ...result, _ts: Date.now() }
         sessionStorage.setItem('afrotresse_results', JSON.stringify(stamped2))
         consumeAnalysis()
+        localStorage.setItem('afrotresse_used_tests', String(parseInt(localStorage.getItem('afrotresse_used_tests') || '0', 10) + 1))
         setTimeout(() => navigate('/results'), 400)
       }
     }
