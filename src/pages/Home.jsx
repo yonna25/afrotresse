@@ -1,4 +1,3 @@
-import ArrowHint from "../components/ArrowHint";
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -61,13 +60,7 @@ function TickerBar() {
             boxShadow: '0 4px 24px rgba(201,150,58,0.6)',
           }}>
           Analyser mon visage 🤳🏿
-          <div className="relative flex flex-col items-center mt-10">
-  <ArrowHint />
-  <button className="bg-black text-white px-6 py-3 rounded-lg mt-4">
-    Analyser mon visage
-  </button>
-</div>
-        </motion.button>
+         </motion.button>
       </div>
       </div>
     </div>
