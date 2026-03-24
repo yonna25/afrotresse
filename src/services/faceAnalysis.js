@@ -215,11 +215,9 @@ export async function analyzeFace(photoBlob) {
   } catch (err) {
     console.error('Face analysis error:', err)
     
-    // Fallback : attendre 2.8s puis retourner une forme aléatoire
+    // Fallback : forme ovale par defaut (stable, non aleatoire)
     await new Promise(r => setTimeout(r, 2800))
-    const shapes = ['oval', 'round', 'square', 'heart', 'long', 'diamond']
-    const faceShape = shapes[Math.floor(Math.random() * shapes.length)]
-    return buildRecommendations(faceShape, '', 0.75)
+    return buildRecommendations('oval', '', 0.75)
   }
 }
 
