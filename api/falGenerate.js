@@ -30,6 +30,10 @@ export default async function handler(req, res) {
     // Upload selfie vers Fal storage
     const selfieUrl = await fal.storage.upload(file);
 
+    // Debug — visible dans les logs Vercel
+    console.log("selfieUrl envoyé à Fal:", selfieUrl);
+    console.log("styleImageUrl envoyé à Fal:", absoluteStyleImageUrl);
+
     // Génération
     const result = await fal.subscribe("fal-ai/image-apps-v2/hair-change", {
       input: {
