@@ -46,16 +46,34 @@ export default async function handler(req, res) {
     });
 
     console.log("📥 Réponse Fal reçue");
+    console.log("Réponse complète:", JSON.stringify(result));
 
-    const imageUrl = result?.data?.image?.url;
+    // Chercher l'URL à plusieurs endroits possibles
+    const imageUrl = result?.data?.image?.url 
+      || result?.data?.images?.[0]?.url
+      || result?.data?.output?.url
+      || result?.data?.result?.url
+      || result?.data?.url
+      || result?.image?.url
+      || result?.output?.url;
+
     if (!imageUrl) {
-      return res.status(500).json({ error: "Fal n'a pas retourné d'image" });
+      console.error("❌ Pas d'image trouvée. Réponse complète:", JSON.stringify(result));
+      return res.status(500).json({ 
+        error: "Fal n'a pas retourné d'image",
+        details: JSON.stringify(result)
+      });
     }
 
+    console.log("✨ Image générée:", imageUrl);
     return res.status(200).json({ imageUrl });
 
   } catch (err) {
     console.error("❌ Erreur:", err.message);
-    return res.status(500).json({ error: err.message });
+    console.error("Stack:", err.stack);
+    return res.status(500).json({ 
+      error: err.message,
+      type: err.name
+    });
   }
 }
