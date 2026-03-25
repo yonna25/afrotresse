@@ -75,19 +75,16 @@ export default function Results() {
       const selfieType    = selfieUrl?.match(/:(.*?);/)?.[1] || "image/jpeg";
 
       // Construire l'URL de l'image de référence du style
-      let styleImageUrl;
-      if (style.localImage) {
-        styleImageUrl = window.location.origin + "/styles/" + style.localImage;
-      } else if (style.image) {
-        styleImageUrl = style.image.startsWith("http")
-          ? style.image
-          : window.location.origin + style.image;
-      } else {
+      const rawImage = style.views?.face || style.localImage || style.image;
+      if (!rawImage) {
         setErrorMsg("Image de coiffure introuvable.");
         clearInterval(waitingIntervalRef.current);
         setLoadingId(null);
         return;
       }
+      const styleImageUrl = rawImage.startsWith("http")
+        ? rawImage
+        : window.location.origin + rawImage;
 
       const res  = await fetch("/api/falGenerate", {
         method:  "POST",
