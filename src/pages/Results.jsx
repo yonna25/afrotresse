@@ -75,7 +75,7 @@ export default function Results() {
       const selfieType    = selfieUrl?.match(/:(.*?);/)?.[1] || "image/jpeg";
 
       // Construire l'URL de l'image de référence du style
-      const rawImage = style.views?.face || style.localImage || style.image;
+      const rawImage = style.views?.top || style.views?.face || style.localImage || style.image;
       if (!rawImage) {
         setErrorMsg("Image de coiffure introuvable.");
         clearInterval(waitingIntervalRef.current);
