@@ -22,15 +22,15 @@ export function detectFaceShape(landmarks) {
     const jawRight = landmarks[454]   // Mâchoire droite
 
     // Calculer les distances
-    const faceHeight = forehead.y - chin.y
+    // Y est inversé dans MediaPipe : chin.y > forehead.y → abs() pour valeur positive
+    const faceHeight = Math.abs(chin.y - forehead.y)
     const faceWidth = Math.abs(rightTemple.x - leftTemple.x)
     const jawWidth = Math.abs(jawRight.x - jawLeft.x)
-    const cheekHeight = forehead.y - leftCheek.y
+    const cheekWidth = Math.abs(rightCheek.x - leftCheek.x)
 
     // Calculer les ratios
     const heightWidthRatio = faceHeight / faceWidth
     const jawFaceRatio = jawWidth / faceWidth
-    const cheekFaceRatio = leftCheek.x - leftTemple.x // largeur joue
 
     // Déterminer la forme basée sur les ratios
     let shape = 'oval' // Fallback
@@ -47,7 +47,6 @@ export function detectFaceShape(landmarks) {
       }
     } else if (jawFaceRatio > 0.9) {
       // Mâchoire proéminente (carrée ou diamant)
-      const cheekWidth = rightCheek.x - leftCheek.x
       if (cheekWidth > faceWidth * 0.6) {
         shape = 'diamond'
       } else {
