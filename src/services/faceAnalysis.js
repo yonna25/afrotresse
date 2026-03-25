@@ -2,7 +2,7 @@ import { useFaceAnalysis } from '../hooks/useFaceAnalysis.js'
 import { detectFaceShape, calculateConfidence } from '../utils/faceShapeDetector.js'
 
 export const BRAIDS_DB = [
-    {
+{
     id: 'box-braids',
     name: 'Box Braids',
     description: 'Intemporelles et polyvalentes, parfaites pour tous types de visages. Protectrices et elegantes.',
@@ -98,9 +98,11 @@ export async function analyzeFace(photoBlob) {
   } catch (err) {
     console.error('Face analysis error:', err)
     
-    // Fallback : forme ovale par defaut (stable, non aleatoire)
+    // Fallback : attendre 2.8s puis retourner une forme aléatoire
     await new Promise(r => setTimeout(r, 2800))
-    return buildRecommendations('oval', '', 0.75)
+    const shapes = ['oval', 'round', 'square', 'heart', 'long', 'diamond']
+    const faceShape = shapes[Math.floor(Math.random() * shapes.length)]
+    return buildRecommendations(faceShape, '', 0.75)
   }
 }
 
