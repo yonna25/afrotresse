@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { getCredits, consumeCredits, addSeenStyleId, getSeenStyleIds } from "../services/credits.js";
@@ -19,9 +19,12 @@ export default function Results() {
   const [credits, setCredits] = useState(getCredits());
   const [saveCount, setSaveCount] = useState(0);
 
+  // UX : Récupération du prénom de l'utilisatrice
+  const userName = localStorage.getItem('afrotresse_user_name') || 'Reine';
   const faceShape = localStorage.getItem("afrotresse_face_shape") || "oval";
   const selfieUrl = sessionStorage.getItem('afrotresse_photo') || localStorage.getItem('afrotresse_selfie');
 
+  // Logique : Strictement 3 styles par analyse
   const currentResults = useMemo(() => {
     const seenIds = getSeenStyleIds();
     const available = BRAIDS_DB.filter(s => s.faceShapes.includes(faceShape));
@@ -33,6 +36,7 @@ export default function Results() {
     return sorted.slice(0, 3);
   }, [faceShape]);
 
+  // Logique : Sauvegarde (1 crédit = 3 images)
   const handleSave = (imageUrl) => {
     if (credits < 1 && saveCount === 0) { navigate("/credits"); return; }
     const link = document.createElement('a'); link.href = imageUrl; link.download = `afrotresse-${Date.now()}.jpg`; link.click();
@@ -43,7 +47,7 @@ export default function Results() {
   return (
     <div className="min-h-screen bg-[#2C1A0E] text-[#FAF4EC] p-5 pb-32 overflow-x-hidden relative">
       
-      {/* HEADER : Selfie + Analyse */}
+      {/* HEADER OPTIMISÉ UX : Selfie + Prénom + Analyse */}
       <div className="mb-10 flex flex-row gap-5 items-center bg-white/5 p-5 rounded-[2rem] border border-white/10 shadow-2xl">
         <div className="relative shrink-0">
           {selfieUrl ? (
@@ -55,7 +59,8 @@ export default function Results() {
         </div>
         
         <div className="flex flex-col flex-1">
-          <h1 className="font-display font-bold text-2xl text-[#C9963A]">Résultats</h1>
+          {/* UX : Titre personnalisé */}
+          <h1 className="font-display font-bold text-2xl text-[#C9963A]">Pour toi, {userName} ✨</h1>
           <p className="text-[11px] opacity-80 font-body leading-tight mt-1 max-w-xs italic">
             {FACE_SHAPE_TEXTS[faceShape]}
           </p>
@@ -96,8 +101,40 @@ export default function Results() {
         ))}
       </div>
 
-      {/* BANDE STICKER : SOLDE CRÉDIT (Position Haut Droite) */}
+      {/* STICKER CRÉDIT OPTIMISÉ UI : Petit Carré Haut Droite */}
       <motion.div 
-        initial={{ x: 100, opacity: 0 }} animate={{ x: 0, opacity: 1 }}
+        initial={{ x: 50, opacity: 0 }} animate={{ x: 0, opacity: 1 }}
         onClick={() => navigate("/credits")}
-        className="fixed top-24 right-4 z-40 bg-[#C9963A] text-[#2C1A0E] px
+        className="fixed top-24 right-4 z-40 bg-[#C9963A] text-[#2C1A0E] w-16 h-16 rounded-2xl flex flex-col items-center justify-center shadow-2xl border-2 border-[#2C1A0E]/20 active:scale-95 transition-all"
+      >
+        <div className="text-[8px] font-black uppercase opacity-70">Solde</div>
+        <div className="text-3xl font-display font-black leading-none">{credits}</div>
+        <div className="text-[7px] font-bold">CRÉDITS</div>
+        
+        {saveCount > 0 && (
+          <div className="absolute -bottom-2 -left-2 bg-[#2C1A0E] text-[#C9963A] text-[8px] font-black px-1.5 py-0.5 rounded-md border border-[#C9963A]/20">
+            Save: {saveCount}/3
+          </div>
+        )}
+      </motion.div>
+
+      {/* LIGHTBOX ZOOM */}
+      <AnimatePresence>
+        {zoomImage && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black/98 flex flex-col items-center justify-center p-6 backdrop-blur-xl"
+            onClick={() => setZoomImage(null)}
+          >
+            <motion.img initial={{ scale: 0.9 }} animate={{ scale: 1 }} src={zoomImage} className="max-w-full max-h-[70vh] rounded-3xl shadow-2xl border border-white/10 object-contain" onClick={(e) => e.stopPropagation()} />
+            <div className="mt-10 flex gap-4 w-full max-w-xs">
+              <button onClick={(e) => { e.stopPropagation(); handleSave(zoomImage); }} className="flex-1 py-4 bg-[#C9963A] text-[#2C1A0E] rounded-2xl font-black shadow-xl flex items-center justify-center gap-2">📥 Sauvegarder</button>
+              <button onClick={() => setZoomImage(null)} className="px-6 py-4 bg-white/10 text-white rounded-2xl font-bold backdrop-blur-md border border-white/10">✕</button>
+            </div>
+            <p className="text-[10px] text-white/40 mt-4 uppercase font-bold tracking-widest">3 saves = 1 crédit</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
