@@ -5,212 +5,141 @@ import { motion, AnimatePresence } from 'framer-motion'
 const SLIDES = [
   { id:1, image:'/Afrotresse1.jpg', style:'Knotless Braids', badge:'⚡ TENDANCE #1', accent:'#C9963A' },
   { id:2, image:'/Afrotresse2.jpg', style:'Box Braids',      badge:'🔥 POPULAIRE',   accent:'#E8B96A' },
-  { id:3, image:'/Afrotresse3.jpg', style:'Cornrows',        badge:'✨ COUP DE CŒUR',accent:'#C9963A' },
+  { id:3, image:'/Afrotresse3.jpg', style:'Cornrows',        badge:'✨ COUP DE C\u0152UR', accent:'#C9963A' },
   { id:4, image:'/Afrotresse4.jpg', style:'Fulani Braids',   badge:'👑 PREMIUM',     accent:'#E8B96A' },
   { id:5, image:'/Afrotresse5.jpg', style:'Senegalese Twist',badge:'💛 CLASSIQUE',   accent:'#C9963A' },
-  { id:6, image:'/Afrotresse6.jpg', style:'Ghana Braids',    badge:'🌟 NOUVEAUTE',   accent:'#E8B96A' },
+  { id:6, image:'/Afrotresse6.jpg', style:'Ghana Braids',    badge:'\ud83c\udf1f NOUVEAUT\u00c9', accent:'#E8B96A' },
 ]
 
-// ─── Messages promo défilants ───
 const TICKER_MESSAGES = [
-  '🎉 Offre spéciale : 3 essais virtuels au prix de 2 — Ce weekend seulement !',
-  '👑 Rejoins +500 reines qui ont trouvé leur tresse parfaite',
-  '💛 -20% sur ton premier pack de crédits avec le code AFRO20',
-  '✨ Nouveau style disponible : Butterfly Locs — Découvre-le maintenant',
-  '🌍 La beauté africaine célébrée à travers 25 styles panafricains',
+  '🎉 Offre sp\u00e9ciale : 3 essais virtuels au prix de 2',
+  '👑 Rejoins +500 reines qui ont trouv\u00e9 leur tresse parfaite',
+  '💛 -20% sur ton premier pack avec le code AFRO20',
+  '✨ Nouveau style disponible : Butterfly Locs',
   '🎁 Parraine une amie et gagne 2 essais gratuits',
-  '🔥 Flash promo : Pack 5 essais à 1500 FCFA aujourd\'hui seulement',
 ]
 
 const INTERVAL = 3500
 
-// ─── Barre ticker défilante ───
 function TickerBar() {
   const text = TICKER_MESSAGES.join('   ✦   ')
-
   return (
-    <div className="w-full overflow-hidden z-50 relative"
-      style={{ background:'#C9963A', height:'28px' }}>
+    <div className="w-full overflow-hidden z-50 relative" style={{ background:'#C9963A', height:'28px' }}>
       <div className="flex items-center h-full">
         <motion.div
           animate={{ x: [0, -2000] }}
-          transition={{ duration: 25, repeat: Infinity, ease: 'linear', repeatType: 'loop' }}
+          transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
           className="flex items-center gap-0 whitespace-nowrap"
-          style={{ willChange: 'transform' }}
         >
-          {/* Répéter 3 fois pour le loop infini */}
           {[0,1,2].map(i => (
-            <span key={i} className="font-body text-xs font-semibold px-8"
-              style={{ color:'#2C1A0E', letterSpacing:'0.04em' }}>
+            <span key={i} className="font-body text-xs font-semibold px-8" style={{ color:'#2C1A0E' }}>
               {text}
             </span>
           ))}
         </motion.div>
-      {/* Bouton flottant analyser */}
-      <div className="absolute bottom-20 left-0 right-0 z-40 flex justify-center px-5 pointer-events-none">
-        <motion.button
-          initial={{ opacity:0, y:20 }}
-          animate={{ opacity:1, y:0 }}
-          transition={{ delay:0.5, duration:0.5 }}
-          onClick={() => window.location.href = '/camera'}
-          className="pointer-events-auto px-8 py-4 rounded-full font-display font-bold text-base"
-          style={{
-            background: 'linear-gradient(135deg,#C9963A,#E8B96A)',
-            color: '#2C1A0E',
-            boxShadow: '0 4px 24px rgba(201,150,58,0.6)',
-          }}>
-          Analyser mon visage 🤳🏿
-         </motion.button>
-      </div>
       </div>
     </div>
   )
 }
 
 export default function Home() {
-  const navigate  = useNavigate()
+  const navigate = useNavigate()
   const [current, setCurrent] = useState(0)
-  const [dir,     setDir]     = useState(1)
-  const timerRef  = useRef(null)
-  const userName  = localStorage.getItem('afrotresse_user_name') || 'Reine'
+  const [showFinger, setShowFinger] = useState(false)
+  const timerRef = useRef(null)
+  const userName = localStorage.getItem('afrotresse_user_name') || 'Reine'
 
-  const goTo = useCallback((idx, d=1) => { setDir(d); setCurrent(idx) }, [])
-  const next  = useCallback(() => goTo((current+1) % SLIDES.length, 1), [current, goTo])
+  // Logique du doigt anime (Priorite 4)
+  useEffect(() => {
+    const hasSeenFinger = localStorage.getItem('afrotresse_finger_seen')
+    if (!hasSeenFinger) {
+      const timer = setTimeout(() => setShowFinger(true), 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [])
+
+  const handleStart = () => {
+    localStorage.setItem('afrotresse_finger_seen', 'true')
+    navigate('/camera')
+  }
+
+  const next = useCallback(() => setCurrent(prev => (prev + 1) % SLIDES.length), [])
 
   useEffect(() => {
     timerRef.current = setInterval(next, INTERVAL)
     return () => clearInterval(timerRef.current)
   }, [next])
 
-  const touchStart = useRef(null)
-  const onTouchStart = (e) => { touchStart.current = e.touches[0].clientX }
-  const onTouchEnd   = (e) => {
-    if (touchStart.current === null) return
-    const diff = touchStart.current - e.changedTouches[0].clientX
-    if (Math.abs(diff) > 40) {
-      clearInterval(timerRef.current)
-      diff > 0
-        ? goTo((current+1) % SLIDES.length, 1)
-        : goTo((current-1+SLIDES.length) % SLIDES.length, -1)
-    }
-    touchStart.current = null
-  }
-
-  const slide    = SLIDES[current]
-  const variants = {
-    enter:  (d) => ({ x: d > 0 ? '100%' : '-100%', opacity: 0 }),
-    center: { x: 0, opacity: 1 },
-    exit:   (d) => ({ x: d > 0 ? '-100%' : '100%', opacity: 0 }),
-  }
+  const slide = SLIDES[current]
 
   return (
-    <div className="flex flex-col w-full bg-brown" style={{ height:'100dvh' }}>
-
-      {/* ─── BARRE TICKER PROMO ─── */}
+    <div className="flex flex-col w-full bg-brown overflow-hidden" style={{ height:'100dvh' }}>
       <TickerBar />
 
-      {/* ─── HERO CAROUSEL ─── */}
-      <div className="relative flex-1 overflow-hidden"
-        onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-
-        {/* Photos */}
-        <AnimatePresence initial={false} custom={dir}>
-          <motion.div key={slide.id} custom={dir} variants={variants}
-            initial="enter" animate="center" exit="exit"
-            transition={{ duration:0.65, ease:[0.32,0.72,0,1] }}
-            className="absolute inset-0">
-            <img src={slide.image} alt={slide.style}
-              className="w-full h-full object-cover object-top select-none"
-              draggable={false}/>
+      <div className="relative flex-1 overflow-hidden">
+        <AnimatePresence initial={false}>
+          <motion.div key={slide.id} initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+            transition={{ duration:0.6 }} className="absolute inset-0">
+            <img src={slide.image} alt={slide.style} className="w-full h-full object-cover object-top" />
           </motion.div>
         </AnimatePresence>
 
-        {/* Degrade haut */}
-        <div className="absolute inset-x-0 top-0 h-40 pointer-events-none z-10"
-          style={{ background:'linear-gradient(to bottom, rgba(44,26,14,0.85) 0%, rgba(44,26,14,0.4) 70%, transparent 100%)' }}/>
+        {/* Gradients */}
+        <div className="absolute inset-x-0 top-0 h-40 z-10" style={{ background:'linear-gradient(to bottom, rgba(44,26,14,0.85), transparent)' }}/>
+        <div className="absolute inset-x-0 bottom-0 h-1/2 z-10" style={{ background:'linear-gradient(to top, rgba(44,26,14,0.98), transparent)' }}/>
 
-        {/* Degrade bas */}
-        <div className="absolute inset-x-0 bottom-0 pointer-events-none z-10"
-          style={{ height:'50%', background:'linear-gradient(to top, rgba(44,26,14,0.98) 0%, rgba(44,26,14,0.82) 50%, transparent 100%)' }}/>
-
-        <div className="absolute inset-x-0 top-0 z-30 px-5 pt-4">
-          <div className="flex items-center gap-1.5">
-            <img src="/logo.png" alt="AfroTresse" className="w-10 h-10 rounded-full object-cover flex-shrink-0"/>
-            <div className="flex flex-col justify-center">
-              <span className="font-display text-3xl leading-none">
-                <span style={{ color:'#FAF4EC' }} className="font-bold">Afro</span>
-                <span style={{ color:'#C9963A' }} className="font-bold">Tresse</span>
-              </span>
-              <p className="font-body text-xs mt-0.5"
-                style={{ color:'#FAF4EC', letterSpacing:'0.12em', opacity:0.80 }}>
-                Chaque visage a sa tresse
-              </p>
-            </div>
+        {/* Logo & Header */}
+        <div className="absolute inset-x-0 top-0 z-30 px-5 pt-4 flex items-center gap-2">
+          <div className="w-10 h-10 bg-[#C9963A] rounded-full flex items-center justify-center font-bold text-white">AT</div>
+          <div className="flex flex-col">
+            <span className="font-display text-2xl leading-none">
+              <span className="text-white font-bold">Afro</span><span className="text-[#C9963A] font-bold">Tresse</span>
+            </span>
           </div>
         </div>
 
-        {/* GREETING + BADGE + DOTS */}
+        {/* Content */}
         <div className="absolute inset-x-0 bottom-0 z-30 px-5 pb-36">
-          <motion.div
-            initial={{ opacity:0, y:20 }}
-            animate={{ opacity:1, y:0 }}
-            transition={{ duration:0.5 }}>
+          <h1 className="font-display text-2xl text-white font-bold leading-tight">
+            Pr\u00eate pour ton nouveau look,<br/>
+            <span className="text-[#C9963A]">{userName} ? \u2728</span>
+          </h1>
 
-            <h1 className="font-display leading-[1.2]" style={{ fontSize:'clamp(1.3rem, 5.5vw, 1.8rem)' }}>
-              <span style={{ color:'#FAF4EC' }} className="font-bold">{"Pr\u00eate pour ton nouveau look,"}</span>
-              <br/>
-              <span style={{ color:'#C9963A' }} className="font-bold">{userName} ? ✨</span>
-            </h1>
-          </motion.div>
-
-          {/* Badge tendance */}
-          <AnimatePresence mode="wait">
-            <motion.div key={current}
-              initial={{ opacity:0, x:-10 }} animate={{ opacity:1, x:0 }}
-              exit={{ opacity:0, x:10 }} transition={{ duration:0.3 }}
-              className="mt-2 inline-flex">
-              <div className="flex items-center gap-2 px-4 py-2 rounded-full"
-                style={{ background:'rgba(255,255,255,0.07)', backdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.1)' }}>
-                <span className="font-body text-xs font-bold" style={{ color:slide.accent }}>
-                  {slide.badge}
-                </span>
-                <span className="w-px h-3 bg-white/20"/>
-                <span className="font-body text-xs" style={{ color:'rgba(250,244,236,0.75)' }}>
-                  {slide.style}
-                </span>
-              </div>
-            </motion.div>
-          </AnimatePresence>
-
-          {/* Dots */}
-          <div className="flex gap-1.5 mt-4">
-            {SLIDES.map((_,i) => (
-              <button key={i}
-                onClick={() => { clearInterval(timerRef.current); goTo(i, i>=current?1:-1) }}
-                style={{
-                  height:'4px', borderRadius:'2px', transition:'all 0.35s ease',
-                  width: i===current ? '28px' : '8px',
-                  background: i===current ? '#C9963A' : 'rgba(255,255,255,0.28)',
-                }}/>
+          <div className="mt-4 flex gap-1.5">
+            {SLIDES.map((_, i) => (
+              <div key={i} className={`h-1 rounded-full transition-all duration-300 ${i === current ? 'w-8 bg-[#C9963A]' : 'w-2 bg-white/30'}`} />
             ))}
           </div>
         </div>
-      {/* Bouton flottant analyser */}
-      <div className="absolute bottom-20 left-0 right-0 z-40 flex justify-center px-5 pointer-events-none">
-        <motion.button
-          initial={{ opacity:0, y:20 }}
-          animate={{ opacity:1, y:0 }}
-          transition={{ delay:0.5, duration:0.5 }}
-          onClick={() => window.location.href = '/camera'}
-          className="pointer-events-auto px-8 py-4 rounded-full font-display font-bold text-base"
-          style={{
-            background: 'linear-gradient(135deg,#C9963A,#E8B96A)',
-            color: '#2C1A0E',
-            boxShadow: '0 4px 24px rgba(201,150,58,0.6)',
-          }}>
-          Analyser mon visage 🤳🏿
-        </motion.button>
-      </div>
+
+        {/* Bouton Analyser + Doigt Anime */}
+        <div className="absolute bottom-16 left-0 right-0 z-40 flex flex-col items-center pointer-events-none">
+          <div className="relative pointer-events-auto">
+            <button
+              onClick={handleStart}
+              className="px-10 py-4 rounded-full font-display font-bold text-lg shadow-2xl transition-transform active:scale-95"
+              style={{ background: 'linear-gradient(135deg,#C9963A,#E8B96A)', color: '#2C1A0E' }}
+            >
+              Analyser mon visage \ud83e\udd33\ud83c\udfff
+            </button>
+
+            {/* Doigt TikTok */}
+            <AnimatePresence>
+              {showFinger && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: [0, -15, 0] }}
+                  exit={{ opacity: 0 }}
+                  transition={{ repeat: 3, duration: 0.8 }}
+                  onAnimationComplete={() => setShowFinger(false)}
+                  className="absolute -bottom-10 right-5 text-4xl"
+                >
+                  \ud83d\udc46
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
       </div>
     </div>
   )
