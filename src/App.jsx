@@ -14,7 +14,7 @@ import CookiePolicy   from './pages/CookiePolicy.jsx'
 import MagicLink      from './pages/MagicLink.jsx'
 import BottomNav from './components/BottomNav.jsx'
 
-// ─── Popup de bienvenue ───
+// \u2500\u2500\u2500 Popup de bienvenue \u2500\u2500\u2500
 function WelcomePopup({ onDone }) {
   const [name, setName] = useState('')
 
@@ -38,32 +38,28 @@ function WelcomePopup({ onDone }) {
         className="w-full max-w-sm rounded-t-3xl p-6 pb-10 overflow-y-auto"
         style={{ background: '#2C1A0E', border: '1px solid rgba(201,150,58,0.3)', maxHeight: '90vh' }}
       >
-        {/* Logo */}
         <div className="flex justify-center mb-4">
           <img src="/logo.png" alt="AfroTresse" className="h-28 w-auto object-contain"
             onError={e => { e.target.style.display='none' }}/>
         </div>
 
-        {/* Titre accrocheur */}
         <h2 className="font-display text-center font-bold mb-2"
           style={{ color: '#FAF4EC', fontSize: 'clamp(1.2rem, 5vw, 1.6rem)', lineHeight: '1.3' }}>
-          Stop a l'hesitation ! ✋
+          Stop \u00e0 l'h\u00e9sitation ! \u270b
         </h2>
 
-        {/* Phrase emotionnelle */}
         <p className="font-body text-center text-sm mb-4 leading-relaxed"
           style={{ color: 'rgba(250,244,236,0.8)' }}>
-          Trouve ta tresse ideale en 10 secondes.
+          Trouve ta tresse id\u00e9ale en 10 secondes.
         </p>
 
-        {/* Champ prénom */}
         <label className="font-body text-xs uppercase tracking-widest mb-2 block"
           style={{ color: '#C9963A' }}>
           Comment tu t'appelles ?
         </label>
         <input
           type="text"
-          placeholder="Ton prenom, Reine..."
+          placeholder="Ton pr\u00e9nom, Reine..."
           value={name}
           onChange={e => setName(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleSubmit()}
@@ -77,19 +73,17 @@ function WelcomePopup({ onDone }) {
           autoFocus
         />
 
-        {/* Bouton principal */}
         <button
           onClick={handleSubmit}
           className="w-full py-4 rounded-2xl font-display font-bold text-base"
           style={{ background: 'linear-gradient(135deg,#C9963A,#E8B96A)', color: '#2C1A0E', boxShadow: '0 4px 20px rgba(201,150,58,0.4)' }}
         >
-          C'est parti ! 🚀
+          C'est parti ! \ud83d\ude80
         </button>
 
-        {/* Urgence */}
         <p className="font-body text-xs text-center mt-2 font-semibold"
           style={{ color: '#E8B96A' }}>
-          🎁 3 essais gratuits aujourd'hui seulement !
+          \ud83c\udf81 3 essais gratuits aujourd'hui seulement !
         </p>
       </motion.div>
     </motion.div>
@@ -104,17 +98,17 @@ function AnimatedRoutes() {
     <>
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
-          <Route path="/"        element={<Home    />} />
-          <Route path="/camera"  element={<Camera  />} />
-          <Route path="/analyze" element={<Analyze />} />
-          <Route path="/results" element={<Results />} />
-          <Route path="/library" element={<Library />} />
-          <Route path="/profile" element={<Profile />} />
+          <Route path="/"                element={<Home    />} />
+          <Route path="/camera"          element={<Camera  />} />
+          <Route path="/analyze"         element={<Analyze />} />
+          <Route path="/results"         element={<Results />} />
+          <Route path="/library"         element={<Library />} />
+          <Route path="/profile"         element={<Profile />} />
           <Route path="/credits"         element={<Credits />} />
-          <Route path="/privacy-policy"  element={<PrivacyPolicy />} />
+          <Route path="/privacy-policy"  element={<PrivacyPolicy  />} />
           <Route path="/terms-of-service" element={<TermsOfService />} />
-          <Route path="/cookie-policy"   element={<CookiePolicy />} />
-          <Route path="/magic-link"      element={<MagicLink />} />
+          <Route path="/cookie-policy"   element={<CookiePolicy   />} />
+          <Route path="/magic-link"      element={<MagicLink      />} />
         </Routes>
       </AnimatePresence>
       {!hideNav && <BottomNav />}
@@ -123,7 +117,6 @@ function AnimatedRoutes() {
 }
 
 export default function App() {
-  // Afficher le popup seulement au premier lancement
   const [showWelcome, setShowWelcome] = useState(false)
 
   useEffect(() => {
