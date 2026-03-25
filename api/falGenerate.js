@@ -18,13 +18,10 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Missing data" });
     }
 
-    // Vérifier que styleImageUrl est une URL publique absolue
-    // (Fal.ai ne peut pas accéder à une URL locale comme /styles/xxx.jpg)
-    if (!styleImageUrl.startsWith("http")) {
-      return res.status(400).json({
-        error: "L'image de style doit être une URL publique accessible. URL locale reçue : " + styleImageUrl
-      });
-    }
+    // Si l'URL est relative, la rendre absolue avec le domaine Vercel
+    const absoluteStyleImageUrl = styleImageUrl.startsWith("http")
+      ? styleImageUrl
+      : `https://afrotresse-hfwf.vercel.app${styleImageUrl}`;
 
     // Convertir base64 en File
     const buffer = Buffer.from(selfieBase64, "base64");
@@ -37,7 +34,7 @@ export default async function handler(req, res) {
     const result = await fal.subscribe("fal-ai/image-apps-v2/hair-change", {
       input: {
         image_url: selfieUrl,
-        reference_image_url: styleImageUrl,
+        reference_image_url: absoluteStyleImageUrl,
       },
     });
 
