@@ -1,21 +1,44 @@
 import { fal } from "@fal-ai/client";
 
-/**
- * G\u00e9n\u00e9ration de coiffure via Fal.ai
- * Utilise le selfie de l'utilisateur et l'image de r\u00e9f\u00e9rence du style
- */
-export async function generateHairstyle(selfieFile, styleImage) {
-  // 1. Upload selfie vers le storage Fal
-  const selfieUrl = await fal.storage.upload(selfieFile);
+export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
 
-  // 2. G\u00e9n\u00e9ration avec le mod\u00e8le hair-change
-  // styleImage doit \u00eatre l'URL de la vue "top" (ex: style.views.top)
-  const result = await fal.subscribe("fal-ai/image-apps-v2/hair-change", {
-    input: {
-      image_url: selfieUrl,
-      reference_image_url: styleImage,
-    },
-  });
+  try {
+    const {
+      selfieBase64,
+      selfieType,
+      styleImageUrl
+    } = req.body;
 
-  return result.data.image.url;
+    if (!selfieBase64 || !styleImageUrl) {
+      return res.status(400).json({ error: "Missing data" });
+    }
+
+    // Convertir base64 en File
+    const buffer = Buffer.from(selfieBase64, "base64");
+    const file = new File([buffer], "selfie.jpg", { type: selfieType });
+
+    // Upload vers Fal
+    const selfieUrl = await fal.storage.upload(file);
+
+    // Génération
+    const result = await fal.subscribe("fal-ai/image-apps-v2/hair-change", {
+      input: {
+        image_url: selfieUrl,
+        reference_image_url: styleImageUrl,
+      },
+    });
+
+    return res.status(200).json({
+      imageUrl: result.data.image.url,
+    });
+
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      error: "Erreur generation",
+    });
+  }
 }
