@@ -90,7 +90,7 @@
       // ... HANDLE ERROR ...
     }
   }
-export default Results;
 
 // ========== FIN DES MODIFICATIONS ==========
 // Tout le reste du fichier reste exactement pareil
+export default Results;
