@@ -114,7 +114,7 @@ export default function Results() {
         initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
         onClick={() => navigate("/credits")}
         // UI RÉDUITE : w-16 h-16 (au lieu de 64px, c'est un carré plus petit)
-        className="fixed bottom-28 right-5 z-40 bg-[#C9963A] text-[#2C1A0E] w-14 h-14 rounded-2xl flex flex-col items-center justify-center shadow-2xl border-2 border-[#2C1A0E]/20 active:scale-95 transition-all"
+        className="fixed bottom-23 right-5 z-40 bg-[#C9963A] text-[#2C1A0E] w-14 h-14 rounded-2xl flex flex-col items-center justify-center shadow-2xl border-2 border-[#2C1A0E]/20 active:scale-95 transition-all"
       >
         {/* CONSIGNE 1 : UTF-8 corrigé dans le solde */}
         <div className="text-[7px] font-black uppercase opacity-60">Solde</div>
