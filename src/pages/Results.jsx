@@ -2,323 +2,173 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { getCredits, consumeCredits, canDiscover, canTransform, PRICING, addSeenStyleId, getSeenStyleIds } from "../services/credits.js";
-import EnhancedBraidCard from "../components/EnhancedBraidCard";
+// Import de la DB avec la nouvelle structure views
+import { BRAIDS_DB } from "../services/faceAnalysis.js";
 
 const FACE_SHAPE_TEXTS = {
-  oval:    "Ton visage est de forme Ovale. C'est une structure tres equilibree qui s'adapte a presque tous les styles. Pour accentuer ton regard, les tresses degagees vers l'arriere sont ideales.",
-  round:   "Ton visage est de forme Ronde. Pour allonger et affiner visuellement tes traits, les tresses hautes et les styles verticaux sont parfaits pour toi.",
-  square:  "Ton visage est de forme Carree. Les tresses avec du volume sur les cotes adoucissent ta machoire et creent une harmonie naturelle.",
-  heart:   "Ton visage est en forme de Coeur. Les tresses avec du volume en bas equilibrent ton menton et mettent en valeur tes pommettes.",
-  long:    "Ton visage est de forme Longue. Les tresses laterales et les styles avec du volume sur les cotes creent l'harmonie parfaite pour toi.",
-  diamond: "Ton visage est de forme Diamant. Tes pommettes sont ton atout majeur. Les tresses qui encadrent le visage te subliment naturellement.",
-}
-
-function shuffleArray(arr) {
-  const a = [...arr]
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]]
-  }
-  return a
+  oval:    "Ton visage est de forme Ovale. C'est une structure tr\u00e8s \u00e9quilibr\u00e9e qui s'adapte \u00e0 presque tous les styles.",
+  round:   "Ton visage est de forme Ronde. Pour allonger et affiner visuellement tes traits, les tresses hautes sont parfaites.",
+  square:  "Ton visage est de forme Carr\u00e9e. Les tresses avec du volume sur les c\u00f4t\u00e9s adoucissent ta m\u00e2choire.",
+  heart:   "Ton visage est en forme de Coeur. Les tresses avec du volume en bas \u00e9quilibrent ton menton.",
+  long:    "Ton visage est de forme Longue. Les tresses lat\u00e9rales cr\u00e9ent l'harmonie parfaite pour toi.",
+  diamond: "Ton visage est de forme Diamant. Les tresses qui encadrent le visage te subliment naturellement.",
 }
 
 export default function Results() {
   const navigate = useNavigate();
-  const [styles, setStyles]           = useState([]);
-  const [shuffledStyles, setShuffledStyles] = useState([]);
-  const [page, setPage]               = useState(0);
-  const [faceShape, setFaceShape]     = useState('oval');
-  const [faceShapeName, setFaceShapeName] = useState('');
-  const [selfieUrl, setSelfieUrl]     = useState(null);
-  const [loadingIdx, setLoadingIdx]   = useState(null);
+  const [page, setPage] = useState(0);
+  const [loadingIdx, setLoadingIdx] = useState(null);
+  const [errorMsg, setErrorMsg] = useState("");
   const [resultImage, setResultImage] = useState(null);
-  const [isFallback, setIsFallback]   = useState(false);
-  const [errorMsg, setErrorMsg]       = useState("");
-  const [credits, setCredits]         = useState(0);
-  const resultRef = useRef(null);
-  const [waitingMsgIdx, setWaitingMsgIdx] = useState(0);
-  const [resultMsg, setResultMsg] = useState('');
-  const waitingIntervalRef = useRef(null);
+  const [credits, setCredits] = useState(getCredits());
+  
+  // Etat pour le zoom (Priorit\u00e9 1.3)
+  const [zoomImage, setZoomImage] = useState(null);
 
-  const WAITING_MSGS = [
-    "Preparation de ton nouveau look... ✨",
-    "On ajuste la tresse a ton visage... 👑",
-    "Presque la... Prepare-toi a briller ! 😍",
-  ];
+  const faceShape = localStorage.getItem("afrotresse_face_shape") || "oval";
+  const selfieUrl = localStorage.getItem("afrotresse_selfie");
 
-  const RESULT_MSGS = [
-    "Waouh 😍, tu es splendide !",
-    "Regarde cette Reine ! ✨",
-    "Le style parfait pour toi. 👑",
-  ];
+  // Melange et filtrage (Priorit\u00e9 2 - Anti-r\u00e9p\u00e9tition)
+  const shuffledStyles = useMemo(() => {
+    const seenIds = getSeenStyleIds();
+    const available = BRAIDS_DB.filter(s => s.faceShapes.includes(faceShape));
+    
+    // On met les nouveaux styles en premier
+    return [...available].sort((a, b) => {
+      const aSeen = seenIds.includes(a.id) ? 1 : 0;
+      const bSeen = seenIds.includes(b.id) ? 1 : 0;
+      return aSeen - bSeen || 0.5 - Math.random();
+    });
+  }, [faceShape]);
 
-  useEffect(() => {
-    const raw = sessionStorage.getItem('afrotresse_results');
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      const recs = parsed.recommendations || [];
-      const seen = getSeenStyleIds();
-      // Exclure les styles déjà vus du premier crédit
-      const filtered = recs.filter(r => !seen.includes(r.id));
-      setStyles(filtered);
-      setShuffledStyles(shuffleArray(filtered));
-      setFaceShape(parsed.faceShape || 'oval');
-      setFaceShapeName(parsed.faceShapeName || '');
-    }
-    const photo = sessionStorage.getItem('afrotresse_photo');
-    if (photo) setSelfieUrl(photo);
-    setCredits(getCredits());
-  }, []);
+  const currentStyles = shuffledStyles.slice(page * 3, (page + 1) * 3);
 
-  const handleTryStyle = async (style, index, type = 'transform') => {
-    // Vérifier les crédits selon le type
-    if (type === 'discover') {
-      if (!canDiscover()) { navigate('/credits'); return; }
-    } else if (type === 'transform') {
-      if (!canTransform()) { navigate('/credits'); return; }
+  const handleTryStyle = async (style, index) => {
+    if (credits < PRICING.TRANSFORM) {
+      navigate("/credits");
+      return;
     }
 
-    setErrorMsg("");
-    setResultImage(null);
-    setIsFallback(false);
     setLoadingIdx(index);
-    setWaitingMsgIdx(0);
-    setResultMsg('');
-
-    // Rotation messages d'attente
-    let idx = 0;
-    waitingIntervalRef.current = setInterval(() => {
-      idx = (idx + 1) % 3;
-      setWaitingMsgIdx(idx);
-    }, 3000);
+    setErrorMsg("");
 
     try {
-      const selfieBase64 = selfieUrl?.split(',')[1] || null;
-      const selfieType   = selfieUrl?.match(/:(.*?);/)?.[1] || 'image/jpeg';
-      const styleImageUrl = style.image
-        ? `${window.location.origin}${style.image}`
-        : `${window.location.origin}/styles/${style.localImage}`;
-
-      const res = await fetch('/api/falGenerate', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          selfieBase64, 
-          selfieType, 
-          styleImageUrl, 
-          faceShape, 
-          styleId: style.id, 
-          type: type // 'discover' ou 'transform'
-        }),
+      const selfieBase = selfieUrl.split(",")[1];
+      const res = await fetch("/api/falGenerate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          selfieBase64: selfieBase,
+          styleImageUrl: style.views.top, // Priorit\u00e9 1.4 - Reference TOP
+          styleId: style.id
+        })
       });
 
       const data = await res.json();
-      if (res.status === 429) { setErrorMsg(data.error); return; }
-
-      clearInterval(waitingIntervalRef.current);
-
-      // Consommer les crédits
-      const creditsCost = type === 'discover' ? PRICING.discoverCost : PRICING.transformCost;
-      consumeCredits(creditsCost);
-      addSeenStyleId(style.id);
-      
-      setCredits(getCredits());
-      setResultImage(data.imageUrl);
-      setResultMsg(RESULT_MSGS[Math.floor(Math.random() * RESULT_MSGS.length)]);
-      setIsFallback(data.fallback || false);
-
-      setTimeout(() => {
-        resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 100);
-    } catch (err) {
-      clearInterval(waitingIntervalRef.current);
-      console.error(err);
-      setErrorMsg("Connexion impossible. Reessaie.");
+      if (data.imageUrl) {
+        setResultImage(data.imageUrl);
+        consumeCredits(PRICING.TRANSFORM);
+        setCredits(getCredits());
+        addSeenStyleId(style.id);
+      } else {
+        throw new Error("Erreur serveur");
+      }
+    } catch (e) {
+      setErrorMsg("Une erreur est survenue. R\u00e9essaie plus tard.");
     } finally {
       setLoadingIdx(null);
     }
   };
 
-  const handleShare = async (text, url) => {
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: 'AfroTresse', text, url: url || window.location.href })
-      } else {
-        await navigator.clipboard.writeText(text)
-        alert('Lien copie dans le presse-papier !')
-      }
-    } catch (e) {
-      console.log('Share cancelled or failed')
-    }
-  }
-
-  const faceText = FACE_SHAPE_TEXTS[faceShape] || ''
-
-  if (!shuffledStyles.length) return (
-    <div className="min-h-screen bg-[#2b1810] flex items-center justify-center">
-        <div className="text-center px-6">
-          <p className="text-4xl mb-4">💆🏾‍♀️</p>
-          <p className="text-white text-xl font-display font-semibold mb-2">Quelle tresse aujourd'hui ?</p>
-          <p className="text-gray-400 text-sm mb-6">Prends un selfie pour decouvrir les styles qui sublimeront ton visage.</p>
-          <button onClick={() => navigate('/')}
-            className="px-6 py-3 rounded-full font-semibold text-sm"
-            style={{ background: '#FFC000', color: '#000' }}>
-            Decouvrir ma tresse parfaite
-          </button>
-        </div>
-    </div>
-  );
-
   return (
-    <div className="px-4 py-6 space-y-5 bg-[#2b1810] min-h-screen pb-28">
-
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <button onClick={() => navigate('/')}
-            className="w-9 h-9 rounded-full bg-[#3a2118] flex items-center justify-center">
-            <svg viewBox="0 0 24 24" className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="15 18 9 12 15 6"/>
-            </svg>
-          </button>
-          <div>
-            <h2 className="text-white text-xl font-semibold">Ta selection sur-mesure</h2>
-            <p className="text-xs mt-0.5" style={{ color: "rgba(232,185,106,0.7)" }}>Les styles qui sublimeront naturellement tes traits.</p>
-          </div>
-        </div>
-        <button onClick={() => navigate('/credits')}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full"
-          style={{ background:'rgba(255,192,0,0.15)', border:'1px solid rgba(255,192,0,0.3)' }}>
-          <span className="text-yellow-400 font-bold text-sm">{credits}</span>
-          <span className="text-gray-400 text-xs">credit{credits > 1 ? 's' : ''}</span>
-        </button>
+    <div className="min-h-screen bg-[#2C1A0E] text-[#FAF4EC] p-5 pb-24">
+      <div className="mb-8">
+        <h1 className="font-display font-bold text-2xl mb-2">Tes R\u00e9sultats</h1>
+        <p className="text-sm opacity-80 font-body">{FACE_SHAPE_TEXTS[faceShape]}</p>
       </div>
 
-      {/* Selfie + analyse visage */}
-      {selfieUrl && (
-        <div className="bg-[#3a2118] rounded-2xl p-4"
-          style={{ border: '1px solid rgba(201,150,58,0.2)' }}>
-          <div className="flex gap-4">
-            <img src={selfieUrl} alt="Ton selfie" className="w-20 h-20 rounded-xl object-cover" />
-            <div className="flex-1">
-              <p className="text-white text-sm font-semibold mb-1">Ton visage : <span style={{ color: '#FFC000' }}>{faceShapeName}</span></p>
-              <p className="text-xs text-gray-400 leading-relaxed">{faceText}</p>
+      {errorMsg && <div className="bg-red-900/30 border border-red-500 p-3 rounded-xl mb-4 text-xs">{errorMsg}</div>}
+
+      <div className="space-y-8">
+        {currentStyles.map((style, idx) => (
+          <div key={style.id} className="bg-[#3D2616] rounded-3xl overflow-hidden border border-[#C9963A]/20 shadow-2xl">
+            
+            {/* 1. GRILLE PHOTO (Priorit\u00e9 1.2) */}
+            <div className="grid grid-cols-3 gap-0.5 h-64 bg-black/20">
+              <div className="col-span-2 h-full overflow-hidden">
+                <img 
+                  src={style.views.face} 
+                  className="w-full h-full object-cover object-top" 
+                  onClick={() => setZoomImage(style.views.face)}
+                />
+              </div>
+              <div className="col-span-1 grid grid-rows-2 gap-0.5">
+                <img 
+                  src={style.views.back} 
+                  className="w-full h-full object-cover" 
+                  onClick={() => setZoomImage(style.views.back)}
+                />
+                <img 
+                  src={style.views.top} 
+                  className="w-full h-full object-cover" 
+                  onClick={() => setZoomImage(style.views.top)}
+                />
+              </div>
+            </div>
+
+            <div className="p-5">
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="font-display font-bold text-xl">{style.name}</h3>
+                <span className="text-[10px] bg-[#C9963A]/20 px-2 py-1 rounded-full text-[#C9963A] uppercase font-bold">
+                  {style.duration}
+                </span>
+              </div>
+              <p className="text-xs opacity-70 mb-5 font-body line-clamp-2">{style.description}</p>
+              
+              <button
+                onClick={() => handleTryStyle(style, idx)}
+                disabled={loadingIdx !== null}
+                className="w-full py-4 rounded-full font-display font-bold text-base transition-transform active:scale-95"
+                style={{ background: 'linear-gradient(135deg,#C9963A,#E8B96A)', color: '#2C1A0E' }}
+              >
+                {loadingIdx === idx ? "G\u00e9n\u00e9ration..." : "Me transformer \u2728"}
+              </button>
             </div>
           </div>
-        </div>
-      )}
+        ))}
+      </div>
 
-      {/* Erreur */}
-      {errorMsg && (
-        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-          className="bg-red-900/30 border border-red-500/50 rounded-lg p-3">
-          <p className="text-red-200 text-sm">{errorMsg}</p>
-        </motion.div>
-      )}
-
-      {/* Credits epuises */}
-      {!canDiscover() && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-          className="bg-[#3a2118] rounded-2xl p-4 border-2 border-yellow-400">
-          <p className="text-white font-semibold mb-2">Plus de credits gratuits 💭</p>
-          <p className="text-sm text-gray-300 mb-3">Achete un pack pour continuer a explorer et transformer tes photos !</p>
-          <button onClick={() => navigate('/credits')}
-            className="w-full py-3 rounded-xl font-bold text-sm"
-            style={{ background: '#FFC000', color: '#000' }}>
-            Obtenir des credits
+      {/* Pagination */}
+      <div className="mt-8 flex gap-3">
+        {shuffledStyles.length > (page + 1) * 3 && (
+          <button 
+            onClick={() => { setPage(p => p + 1); window.scrollTo(0,0); }}
+            className="flex-1 py-4 rounded-2xl bg-white/5 border border-white/10 font-bold text-sm"
+          >
+            Voir d'autres styles
           </button>
-        </motion.div>
-      )}
+        )}
+      </div>
 
-      {/* Resultat Fal.ai */}
+      {/* 2. LIGHTBOX / ZOOM (Priorit\u00e9 1.3) */}
       <AnimatePresence>
-        {resultImage && (
-          <motion.div ref={resultRef}
-            initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
-            className="bg-[#3a2118] rounded-2xl overflow-hidden border-2 border-yellow-400">
-            <div className="px-4 pt-4 pb-2">
-              <h3 className="text-yellow-400 font-bold text-xl">
-                {isFallback ? 'Style similaire pour toi' : (resultMsg || 'Magnifique !')}
-              </h3>
-              <p className="text-sm mt-1 font-medium" style={{ color: '#FAF4EC' }}>
-                {isFallback
-                  ? 'Apercu base sur ta forme de visage — essaie un vrai selfie pour plus de precision'
-                  : 'Ce style te met vraiment en valeur. Montre-le a ta coiffeuse !'}
-              </p>
-            </div>
-            <img src={resultImage} alt="Resultat" className="w-full object-cover"/>
-            <div className="p-4 space-y-2">
-              <button
-                onClick={() => handleShare("Regarde le style que j'ai choisi avec AfroTresse !", resultImage)}
-                className="w-full py-3 rounded-xl text-sm font-bold"
-                style={{ background: '#FFC000', color: '#000' }}>
-                Envoyer a ma coiffeuse
-              </button>
-              <button
-                onClick={() => handleShare("Rejoins AfroTresse et trouve ta tresse parfaite !", window.location.origin)}
-                className="w-full py-2 rounded-xl text-sm font-semibold"
-                style={{ background: 'rgba(255,192,0,0.1)', color: '#FFC000', border: '1px solid rgba(255,192,0,0.3)' }}>
-                Inviter une amie (1 essai offert)
-              </button>
-              <button onClick={() => setResultImage(null)}
-                className="w-full py-2 rounded-xl text-sm text-gray-400 border border-gray-600">
-                Fermer
-              </button>
-            </div>
+        {(zoomImage || resultImage) && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black/95 flex flex-col items-center justify-center p-6"
+            onClick={() => { setZoomImage(null); setResultImage(null); }}
+          >
+            <motion.img 
+              initial={{ scale: 0.9 }} animate={{ scale: 1 }}
+              src={zoomImage || resultImage} 
+              className="max-w-full max-h-[80vh] rounded-3xl shadow-2xl border border-white/10"
+            />
+            <button className="mt-8 px-8 py-3 bg-[#C9963A] text-[#2C1A0E] rounded-full font-bold">
+              Fermer
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Labels */}
-      {page === 0 && (
-        <div className="flex gap-2">
-          {['Le Choix Ideal', 'Le Style Structurant', 'La Tendance'].map((label, i) => (
-            <div key={i} className="flex-1 text-center py-1.5 rounded-xl text-xs font-semibold"
-              style={{ background: 'rgba(201,150,58,0.1)', color: '#C9963A', border: '1px solid rgba(201,150,58,0.2)' }}>
-              {label}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Cartes styles - ENHANCED */}
-      {shuffledStyles.slice(page * 3, page * 3 + 3).map((style, index) => (
-        <EnhancedBraidCard
-          key={style.id || index}
-          braid={style}
-          index={index}
-          onTryStyle={handleTryStyle}
-          isLoading={loadingIdx === index}
-          canDiscover={canDiscover()}
-          canTransform={canTransform()}
-          credits={credits}
-        />
-      ))}
-
-      {/* Navigation */}
-      <div className="flex gap-3 mt-2">
-        <button onClick={() => navigate('/camera')}
-          className="flex-1 py-3 rounded-xl text-sm font-semibold"
-          style={{ border:'1px solid rgba(255,192,0,0.3)', color:'#FFC000', background:'rgba(255,192,0,0.05)' }}>
-          Nouveau selfie
-        </button>
-        {shuffledStyles.length > (page + 1) * 3 && (
-          <button
-            onClick={() => { setPage(p => p + 1); setResultImage(null); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
-            className="flex-1 py-3 rounded-xl text-sm font-semibold"
-            style={{ background: '#FFC000', color: '#000' }}>
-            3 styles suivants
-          </button>
-        )}
-        {page > 0 && shuffledStyles.length <= (page + 1) * 3 && (
-          <button
-            onClick={() => { setPage(0); setResultImage(null); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
-            className="flex-1 py-3 rounded-xl text-sm font-semibold"
-            style={{ border:'1px solid rgba(255,192,0,0.3)', color:'#FFC000' }}>
-            Revoir les premiers
-          </button>
-        )}
-      </div>
     </div>
   );
 }
