@@ -19,19 +19,55 @@ export default async function handler(req, res) {
     const selfieUrl = await fal.storage.upload(file);
     console.log("✅ Selfie uploadé:", selfieUrl);
 
-    console.log("📤 Test 3 : Stable Diffusion v3.5 (texte + image)");
+    const absoluteStyleImageUrl = styleImageUrl.startsWith("http")
+      ? styleImageUrl
+      : `https://afrotresse-hfwf.vercel.app${styleImageUrl}`;
 
-    // TEST 3 : Stable Diffusion - génère depuis une description texte
-    // Plus de contrôle, mais moins de fidélité à la référence
-    const result = await fal.subscribe("fal-ai/stable-diffusion-v3.5", {
-      input: {
-        prompt: "African woman with detailed braided hairstyle, professional studio lighting, high quality portrait",
-        image_url: styleImageUrl,  // Utilise l'image de style comme inspiration
-        strength: 0.7,  // Force du contrôle (0-1)
-        num_inference_steps: 50,
-        guidance_scale: 7.5,
-      },
-    });
+    let referenceUrl = absoluteStyleImageUrl;
+    try {
+      const refResponse = await fetch(absoluteStyleImageUrl);
+      if (refResponse.ok) {
+        const refBuffer = await refResponse.arrayBuffer();
+        const refFile = new File([refBuffer], "reference.jpg", { type: "image/jpeg" });
+        referenceUrl = await fal.storage.upload(refFile);
+        console.log("✅ Référence uploadée:", referenceUrl);
+      }
+    } catch (err) {
+      console.warn("⚠️ Upload référence échoué:", err.message);
+    }
+
+    // ======================================
+    // TEST 2 CORRIGÉ : Essayer pulid en premier
+    // ======================================
+    let result = null;
+    try {
+      console.log("📤 Essai 1 : pulid (pose transfer)");
+      result = await fal.subscribe("fal-ai/pulid", {
+        input: {
+          image_url: selfieUrl,
+          id_image_url: referenceUrl,
+        },
+      });
+      console.log("✅ Pulid marche!");
+    } catch (pulIdError) {
+      console.warn("⚠️ Pulid échoué:", pulIdError.message);
+      
+      // ======================================
+      // FALLBACK : Revenir à hair-change
+      // ======================================
+      console.log("📤 Essai 2 : Fallback à hair-change (modèle original)");
+      try {
+        result = await fal.subscribe("fal-ai/image-apps-v2/hair-change", {
+          input: {
+            image_url: selfieUrl,
+          },
+        });
+        console.log("✅ Hair-change marche!");
+      } catch (hairChangeError) {
+        console.error("❌ Hair-change aussi échoué:", hairChangeError.message);
+        throw hairChangeError;
+      }
+    }
 
     console.log("📥 Réponse Fal reçue");
 
@@ -44,15 +80,19 @@ export default async function handler(req, res) {
       || result?.output?.url;
 
     if (!imageUrl) {
-      console.error("❌ Pas d'image. Réponse:", JSON.stringify(result));
+      console.error("❌ Pas d'image. Réponse complète:", JSON.stringify(result));
       return res.status(500).json({ error: "Fal n'a pas retourné d'image" });
     }
 
-    console.log("✨ Image générée:", imageUrl);
+    console.log("✨ Image générée avec succès:", imageUrl);
     return res.status(200).json({ imageUrl });
 
   } catch (err) {
-    console.error("❌ Erreur:", err.message);
-    return res.status(500).json({ error: err.message });
+    console.error("❌ Erreur finale:", err.message);
+    console.error("Stack:", err.stack);
+    return res.status(500).json({ 
+      error: err.message || "Erreur Fal.ai",
+      type: err.name
+    });
   }
 }
