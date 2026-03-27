@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import CameraCapture from '../components/CameraCapture.jsx'
@@ -47,6 +47,7 @@ export default function Camera() {
   const [photo,   setPhoto]   = useState(null)
   const [showCam, setShowCam] = useState(false)
   const [photoError, setPhotoError] = useState("")
+  const fileInputRef = useRef(null)
 
   const handleCapture = (data) => {
     setPhoto(data)
@@ -131,16 +132,20 @@ export default function Camera() {
               <button onClick={() => setShowCam(true)} className="btn-gold w-full">
                 📸 Ouvrir la caméra
               </button>
-              <label className="btn-outline w-full flex items-center justify-center gap-2 cursor-pointer">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="btn-outline w-full flex items-center justify-center gap-2 cursor-pointer">
                 <UploadIcon />
                 <span>Importer une photo</span>
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  className="hidden" 
-                  onChange={handleFileUpload}
-                />
-              </label>
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileUpload}
+              />
             </div>
           </>
         ) : (
