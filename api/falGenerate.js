@@ -1,5 +1,5 @@
 // api/falGenerate.js
-// Version pragmatique pour HuggingFace Router (img2img coiffure)
+// Version HuggingFace Router stable pour PWA AfroTresse
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -17,6 +17,7 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "API key manquante" });
     }
 
+    // URL absolue de l'image style
     const absoluteStyleImageUrl = styleImageUrl.startsWith("http")
       ? styleImageUrl
       : `https://afrotresse-hfwf.vercel.app${styleImageUrl}`;
@@ -24,14 +25,14 @@ export default async function handler(req, res) {
     console.log("✅ Selfie et style prêts");
     console.log("🔗 URL style:", absoluteStyleImageUrl);
 
-    // Fetch style image en base64
+    // Récupérer style image en base64
     const styleResponse = await fetch(absoluteStyleImageUrl);
     const styleArrayBuffer = await styleResponse.arrayBuffer();
     const styleBase64 = Buffer.from(styleArrayBuffer).toString("base64");
 
     // Appel HuggingFace Router (img2img)
     const hfResponse = await fetch(
-      "https://router.huggingface.co/models/stabilityai/stable-diffusion-xl-refiner-1.0",
+      "https://router.huggingface.co/models/runwayml/stable-diffusion-v1-5",
       {
         method: "POST",
         headers: {
