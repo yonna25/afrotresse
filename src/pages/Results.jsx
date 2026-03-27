@@ -34,7 +34,8 @@ export default function Results() {
 
   const getImgPath = (img) => {
     if (!img) return "";
-    return img.startsWith('http') || img.startsWith('/styles/') ? img : `/styles/${img.split('/').pop()}`;
+    const name = img.split('/').pop();
+    return `/styles/${name}`;
   };
 
   const handleTryStyle = async (style) => {
@@ -59,9 +60,9 @@ export default function Results() {
 
       consumeTransform();
       setResultImage(data.imageUrl);
-      setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth" }), 150);
+      setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth" }), 200);
     } catch (err) {
-      setErrorMsg("Erreur de génération. Vérifie tes crédits.");
+      setErrorMsg("Erreur de génération. Réessaie.");
     } finally {
       setLoadingId(null);
     }
@@ -69,10 +70,10 @@ export default function Results() {
 
   return (
     <div className="min-h-screen bg-[#2C1A0E] text-[#FAF4EC] p-4 pb-32">
-      <div className="mb-8 flex items-center gap-4 bg-white/5 p-5 rounded-[2rem] border border-white/10">
+      <div className="mb-8 flex items-center gap-4 bg-white/5 p-5 rounded-[2.5rem] border border-white/10">
         <img src={selfieUrl} className="w-16 h-16 rounded-2xl border-2 border-[#C9963A] object-cover" alt="Moi" />
         <div className="flex-1">
-          <h1 className="text-xl font-bold text-[#C9963A]">Mon Analyse ✨</h1>
+          <h1 className="text-xl font-bold text-[#C9963A]">Analyse ✨</h1>
           <p className="text-[10px] opacity-70 leading-tight">{FACE_SHAPE_TEXTS[faceShape]}</p>
         </div>
       </div>
@@ -81,9 +82,9 @@ export default function Results() {
 
       <AnimatePresence>
         {resultImage && (
-          <motion.div ref={resultRef} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-10 bg-[#3D2616] rounded-[2.5rem] overflow-hidden border-2 border-[#C9963A] shadow-2xl">
+          <motion.div ref={resultRef} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="mb-10 bg-[#3D2616] rounded-[2.5rem] overflow-hidden border-2 border-[#C9963A] shadow-2xl">
             <img src={resultImage} className="w-full" alt="Résultat" />
-            <div className="p-4"><button onClick={() => setResultImage(null)} className="w-full py-4 bg-white/10 rounded-2xl text-sm font-bold">Essayer un autre style</button></div>
+            <div className="p-4"><button onClick={() => setResultImage(null)} className="w-full py-4 bg-white/10 rounded-2xl text-sm font-bold">Fermer</button></div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -92,10 +93,10 @@ export default function Results() {
         {currentResults.map((style) => (
           <div key={style.id} className="bg-[#3D2616] rounded-[2.5rem] overflow-hidden border border-[#C9963A]/20 shadow-xl">
             <img src={getImgPath(style.localImage || style.image)} className="w-full h-72 object-cover object-top" alt={style.name} onError={(e) => { e.target.src = "https://placehold.co/400x600?text=Image+Indisponible"; }} />
-            <div className="p-6">
+            <div className="p-6 text-center">
               <h3 className="text-xl font-bold mb-4">{style.name}</h3>
               <button onClick={() => handleTryStyle(style)} disabled={loadingId === style.id} className="w-full py-4 bg-[#C9963A] text-[#2C1A0E] rounded-2xl font-black shadow-lg disabled:opacity-50">
-                {loadingId === style.id ? "Génération... ⏳" : "Essayer virtuellement ✨"}
+                {loadingId === style.id ? "Création... ⏳" : "Essayer virtuellement ✨"}
               </button>
             </div>
           </div>
