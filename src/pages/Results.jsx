@@ -27,6 +27,71 @@ const RESULT_MSGS = [
   "Le style parfait pour toi. 👑",
 ]
 
+import { useState } from "react";
+
+export default function TryOnSimple({ selfieUrl, styleTopUrl }) {
+  const [offsetY, setOffsetY] = useState(0);
+  const [scale, setScale] = useState(1);
+
+  return (
+    <div style={{ textAlign: "center" }}>
+      
+      {/* Zone image */}
+      <div style={{ position: "relative", display: "inline-block" }}>
+        
+        {/* Selfie */}
+        <img
+          src={selfieUrl}
+          alt="selfie"
+          style={{ width: 300, borderRadius: 12 }}
+        />
+
+        {/* Coiffure superposée */}
+        <img
+          src={styleTopUrl}
+          alt="style"
+          style={{
+            position: "absolute",
+            top: `${offsetY}px`,
+            left: 0,
+            width: "100%",
+            opacity: 0.85,
+            transform: `scale(${scale})`,
+            pointerEvents: "none"
+          }}
+        />
+      </div>
+
+      {/* Contrôles simples */}
+      <div style={{ marginTop: 20 }}>
+        
+        <p>Ajuste la coiffure 👇</p>
+
+        <label>Position verticale</label>
+        <input
+          type="range"
+          min={-100}
+          max={100}
+          value={offsetY}
+          onChange={(e) => setOffsetY(e.target.value)}
+        />
+
+        <br />
+
+        <label>Taille</label>
+        <input
+          type="range"
+          min={0.5}
+          max={1.5}
+          step={0.01}
+          value={scale}
+          onChange={(e) => setScale(e.target.value)}
+        />
+      </div>
+
+    </div>
+  );
+}
 export default function Results() {
   const navigate = useNavigate();
   const [zoomImage, setZoomImage]     = useState(null);
