@@ -6,6 +6,7 @@ import { getCredits, consumeCredits, consumeTransform, canTransform, addSeenStyl
 import { BRAIDS_DB } from "../services/faceAnalysis.js";
 import { addShare } from "../services/stats.js";
 
+// Initialisation de Supabase
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
   import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -39,24 +40,27 @@ export default function Results() {
   const [errorMsg, setErrorMsg]       = useState("");
   const resultRef                     = useRef(null);
   const errorRef                      = useRef(null);
+  
+  // État pour forcer le rafraîchissement des recommandations
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const userName  = localStorage.getItem("afrotresse_user_name") || "Reine";
   const faceShape = localStorage.getItem("afrotresse_face_shape") || "oval";
   const selfieUrl = sessionStorage.getItem("afrotresse_photo") || localStorage.getItem("afrotresse_selfie");
 
-  // Logique d'unicité stricte : on exclut les styles déjà vus
+  // --- LOGIQUE D'UNICITÉ : EXCLURE LES STYLES DÉJÀ VUS ---
   const allResults = useMemo(() => {
     const seenIds = getSeenStyleIds();
     const available = BRAIDS_DB.filter(s => 
       s.faceShapes.includes(faceShape) && !seenIds.includes(s.id)
     );
+    // On mélange pour avoir de la nouveauté à chaque clic
     return [...available].sort(() => 0.5 - Math.random());
   }, [faceShape, refreshTrigger]);
 
   const currentResults = allResults.slice(0, PAGE_SIZE);
 
-  // Fonction pour générer 3 nouveaux styles (consomme 1 crédit)
+  // --- ACTION : GÉNÉRER 3 NOUVEAUX STYLES (1 CRÉDIT) ---
   const handleGetNewStyles = useCallback(() => {
     if (credits < 1) {
       navigate("/credits");
@@ -64,25 +68,26 @@ export default function Results() {
     }
 
     if (allResults.length <= PAGE_SIZE) {
-        setErrorMsg("Tu as exploré tous les styles pour ton visage !");
+        setErrorMsg("Tu as exploré tous les styles disponibles pour ton visage !");
         return;
     }
 
-    // Action Payante
+    // Consommation du crédit
     consumeCredits(1);
     setCredits(getCredits());
     setErrorMsg("");
 
-    // Marquer les styles affichés comme vus avant de changer
+    // On marque les styles actuels comme vus pour ne plus les revoir
     currentResults.forEach(style => addSeenStyleId(style.id));
 
-    // Déclencher le nouveau tirage
+    // On déclenche le nouveau tirage via le refreshTrigger
     setRefreshTrigger(prev => prev + 1);
+    
+    // Retour en haut de la liste pour voir les nouveaux styles
     window.scrollTo({ top: 0, behavior: "smooth" });
 
   }, [credits, navigate, allResults.length, currentResults]);
 
-  // Fonctions de sauvegarde et transformation (conservées)
   const handleSave = (imageUrl) => {
     if (credits < 1 && saveCount === 0) { navigate("/credits"); return; }
     const link = document.createElement("a");
@@ -103,7 +108,7 @@ export default function Results() {
       const blob = await fetch(selfieUrl).then(r => r.blob());
       const fileName = `selfie-${Date.now()}.jpg`;
       const { error: upError } = await supabase.storage.from('selfies').upload(fileName, blob);
-      if (upError) throw new Error("Échec de l'upload.");
+      if (upError) throw new Error("Échec de l'upload du selfie.");
       const { data: { publicUrl } } = supabase.storage.from('selfies').getPublicUrl(fileName);
       const res = await fetch("/api/falGenerate", {
         method: "POST",
@@ -111,7 +116,7 @@ export default function Results() {
         body: JSON.stringify({ selfieUrl: publicUrl, stylePath: "/styles/" + (style.localImage || style.image) }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Erreur IA.");
+      if (!res.ok) throw new Error(data.error || "La génération a échoué.");
       consumeTransform();
       addSeenStyleId(style.id);
       setCredits(getCredits());
@@ -126,8 +131,29 @@ export default function Results() {
   return (
     <div className="min-h-[100dvh] bg-[#2C1A0E] text-[#FAF4EC] p-4 sm:p-6 pb-40 overflow-x-hidden relative">
       
+      {/* BOUTON GÉNÉRER NOUVEAUX STYLES (FIXED UX) */}
+      <div className="fixed top-24 left-0 right-0 z-[60] flex justify-center pointer-events-none">
+        <motion.button 
+          initial={{ y: -50, opacity: 0 }} 
+          animate={{ y: 0, opacity: 1 }}
+          onClick={handleGetNewStyles}
+          className="pointer-events-auto flex items-center gap-3 px-5 py-2.5 rounded-full border border-[#C9963A]/50 bg-[#2C1A0E]/90 backdrop-blur-xl shadow-[0_15px_40px_rgba(0,0,0,0.6)] active:scale-95 transition-all"
+        >
+          <span className="text-base">✨</span>
+          <div className="flex flex-col items-start leading-none">
+            <span className="text-[10px] font-black text-[#C9963A] uppercase tracking-widest">
+              3 autres styles
+            </span>
+            <span className="text-[8px] opacity-60 font-bold mt-1">1 crédit</span>
+          </div>
+          <div className="bg-[#C9963A] text-[#2C1A0E] text-[9px] font-black h-5 w-5 flex items-center justify-center rounded-full ml-1">
+            -1
+          </div>
+        </motion.button>
+      </div>
+
       {/* HEADER */}
-      <div className="mb-6 flex flex-row gap-5 items-center bg-white/5 p-5 rounded-[2.5rem] border border-white/10 shadow-2xl">
+      <div className="mb-10 flex flex-row gap-5 items-center bg-white/5 p-5 rounded-[2.5rem] border border-white/10 shadow-2xl relative">
         <div className="relative shrink-0">
           <img src={selfieUrl} className="w-20 h-20 rounded-2xl border-2 border-[#C9963A] object-cover" alt="Moi" />
           <div className="absolute -bottom-2 -right-2 bg-[#C9963A] text-[#2C1A0E] text-[10px] font-black px-2 py-1 rounded-md shadow-lg">MOI</div>
@@ -136,24 +162,6 @@ export default function Results() {
           <h1 className="font-display font-bold text-2xl text-[#C9963A]">Résultats pour <span className="text-[#FAF4EC]">{userName}</span></h1>
           <p className="text-[10px] opacity-70 italic leading-tight">{FACE_SHAPE_TEXTS[faceShape]}</p>
         </div>
-      </div>
-
-      {/* --- LE BOUTON STICKY (AFFINÉ) --- */}
-      <div className="sticky top-4 z-50 flex justify-center mb-10 pointer-events-none">
-        <motion.button 
-          initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-          onClick={handleGetNewStyles}
-          className="pointer-events-auto group relative flex items-center gap-4 px-6 py-2.5 rounded-full border border-[#C9963A]/40 bg-[#3D2616]/80 backdrop-blur-md hover:bg-[#C9963A]/20 transition-all active:scale-95 shadow-[0_10px_30px_rgba(0,0,0,0.5)]"
-        >
-          <span className="text-base">✨</span>
-          <div className="flex flex-col items-start leading-none">
-            <span className="text-[10px] font-black text-[#C9963A] uppercase tracking-widest">Voir 3 autres styles</span>
-            <span className="text-[8px] opacity-60 font-bold mt-1">Coût : 1 crédit</span>
-          </div>
-          <div className="bg-[#C9963A] text-[#2C1A0E] text-[9px] font-black h-5 w-5 flex items-center justify-center rounded-full ml-1">
-            -1
-          </div>
-        </motion.button>
       </div>
 
       {/* ERREUR */}
@@ -179,7 +187,7 @@ export default function Results() {
         )}
       </AnimatePresence>
 
-      {/* LISTE DES STYLES (3 PAR GÉNÉRATION) */}
+      {/* LISTE DES STYLES */}
       <div className="space-y-12">
         {currentResults.map((style) => (
           <div key={style.id} className="bg-[#3D2616] rounded-[2.5rem] overflow-hidden border border-[#C9963A]/20 shadow-2xl relative">
@@ -199,7 +207,7 @@ export default function Results() {
               </div>
               <p className="text-[11px] opacity-70 mb-6 font-body leading-relaxed">{style.description}</p>
               <button onClick={() => handleTryStyle(style)} disabled={loadingId === style.id} className="w-full py-4 rounded-2xl font-display font-bold text-base shadow-xl bg-gradient-to-r from-[#C9963A] to-[#E8B96A] text-[#2C1A0E] disabled:opacity-50">
-                {loadingId === style.id ? "Génération en cours... ⏳" : "Essayer virtuellement ✨"}
+                {loadingId === style.id ? "Génération... ⏳" : "Essayer virtuellement ✨"}
               </button>
             </div>
           </div>
