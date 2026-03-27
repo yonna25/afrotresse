@@ -230,7 +230,7 @@ export default function Results() {
         </div>
       </div>
 
-      {/* BARRE PAGINATION \u2014 visible si 2+ pages */}
+      {/* BARRE PAGINATION — visible si 2+ pages */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between bg-[#3D2616] rounded-xl px-3 py-2 mb-6"
           style={{ border: "1px solid rgba(201,150,58,0.3)" }}>
@@ -244,4 +244,138 @@ export default function Results() {
             </svg>
             <span>Pr\u00e9c\u00e9dent</span>
           </button>
-          <span style={{ color: "
+          <span style={{ color: "#E8B96A", fontSize: 14, fontWeight: 700 }}>
+            {pageIdx + 1} / {totalPages}
+          </span>
+          <button
+            onClick={() => { setPageIdx(i => i + 1); setResultImage(null); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+            disabled={pageIdx >= totalPages - 1}
+            className="flex items-center gap-1 px-3 py-2 rounded-lg font-bold disabled:opacity-30"
+            style={{ color: "#C9963A", background: "rgba(201,150,58,0.12)", fontSize: 14, minWidth: 110, justifyContent: "flex-end" }}>
+            <span>Suivant</span>
+            <svg viewBox="0 0 24 24" style={{ width: 16, height: 16 }} fill="none" stroke="currentColor" strokeWidth="2.5">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
+        </div>
+      )}
+
+      {/* ERREUR */}
+      {errorMsg && (
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+          className="mb-4 bg-red-900/30 border border-red-500/50 rounded-xl p-3">
+          <p className="text-red-200 text-sm">{errorMsg}</p>
+        </motion.div>
+      )}
+
+      {/* RESULTAT Fal.ai */}
+      <AnimatePresence>
+        {resultImage && (
+          <motion.div ref={resultRef}
+            initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
+            className="mb-8 bg-[#3D2616] rounded-[2.5rem] overflow-hidden border-2 border-[#C9963A] shadow-2xl">
+            <div className="p-5">
+              <h3 className="text-[#C9963A] font-bold text-xl">{resultMsg || "Magnifique !"}</h3>
+              <p className="text-[11px] mt-1 opacity-70">Ce style te met vraiment en valeur. Montre-le \u00e0 ta coiffeuse !</p>
+            </div>
+            <img src={resultImage} alt="R\u00e9sultat" className="w-full object-cover"/>
+            <div className="p-5 space-y-2">
+              <button onClick={handleShare}
+                className="w-full py-4 rounded-2xl font-bold text-base shadow-xl"
+                style={{ background: "linear-gradient(135deg,#C9963A,#E8B96A)", color: "#2C1A0E" }}>
+                Envoyer \u00e0 ma coiffeuse
+              </button>
+              <button onClick={() => setResultImage(null)}
+                className="w-full py-3 rounded-2xl text-sm font-semibold bg-white/10 text-white/70 border border-white/10">
+                Fermer
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* LISTE DES 3 STYLES */}
+      <div className="space-y-12">
+        {currentStyles.map((style) => {
+          const imgFace = style.views?.face || "/styles/" + (style.localImage || style.image || "");
+          const imgBack = style.views?.back || imgFace;
+          const imgTop  = style.views?.top  || imgFace;
+          return (
+            <div key={style.id} className="bg-[#3D2616] rounded-[2.5rem] overflow-hidden border border-[#C9963A]/20 shadow-2xl">
+              <div className="grid grid-cols-3 gap-0.5 h-72 bg-black/40">
+                <div className="col-span-2 h-full overflow-hidden">
+                  <img src={imgFace} className="w-full h-full object-cover object-top cursor-pointer"
+                    onClick={() => setZoomImage(imgFace)} alt={style.name} />
+                </div>
+                <div className="col-span-1 grid grid-rows-2 gap-0.5">
+                  <img src={imgBack} className="w-full h-full object-cover cursor-pointer"
+                    onClick={() => setZoomImage(imgBack)} alt={style.name} />
+                  <img src={imgTop} className="w-full h-full object-cover cursor-pointer"
+                    onClick={() => setZoomImage(imgTop)} alt={style.name} />
+                </div>
+              </div>
+              <div className="px-6 py-3 flex gap-5 text-[10px] font-black uppercase tracking-widest text-[#C9963A]/80 border-b border-white/5">
+                <span>\uD83D\uDC41\uFE0F 2.4K vues</span>
+                <span>\u2764\uFE0F 892 likes</span>
+              </div>
+              <div className="p-6">
+                <div className="flex justify-between items-start mb-3">
+                  <h3 className="font-display font-bold text-xl leading-none">{style.name}</h3>
+                  <span className="text-[10px] bg-[#C9963A] text-[#2C1A0E] px-2.5 py-1 rounded-md font-black uppercase">{style.duration}</span>
+                </div>
+                <p className="text-[11px] opacity-70 mb-6 font-body leading-relaxed">{style.description}</p>
+                <button
+                  onClick={() => handleTryStyle(style)}
+                  disabled={loadingId === style.id}
+                  className="w-full py-4 rounded-2xl font-display font-bold text-base shadow-xl active:scale-[0.98] transition-all disabled:opacity-50"
+                  style={{ background: "linear-gradient(135deg,#C9963A,#E8B96A)", color: "#2C1A0E" }}>
+                  {loadingId === style.id ? "G\u00e9n\u00e9ration... \u23F3" : "Essayer virtuellement ce style \u2728"}
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* BOUTON CREDITS FLOTTANT */}
+      <motion.div
+        initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+        onClick={() => navigate("/credits")}
+        className="fixed bottom-28 right-5 z-40 bg-[#C9963A] text-[#2C1A0E] w-14 h-14 rounded-2xl flex flex-col items-center justify-center shadow-2xl border-2 border-[#2C1A0E]/20 active:scale-95 transition-all">
+        <div className="text-[7px] font-black uppercase opacity-60">Solde</div>
+        <div className="text-3xl font-display font-black leading-none">{credits}</div>
+        <div className="text-[7px] font-bold tracking-tight">CR\u00c9DITS</div>
+        {saveCount > 0 && (
+          <div className="absolute -top-2 -left-2 bg-[#2C1A0E] text-[#C9963A] text-[8px] font-black px-1.5 py-0.5 rounded-md border border-[#C9963A]/20">
+            {saveCount}/3
+          </div>
+        )}
+      </motion.div>
+
+      {/* LIGHTBOX ZOOM */}
+      <AnimatePresence>
+        {zoomImage && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black/98 flex flex-col items-center justify-center p-6 backdrop-blur-xl"
+            onClick={() => setZoomImage(null)}>
+            <motion.img initial={{ scale: 0.9 }} animate={{ scale: 1 }}
+              src={zoomImage} alt="Zoom"
+              className="max-w-full max-h-[70vh] rounded-3xl shadow-2xl border border-white/10 object-contain"
+              onClick={(e) => e.stopPropagation()} />
+            <div className="mt-10 flex gap-4 w-full max-w-xs">
+              <button onClick={(e) => { e.stopPropagation(); handleSave(zoomImage); }}
+                className="flex-1 py-4 bg-[#C9963A] text-[#2C1A0E] rounded-2xl font-black shadow-xl flex items-center justify-center gap-2">
+                \uD83D\uDCE5 Sauvegarder
+              </button>
+              <button onClick={() => setZoomImage(null)}
+                className="px-8 py-4 bg-white/10 text-white rounded-2xl font-bold backdrop-blur-md border border-white/10">
+                \u2715
+              </button>
+            </div>
+            <p className="text-[10px] text-white/40 mt-4 uppercase font-bold tracking-widest">3 saves = 1 cr\u00e9dit</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
