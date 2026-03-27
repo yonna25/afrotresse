@@ -38,7 +38,7 @@ function imgUrl(style, view) {
     || "/styles/" + (style.localImage || style.image || "");
 }
 
-// Icone personnalisée : Flèches de Cycle avec Étincelle
+// Icône personnalisée : Flèches de Cycle avec Étincelle
 const IconGenerate = () => (
   <div className="relative w-6 h-6">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-full h-full opacity-80">
@@ -149,7 +149,6 @@ export default function Results() {
       setResultImage(data.imageUrl);
       setResultMsg(RESULT_MSGS[Math.floor(Math.random() * RESULT_MSGS.length)]);
       
-      // Scroll vers le résultat après un court délai pour laisser l'image apparaître
       setTimeout(() => {
         resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 500);
@@ -164,13 +163,22 @@ export default function Results() {
 
   const handleSave = (imageUrl) => {
     if (credits < 1 && saveCount === 0) { navigate("/credits"); return; }
+    
     const link = document.createElement("a");
     link.href = imageUrl;
     link.download = "afrotresse-" + Date.now() + ".jpg";
     link.click();
+
     const next = saveCount + 1;
-    if (next >= 3) { consumeCredits(1); setCredits(getCredits()); setSaveCount(0); }
-    else setSaveCount(next);
+    if (next >= 3) {
+      consumeCredits(1);
+      setCredits(getCredits());
+      setSaveCount(0);
+      setErrorMsg("SUCCESS_SAVE"); 
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      setSaveCount(next);
+    }
   };
 
   const handleShare = async () => {
@@ -204,12 +212,31 @@ export default function Results() {
         </div>
       </div>
 
-      {/* ERREUR */}
+      {/* NOTIFICATIONS (ERREUR OU SUCCÈS SAUVEGARDE) */}
       <div ref={errorRef}>
         {errorMsg !== "" && (
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-            className="mb-4 bg-red-900/30 border border-red-500/50 rounded-xl p-3">
-            <p className="text-red-200 text-sm">{errorMsg}</p>
+            className={`mb-4 rounded-xl p-4 border ${
+              errorMsg === "SUCCESS_SAVE" 
+                ? "bg-green-900/20 border-green-500/50" 
+                : "bg-red-900/30 border-red-500/50"
+            }`}>
+            {errorMsg === "SUCCESS_SAVE" ? (
+              <div className="text-center">
+                <p className="text-[#FAF4EC] text-sm font-bold mb-3">
+                  Souvenir enregistré 📸<br/>
+                  Ton style est sauvegardé — 1 crédit utilisé
+                </p>
+                <button 
+                  onClick={() => navigate("/profil")}
+                  className="text-[#C9963A] font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 w-full border-t border-white/10 pt-3"
+                >
+                  👉 Voir mes styles enregistrés
+                </button>
+              </div>
+            ) : (
+              <p className="text-red-200 text-sm">{errorMsg}</p>
+            )}
           </motion.div>
         )}
       </div>
