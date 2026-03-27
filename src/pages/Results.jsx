@@ -39,6 +39,7 @@ export default function Results() {
   const [isFallback, setIsFallback]   = useState(false);
   const [errorMsg, setErrorMsg]       = useState("");
   const resultRef                     = useRef(null);
+  const errorRef                      = useRef(null);
 
   const userName  = localStorage.getItem("afrotresse_user_name") || "Reine";
   const faceShape = localStorage.getItem("afrotresse_face_shape") || "oval";
@@ -109,7 +110,12 @@ export default function Results() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || "La génération a échoué.");
+        const msg = data.error || "La génération a échoué.";
+        setErrorMsg(msg);
+        setTimeout(() => {
+          errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 100);
+        return;
       }
 
       // 4. Succès et mise à jour de l'interface
@@ -127,6 +133,9 @@ export default function Results() {
     } catch (err) {
       console.error(err);
       setErrorMsg(err.message || "Connexion impossible. Réessaie.");
+      setTimeout(() => {
+        errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 100);
     } finally {
       setLoadingId(null);
     }
@@ -169,7 +178,7 @@ export default function Results() {
 
       {/* ERREUR */}
       {errorMsg && (
-        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+        <motion.div ref={errorRef} initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
           className="mb-4 bg-red-900/30 border border-red-500/50 rounded-xl p-3">
           <p className="text-red-200 text-sm">{errorMsg}</p>
         </motion.div>
