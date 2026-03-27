@@ -6,7 +6,7 @@ import { getCredits, consumeCredits, consumeTransform, canTransform, addSeenStyl
 import { BRAIDS_DB } from "../services/faceAnalysis.js";
 import { addShare } from "../services/stats.js";
 
-// Initialisation de Supabase
+// Initialisation du client Supabase pour l'upload des selfies
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
   import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -36,7 +36,6 @@ export default function Results() {
   const [resultImage, setResultImage] = useState(null);
   const [resultStyleId, setResultStyleId] = useState(null);
   const [resultMsg, setResultMsg]     = useState("");
-  const [isFallback, setIsFallback]   = useState(false);
   const [errorMsg, setErrorMsg]       = useState("");
   const resultRef                     = useRef(null);
 
@@ -76,33 +75,44 @@ export default function Results() {
       return; 
     }
 
+    if (!selfieUrl) {
+      setErrorMsg("Photo introuvable. Merci de recommencer l'analyse.");
+      return;
+    }
+
     setErrorMsg("");
     setResultImage(null);
     setLoadingId(style.id);
 
     try {
-      // 1. Préparation du fichier selfie (Blob)
-      const blob = await fetch(selfieUrl).then(r => r.blob());
+      // 1. Conversion du selfie (base64) en Blob pour l'upload
+      const response = await fetch(selfieUrl);
+      const blob = await response.blob();
       const fileName = `selfie-${Date.now()}.jpg`;
 
-      // 2. Upload vers Supabase pour obtenir une URL publique
+      // 2. Upload vers le bucket 'selfies' de Supabase
       const { data: upData, error: upError } = await supabase.storage
         .from('selfies')
         .upload(fileName, blob);
 
-      if (upError) throw new Error("Échec de l'upload du selfie vers le serveur.");
+      if (upError) throw new Error("Erreur lors de l'envoi de ta photo au serveur.");
 
+      // 3. Récupération de l'URL publique pour Replicate
       const { data: { publicUrl: selfiePublicUrl } } = supabase.storage
         .from('selfies')
         .getPublicUrl(fileName);
 
-      // 3. Appel de l'API de génération (Backend Replicate)
+      // 4. Préparation du chemin de style propre (/styles/image.jpg)
+      const imageFile = style.localImage || style.image;
+      const cleanStylePath = imageFile.startsWith('/') ? imageFile : `/styles/${imageFile}`;
+
+      // 5. Appel API vers le backend corrigé
       const res = await fetch("/api/falGenerate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           selfieUrl: selfiePublicUrl,
-          stylePath: "/styles/" + (style.localImage || style.image)
+          stylePath: cleanStylePath
         }),
       });
 
@@ -112,7 +122,7 @@ export default function Results() {
         throw new Error(data.error || "La génération a échoué.");
       }
 
-      // 4. Succès et mise à jour de l'interface
+      // 6. Succès : Mise à jour des crédits et affichage
       consumeTransform();
       addSeenStyleId(style.id);
       setCredits(getCredits());
@@ -120,9 +130,10 @@ export default function Results() {
       setResultStyleId(style.id);
       setResultMsg(RESULT_MSGS[Math.floor(Math.random() * RESULT_MSGS.length)]);
       
+      // Scroll automatique vers le résultat
       setTimeout(() => {
         resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }, 100);
+      }, 150);
 
     } catch (err) {
       console.error(err);
@@ -146,7 +157,7 @@ export default function Results() {
   return (
     <div className="min-h-[100dvh] bg-[#2C1A0E] text-[#FAF4EC] p-4 sm:p-6 pb-40 overflow-x-hidden relative">
       
-      {/* HEADER */}
+      {/* HEADER AVEC ANALYSE */}
       <div className="mb-10 flex flex-row gap-5 items-center bg-white/5 p-5 rounded-[2.5rem] border border-white/10 shadow-2xl relative">
         <div className="relative shrink-0">
           {selfieUrl ? (
@@ -167,7 +178,7 @@ export default function Results() {
         </div>
       </div>
 
-      {/* ERREUR */}
+      {/* ZONE D'ERREUR */}
       {errorMsg && (
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
           className="mb-4 bg-red-900/30 border border-red-500/50 rounded-xl p-3">
@@ -175,7 +186,7 @@ export default function Results() {
         </motion.div>
       )}
 
-      {/* RÉSULTAT IA */}
+      {/* AFFICHAGE DU RÉSULTAT IA */}
       <AnimatePresence>
         {resultImage && (
           <motion.div ref={resultRef}
@@ -183,7 +194,7 @@ export default function Results() {
             className="mb-6 bg-[#3D2616] rounded-[2.5rem] overflow-hidden border-2 border-[#C9963A] shadow-2xl">
             <div className="p-5">
               <h3 className="text-[#C9963A] font-bold text-xl">{resultMsg || "Magnifique !"}</h3>
-              <p className="text-[11px] mt-1 opacity-70">Ce style te met vraiment en valeur. Montre-le à ta coiffeuse !</p>
+              <p className="text-[11px] mt-1 opacity-70">Voici ton aperçu. Montre-le à ta coiffeuse pour ton prochain rendez-vous !</p>
             </div>
             <img src={resultImage} alt="Résultat" className="w-full object-cover"/>
             <div className="p-5 space-y-2">
@@ -202,6 +213,8 @@ export default function Results() {
         )}
       </AnimatePresence>
 
-      {/* LISTE DES STYLES */}
+      {/* CATALOGUE DES STYLES CONSEILLÉS */}
       <div className="space-y-12">
         {currentResults.map((style) => (
+          <div key={style.id} className="bg-[#3D2616] rounded-[2.5rem] overflow-hidden border border-[#C9963A]/20 shadow-2xl relative">
+            <div className="grid grid-cols-3 gap-0
