@@ -8,18 +8,18 @@ import {
 import { BRAIDS_DB } from "../services/faceAnalysis.js";
 
 const FACE_SHAPE_TEXTS = {
-  oval:    "Ton visage est de forme Ovale. C\u2019est une structure tr\u00e8s \u00e9quilibr\u00e9e qui s\u2019adapte \u00e0 presque tous les styles.",
+  oval:    "Ton visage est de forme Ovale. C’est une structure très équilibrée qui s’adapte à presque tous les styles.",
   round:   "Ton visage est de forme Ronde. Pour allonger et affiner visuellement tes traits, les tresses hautes sont parfaites.",
-  square:  "Ton visage est de forme Carr\u00e9e. Les tresses avec du volume adoucissent ta m\u00e2choire.",
-  heart:   "Ton visage est en forme de C\u0153ur. Les tresses avec du volume en bas \u00e9quilibrent ton menton.",
-  long:    "Ton visage est de forme Longue. Les tresses lat\u00e9rales cr\u00e9ent l\u2019harmonie parfaite.",
+  square:  "Ton visage est de forme Carrée. Les tresses avec du volume adoucissent ta mâchoire.",
+  heart:   "Ton visage est en forme de Cœur. Les tresses avec du volume en bas équilibrent ton menton.",
+  long:    "Ton visage est de forme Longue. Les tresses latérales créent l’harmonie parfaite.",
   diamond: "Ton visage est de forme Diamant. Les tresses qui encadrent le visage te subliment.",
 }
 
 const RESULT_MSGS = [
-  "Waouh \uD83D\uDE0D, tu es splendide !",
-  "Regarde cette Reine ! \u2728",
-  "Le style parfait pour toi. \uD83D\uDC51",
+  "Waouh 😍, tu es splendide !",
+  "Regarde cette Reine ! ✨",
+  "Le style parfait pour toi. 👑",
 ]
 
 const PAGE_SIZE = 3;
@@ -50,7 +50,7 @@ export default function Results() {
   const faceShape = localStorage.getItem("afrotresse_face_shape") || "oval";
   const selfieUrl = sessionStorage.getItem("afrotresse_photo") || localStorage.getItem("afrotresse_selfie");
 
-  // Pagination : pages stock\u00e9es en sessionStorage
+  // Pagination : pages stockées en sessionStorage
   const [pages, setPages] = useState(() => {
     const stored = getStoredPages();
     if (stored.length > 0) return stored;
@@ -81,7 +81,7 @@ export default function Results() {
       || "/styles/" + (style.localImage || style.image || "");
   }
 
-  // G\u00e9n\u00e9rer 3 nouveaux styles — 1 cr\u00e9dit
+  // Générer 3 nouveaux styles — 1 crédit
   const handleGetNewStyles = useCallback(() => {
     if (credits < 1) { navigate("/credits"); return; }
     const seen      = getSeenStyleIds();
@@ -94,7 +94,7 @@ export default function Results() {
       .sort(() => 0.5 - Math.random());
 
     if (available.length === 0) {
-      setErrorMsg("Tu as explor\u00e9 tous les styles disponibles pour ton visage !");
+      setErrorMsg("Tu as exploré tous les styles disponibles pour ton visage !");
       return;
     }
     consumeCredits(1);
@@ -119,7 +119,7 @@ export default function Results() {
       const selfieType   = selfieUrl?.match(/:(.*?);/)?.[1] || "image/jpeg";
       const styleImageUrl = window.location.origin + imgUrl(style, "face");
 
-      if (!selfieBase64) throw new Error("Selfie introuvable. Prends une photo d\u2019abord.");
+      if (!selfieBase64) throw new Error("Selfie introuvable. Prends une photo d’abord.");
 
       const res  = await fetch("/api/falGenerate", {
         method:  "POST",
@@ -135,7 +135,7 @@ export default function Results() {
       });
       const data = await res.json();
       if (res.status === 429) { setErrorMsg(data.error || "Attends quelques secondes."); return; }
-      if (!res.ok)             { setErrorMsg(data.error || "La g\u00e9n\u00e9ration a \u00e9chou\u00e9."); return; }
+      if (!res.ok)             { setErrorMsg(data.error || "La génération a échoué."); return; }
 
       consumeTransform();
       addSeenStyleId(style.id);
@@ -145,13 +145,13 @@ export default function Results() {
       setZoomImage(null);
       setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth" }), 400);
     } catch (err) {
-      setErrorMsg(err.message || "Connexion impossible. Reessaie.");
+      setErrorMsg(err.message || "Connexion impossible. Réessaie.");
     } finally {
       setLoadingId(null);
     }
   };
 
-  // Sauvegarde (3 saves = 1 cr\u00e9dit)
+  // Sauvegarde (3 saves = 1 crédit)
   const handleSave = (imageUrl) => {
     if (credits < 1 && saveCount === 0) { navigate("/credits"); return; }
     const link = document.createElement("a");
@@ -169,7 +169,7 @@ export default function Results() {
         await navigator.share({ title: "AfroTresse", text: "Regarde ce style !", url: window.location.href });
       } else {
         await navigator.clipboard.writeText(window.location.href);
-        alert("Lien copi\u00e9 !");
+        alert("Lien copié !");
       }
     } catch {}
   };
@@ -183,10 +183,10 @@ export default function Results() {
           initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
           onClick={handleGetNewStyles}
           className="pointer-events-auto flex items-center gap-3 px-5 py-2.5 rounded-full border border-[#C9963A]/50 bg-[#2C1A0E]/90 backdrop-blur-xl shadow-[0_15px_40px_rgba(0,0,0,0.6)] active:scale-95 transition-all">
-          <span className="text-base">\u2728</span>
+          <span className="text-base">✨</span>
           <div className="flex flex-col items-start leading-none">
             <span className="text-[10px] font-black text-[#C9963A] uppercase tracking-widest">3 autres styles</span>
-            <span className="text-[8px] opacity-60 font-bold mt-1">1 cr\u00e9dit</span>
+            <span className="text-[8px] opacity-60 font-bold mt-1">1 crédit</span>
           </div>
           <div className="bg-[#C9963A] text-[#2C1A0E] text-[9px] font-black h-5 w-5 flex items-center justify-center rounded-full ml-1">-1</div>
         </motion.button>
@@ -203,7 +203,7 @@ export default function Results() {
         </div>
         <div className="flex flex-col flex-1">
           <h1 className="font-display font-bold text-2xl text-[#C9963A]">
-            R\u00e9sultats pour <span className="text-[#FAF4EC]">{userName}</span>
+            Résultats pour <span className="text-[#FAF4EC]">{userName}</span>
           </h1>
           <p className="text-[10px] opacity-70 italic leading-tight mt-1">{FACE_SHAPE_TEXTS[faceShape]}</p>
         </div>
@@ -221,7 +221,7 @@ export default function Results() {
             <svg viewBox="0 0 24 24" style={{ width: 16, height: 16 }} fill="none" stroke="currentColor" strokeWidth="2.5">
               <polyline points="15 18 9 12 15 6"/>
             </svg>
-            <span>Pr\u00e9c\u00e9dent</span>
+            <span>Précédent</span>
           </button>
           <span style={{ color: "#E8B96A", fontSize: 14, fontWeight: 700 }}>
             {pageIdx + 1} / {totalPages}
@@ -255,14 +255,14 @@ export default function Results() {
             className="mb-8 bg-[#3D2616] rounded-[2.5rem] overflow-hidden border-2 border-[#C9963A] shadow-2xl">
             <div className="p-5">
               <h3 className="text-[#C9963A] font-bold text-xl">{resultMsg || "Magnifique !"}</h3>
-              <p className="text-[11px] mt-1 opacity-70">Ce style te met vraiment en valeur. Montre-le \u00e0 ta coiffeuse !</p>
+              <p className="text-[11px] mt-1 opacity-70">Ce style te met vraiment en valeur. Montre-le à ta coiffeuse !</p>
             </div>
             <img src={resultImage} alt="Resultat" className="w-full object-cover"/>
             <div className="p-5 space-y-2">
               <button onClick={handleShare}
                 className="w-full py-4 rounded-2xl font-bold text-base"
                 style={{ background: "linear-gradient(135deg,#C9963A,#E8B96A)", color: "#2C1A0E" }}>
-                Envoyer \u00e0 ma coiffeuse
+                Envoyer à ma coiffeuse
               </button>
               <button onClick={() => setResultImage(null)}
                 className="w-full py-3 rounded-2xl text-sm font-semibold bg-white/10 text-white/70 border border-white/10">
@@ -290,8 +290,8 @@ export default function Results() {
               </div>
             </div>
             <div className="px-6 py-3 flex gap-5 text-[10px] font-black uppercase tracking-widest text-[#C9963A]/80 border-b border-white/5">
-              <span>\uD83D\uDC41\uFE0F 2.4K vues</span>
-              <span>\u2764\uFE0F 892 likes</span>
+              <span>👁️ 2.4K vues</span>
+              <span>❤️ 892 likes</span>
             </div>
             <div className="p-6">
               <div className="flex justify-between items-start mb-3">
@@ -304,7 +304,7 @@ export default function Results() {
                 disabled={loadingId === style.id}
                 className="w-full py-4 rounded-2xl font-display font-bold text-base shadow-xl active:scale-[0.98] transition-all disabled:opacity-50"
                 style={{ background: "linear-gradient(135deg,#C9963A,#E8B96A)", color: "#2C1A0E" }}>
-                {loadingId === style.id ? "G\u00e9n\u00e9ration... \u23F3" : "Essayer virtuellement \u2728"}
+                {loadingId === style.id ? "Génération... ⏳" : "Essayer virtuellement ✨"}
               </button>
             </div>
           </div>
@@ -318,7 +318,7 @@ export default function Results() {
         className="fixed bottom-28 right-5 z-40 bg-[#C9963A] text-[#2C1A0E] w-14 h-14 rounded-2xl flex flex-col items-center justify-center shadow-2xl border-2 border-[#2C1A0E]/20 active:scale-95 transition-all">
         <div className="text-[7px] font-black uppercase opacity-60">Solde</div>
         <div className="text-3xl font-display font-black leading-none">{credits}</div>
-        <div className="text-[7px] font-bold tracking-tight">CR\u00c9DITS</div>
+        <div className="text-[7px] font-bold tracking-tight">CRÉDITS</div>
         {saveCount > 0 && (
           <div className="absolute -top-2 -left-2 bg-[#2C1A0E] text-[#C9963A] text-[8px] font-black px-1.5 py-0.5 rounded-md border border-[#C9963A]/20">
             {saveCount}/3
@@ -343,21 +343,21 @@ export default function Results() {
                   disabled={loadingId === zoomStyle.id}
                   className="w-full py-4 rounded-2xl font-bold text-base shadow-xl disabled:opacity-50"
                   style={{ background: "linear-gradient(135deg,#C9963A,#E8B96A)", color: "#2C1A0E" }}>
-                  {loadingId === zoomStyle.id ? "G\u00e9n\u00e9ration... \u23F3" : "Essayer virtuellement \u2728"}
+                  {loadingId === zoomStyle.id ? "Génération... ⏳" : "Essayer virtuellement ✨"}
                 </button>
               )}
               <div className="flex gap-3">
                 <button onClick={(e) => { e.stopPropagation(); handleSave(zoomImage); }}
                   className="flex-1 py-3 bg-[#C9963A] text-[#2C1A0E] rounded-2xl font-black shadow-xl flex items-center justify-center gap-2">
-                  \uD83D\uDCE5 Sauvegarder
+                  📥 Sauvegarder
                 </button>
                 <button onClick={() => setZoomImage(null)}
                   className="px-6 py-3 bg-white/10 text-white rounded-2xl font-bold backdrop-blur-md border border-white/10">
-                  \u2715
+                  ✕
                 </button>
               </div>
             </div>
-            <p className="text-[10px] text-white/40 mt-4 uppercase font-bold tracking-widest">3 saves = 1 cr\u00e9dit</p>
+            <p className="text-[10px] text-white/40 mt-4 uppercase font-bold tracking-widest">3 saves = 1 crédit</p>
           </motion.div>
         )}
       </AnimatePresence>
