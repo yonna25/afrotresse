@@ -8,18 +8,18 @@ import {
 import { BRAIDS_DB } from "../services/faceAnalysis.js";
 
 const FACE_SHAPE_TEXTS = {
-  oval:    "Ton visage est de forme Ovale. C’est une structure très équilibrée qui s’adapte à presque tous les styles.",
+  oval:    "Ton visage est de forme Ovale. C\u2019est une structure tr\u00e8s \u00e9quilibr\u00e9e qui s\u2019adapte \u00e0 presque tous les styles.",
   round:   "Ton visage est de forme Ronde. Pour allonger et affiner visuellement tes traits, les tresses hautes sont parfaites.",
-  square:  "Ton visage est de forme Carrée. Les tresses avec du volume adoucissent ta mâchoire.",
-  heart:   "Ton visage est en forme de Cœur. Les tresses avec du volume en bas équilibrent ton menton.",
-  long:    "Ton visage est de forme Longue. Les tresses latérales créent l’harmonie parfaite.",
+  square:  "Ton visage est de forme Carr\u00e9e. Les tresses avec du volume adoucissent ta m\u00e2choire.",
+  heart:   "Ton visage est en forme de C\u0153ur. Les tresses avec du volume en bas \u00e9quilibrent ton menton.",
+  long:    "Ton visage est de forme Longue. Les tresses lat\u00e9rales cr\u00e9ent l\u2019harmonie parfaite.",
   diamond: "Ton visage est de forme Diamant. Les tresses qui encadrent le visage te subliment.",
 }
 
 const RESULT_MSGS = [
-  "Waouh 😍, tu es splendide !",
-  "Regarde cette Reine ! ✨",
-  "Le style parfait pour toi. 👑",
+  "Waouh \uD83D\uDE0D, tu es splendide !",
+  "Regarde cette Reine ! \u2728",
+  "Le style parfait pour toi. \uD83D\uDC51",
 ]
 
 const PAGE_SIZE = 3;
@@ -29,27 +29,19 @@ function getStoredPages() {
   try { return JSON.parse(sessionStorage.getItem(KEY_PAGES) || "[]"); }
   catch { return []; }
 }
-
 function storePages(p) {
   try { sessionStorage.setItem(KEY_PAGES, JSON.stringify(p)); } catch {}
 }
 
+// Helper URL image
 function imgUrl(style, view) {
   return (view && style.views && style.views[view])
     || "/styles/" + (style.localImage || style.image || "");
 }
 
-const IconGenerate = () => (
-  <div className="relative w-6 h-6">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-full h-full opacity-80">
-      <path d="M21 12a9 9 0 11-9-9c2.52 0 4.85.99 6.57 2.57L21 8M21 3v5h-5" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-    <span className="absolute -top-1 -right-1 text-[10px]">✨</span>
-  </div>
-);
-
 export default function Results() {
   const navigate = useNavigate();
+
   const [zoomImage, setZoomImage]     = useState(null);
   const [credits, setCredits]         = useState(getCredits());
   const [saveCount, setSaveCount]     = useState(0);
@@ -57,13 +49,13 @@ export default function Results() {
   const [resultImage, setResultImage] = useState(null);
   const [resultMsg, setResultMsg]     = useState("");
   const [errorMsg, setErrorMsg]       = useState("");
-  
-  const resultRef = useRef(null);
-  const errorRef  = useRef(null);
+  const resultRef                     = useRef(null);
+
   const userName  = localStorage.getItem("afrotresse_user_name") || "Reine";
   const faceShape = localStorage.getItem("afrotresse_face_shape") || "oval";
   const selfieUrl = sessionStorage.getItem("afrotresse_photo") || localStorage.getItem("afrotresse_selfie");
 
+  // Pagination
   const [pages, setPages] = useState(() => {
     const stored = getStoredPages();
     if (stored.length > 0) return stored;
@@ -83,17 +75,26 @@ export default function Results() {
 
   const currentStyles = pages[pageIdx] ? pages[pageIdx].styles : [];
   const totalPages    = pages.length;
-  const usedIds = useMemo(() => pages.flatMap(p => (p.styles || []).map(s => s.id)), [pages]);
 
-  const handleGetNewStyles = useCallback(() => {
+  const usedIds = useMemo(
+    () => pages.flatMap(function(p) { return (p.styles || []).map(function(s) { return s.id; }); }),
+    [pages]
+  );
+
+  // Generer 3 nouveaux styles — 1 credit
+  const handleGetNewStyles = useCallback(function() {
     if (credits < 1) { navigate("/credits"); return; }
     const seen      = getSeenStyleIds();
     const available = BRAIDS_DB
-      .filter(s => s.faceShapes.includes(faceShape) && !seen.includes(s.id) && !usedIds.includes(s.id))
-      .sort(() => 0.5 - Math.random());
+      .filter(function(s) {
+        return s.faceShapes.includes(faceShape) &&
+          !seen.includes(s.id) &&
+          !usedIds.includes(s.id);
+      })
+      .sort(function() { return 0.5 - Math.random(); });
 
     if (available.length === 0) {
-      setErrorMsg("Tu as exploré tous les styles disponibles !");
+      setErrorMsg("Tu as explor\u00e9 tous les styles disponibles pour ton visage !");
       return;
     }
     consumeCredits(1);
@@ -107,7 +108,8 @@ export default function Results() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [credits, navigate, faceShape, usedIds, pages]);
 
-  const handleTryStyle = async (style) => {
+  // Transformation Fal.ai
+  const handleTryStyle = async function(style) {
     if (!canTransform()) { navigate("/credits"); return; }
     setErrorMsg("");
     setResultImage(null);
@@ -117,149 +119,263 @@ export default function Results() {
       const selfieType   = selfieUrl ? (selfieUrl.match(/:(.*?);/) || [])[1] || "image/jpeg" : "image/jpeg";
       const styleImageUrl = window.location.origin + imgUrl(style, "face");
 
-      if (!selfieBase64) throw new Error("Selfie introuvable.");
+      if (!selfieBase64) throw new Error("Selfie introuvable. Prends une photo d\u2019abord.");
 
       const res = await fetch("/api/falGenerate", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ selfieBase64, selfieType, styleImageUrl, faceShape, styleId: style.id, type: "transform" }),
+        body:    JSON.stringify({
+          selfieBase64,
+          selfieType,
+          styleImageUrl,
+          faceShape,
+          styleId: style.id,
+          type: "transform",
+        }),
       });
       const data = await res.json();
-      
-      if (!res.ok) { 
-        setErrorMsg(data.error || "La génération a échoué.");
-        return; 
-      }
+      if (res.status === 429) { setErrorMsg(data.error || "Attends quelques secondes."); return; }
+      if (!res.ok)             { setErrorMsg(data.error || "La g\u00e9n\u00e9ration a \u00e9chou\u00e9."); return; }
 
       consumeTransform();
       addSeenStyleId(style.id);
       setCredits(getCredits());
       setResultImage(data.imageUrl);
       setResultMsg(RESULT_MSGS[Math.floor(Math.random() * RESULT_MSGS.length)]);
+      setTimeout(function() {
+        if (resultRef.current) resultRef.current.scrollIntoView({ behavior: "smooth" });
+      }, 400);
     } catch (err) {
-      setErrorMsg(err.message || "Erreur de connexion.");
+      setErrorMsg(err.message || "Connexion impossible. Reessaie.");
     } finally {
       setLoadingId(null);
     }
   };
 
-  const handleSave = (imageUrl) => {
+  // Sauvegarde (3 saves = 1 credit)
+  const handleSave = function(imageUrl) {
+    if (credits < 1 && saveCount === 0) { navigate("/credits"); return; }
     const link = document.createElement("a");
-    link.href = imageUrl;
+    link.href     = imageUrl;
     link.download = "afrotresse-" + Date.now() + ".jpg";
     link.click();
-
     const next = saveCount + 1;
-    if (next >= 3) {
-      consumeCredits(1);
-      setCredits(getCredits());
-      setSaveCount(0);
-      setErrorMsg("SUCCESS_SAVE"); 
-    } else {
-      setSaveCount(next);
-    }
+    if (next >= 3) { consumeCredits(1); setCredits(getCredits()); setSaveCount(0); }
+    else setSaveCount(next);
+  };
+
+  const handleShare = async function() {
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "AfroTresse", text: "Regarde ce style !", url: window.location.href });
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        alert("Lien copi\u00e9 !");
+      }
+    } catch(e) {}
   };
 
   return (
     <div className="min-h-[100dvh] bg-[#2C1A0E] text-[#FAF4EC] p-4 sm:p-6 pb-40 overflow-x-hidden relative">
+
       {/* HEADER */}
       <div className="mb-6 flex flex-row gap-5 items-center bg-white/5 p-5 rounded-[2.5rem] border border-white/10 shadow-2xl">
         <div className="relative shrink-0">
-          <img src={selfieUrl || "/avatar.png"} className="w-20 h-20 rounded-2xl border-2 border-[#C9963A] object-cover" alt="Moi" />
-          <div className="absolute -bottom-2 -right-2 bg-[#C9963A] text-[#2C1A0E] text-[10px] font-black px-2 py-1 rounded-md">MOI</div>
+          {selfieUrl
+            ? <img src={selfieUrl} className="w-20 h-20 rounded-2xl border-2 border-[#C9963A] object-cover" alt="Moi" />
+            : <div className="w-20 h-20 rounded-2xl border-2 border-white/10 bg-white/5 flex items-center justify-center text-[10px]">Photo</div>
+          }
+          <div className="absolute -bottom-2 -right-2 bg-[#C9963A] text-[#2C1A0E] text-[10px] font-black px-2 py-1 rounded-md shadow-lg">MOI</div>
         </div>
         <div className="flex flex-col flex-1">
           <h1 className="font-display font-bold text-2xl text-[#C9963A]">
-            Tes Résultats ✨ <span className="text-[#FAF4EC]">{userName}</span>
+            R\u00e9sultats pour <span className="text-[#FAF4EC]">{userName}</span>
           </h1>
           <p className="text-[10px] opacity-70 italic leading-tight mt-1">{FACE_SHAPE_TEXTS[faceShape]}</p>
         </div>
       </div>
 
-      {/* NOTIFICATIONS */}
+      {/* ERREUR */}
       {errorMsg !== "" && (
-        <div className={`mb-4 rounded-xl p-4 border ${errorMsg === "SUCCESS_SAVE" ? "bg-green-900/20 border-green-500/50" : "bg-red-900/30 border-red-500/50"}`}>
-          <p className="text-sm text-center">{errorMsg === "SUCCESS_SAVE" ? "Style sauvegardé !" : errorMsg}</p>
-        </div>
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+          className="mb-4 bg-red-900/30 border border-red-500/50 rounded-xl p-3">
+          <p className="text-red-200 text-sm">{errorMsg}</p>
+        </motion.div>
       )}
 
-      {/* RÉSULTAT IA */}
+      {/* RESULTAT Fal.ai */}
       <AnimatePresence>
         {resultImage && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-8 bg-[#3D2616] rounded-[2.5rem] overflow-hidden border-2 border-[#C9963A]">
+          <motion.div ref={resultRef}
+            initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
+            className="mb-8 bg-[#3D2616] rounded-[2.5rem] overflow-hidden border-2 border-[#C9963A] shadow-2xl">
             <div className="p-5">
-              <h3 className="text-[#C9963A] font-bold text-xl">{resultMsg}</h3>
+              <h3 className="text-[#C9963A] font-bold text-xl">{resultMsg || "Magnifique !"}</h3>
+              <p className="text-[11px] mt-1 opacity-70">Ce style te met vraiment en valeur. Montre-le \u00e0 ta coiffeuse !</p>
             </div>
             <img src={resultImage} alt="Resultat" className="w-full object-cover"/>
-            <div className="p-5">
-              <button onClick={() => setResultImage(null)} className="w-full py-3 bg-white/10 rounded-2xl">Fermer</button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* LISTE DES STYLES */}
-      <div className="space-y-12">
-        {currentStyles.map((style) => (
-          <div key={style.id} className="bg-[#3D2616] rounded-[2.5rem] overflow-hidden border border-[#C9963A]/20">
-            <div className="grid grid-cols-3 gap-0.5 h-72">
-              <div className="col-span-2 overflow-hidden">
-                <img src={imgUrl(style, "face")} className="w-full h-full object-cover" onClick={() => setZoomImage(imgUrl(style, "face"))} alt={style.name} />
-              </div>
-              <div className="col-span-1 grid grid-rows-2 gap-0.5">
-                <img src={imgUrl(style, "back")} className="w-full h-full object-cover" onClick={() => setZoomImage(imgUrl(style, "back"))} alt={style.name} />
-                <img src={imgUrl(style, "top")} className="w-full h-full object-cover" onClick={() => setZoomImage(imgUrl(style, "top"))} alt={style.name} />
-              </div>
-            </div>
-            <div className="p-6">
-              <h3 className="font-display font-bold text-xl mb-2">{style.name}</h3>
-              <p className="text-[11px] opacity-70 mb-6">{style.description}</p>
-              <button
-                onClick={() => handleTryStyle(style)}
-                disabled={loadingId === style.id}
-                className="w-full py-4 rounded-2xl font-bold"
-                style={{ background: "linear-gradient(135deg,#C9963A,#E8B96A)", color: "#2C1A0E" }}
-              >
-                {loadingId === style.id ? "Génération..." : "Essayer virtuellement ✨"}
+            <div className="p-5 space-y-2">
+              <button onClick={handleShare}
+                className="w-full py-4 rounded-2xl font-bold text-base"
+                style={{ background: "linear-gradient(135deg,#C9963A,#E8B96A)", color: "#2C1A0E" }}>
+                Envoyer \u00e0 ma coiffeuse
+              </button>
+              <button onClick={function() { setResultImage(null); }}
+                className="w-full py-3 rounded-2xl text-sm font-semibold bg-white/10 text-white/70 border border-white/10">
+                Fermer
               </button>
             </div>
-          </div>
-        ))}
-      </div>
-
-      {/* PAGINATION */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-10 p-4 bg-[#3D2616] rounded-2xl border border-gold/30">
-          <button onClick={() => setPageIdx(i => i - 1)} disabled={pageIdx === 0} className="text-[#C9963A] font-bold">Précédent</button>
-          <span className="text-[#E8B96A] font-bold">{pageIdx + 1} / {totalPages}</span>
-          <button onClick={() => setPageIdx(i => i + 1)} disabled={pageIdx === totalPages - 1} className="text-[#C9963A] font-bold">Suivant</button>
-        </div>
-      )}
-
-      {/* BOUTONS FLOTTANTS */}
-      <div className="fixed bottom-28 right-5 z-40 flex flex-col gap-2">
-        <div onClick={() => navigate("/credits")} className="bg-[#C9963A] text-[#2C1A0E] w-14 h-14 rounded-2xl flex flex-col items-center justify-center font-black">
-          <span className="text-[7px]">SOLDE</span>
-          <span className="text-2xl">{credits}</span>
-        </div>
-        <button onClick={handleGetNewStyles} className="w-14 h-14 rounded-2xl bg-[#2C1A0E] border-2 border-[#C9963A] flex flex-col items-center justify-center">
-          <IconGenerate />
-          <span className="text-[7px] text-[#C9963A] font-black">+3</span>
-        </button>
-      </div>
-
-      {/* LIGHTBOX */}
-      <AnimatePresence>
-        {zoomImage && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 z-[100] bg-black/98 flex flex-col items-center justify-center p-6 backdrop-blur-xl">
-            <img src={zoomImage} className="max-w-full max-h-[70vh] rounded-3xl" alt="Zoom" />
-            <div className="mt-8 flex gap-4 w-full max-w-xs">
-              <button onClick={() => handleSave(zoomImage)} className="flex-1 py-4 rounded-2xl font-black bg-[#C9963A] text-[#2C1A0E]">📥 Sauvegarder</button>
-              <button onClick={() => setZoomImage(null)} className="px-8 py-4 bg-white/10 rounded-2xl">✕</button>
-            </div>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* LISTE DES 3 STYLES */}
+      <div className="space-y-12">
+        {currentStyles.map(function(style) {
+          return (
+            <div key={style.id} className="bg-[#3D2616] rounded-[2.5rem] overflow-hidden border border-[#C9963A]/20 shadow-2xl">
+              <div className="grid grid-cols-3 gap-0.5 h-72 bg-black/40">
+                <div className="col-span-2 h-full overflow-hidden">
+                  <img
+                    src={imgUrl(style, "face")}
+                    className="w-full h-full object-cover object-top cursor-pointer"
+                    onClick={function() { setZoomImage(imgUrl(style, "face")); }}
+                    alt={style.name}
+                  />
+                </div>
+                <div className="col-span-1 grid grid-rows-2 gap-0.5">
+                  <img
+                    src={imgUrl(style, "back")}
+                    className="w-full h-full object-cover cursor-pointer"
+                    onClick={function() { setZoomImage(imgUrl(style, "back")); }}
+                    alt={style.name}
+                  />
+                  <img
+                    src={imgUrl(style, "top")}
+                    className="w-full h-full object-cover cursor-pointer"
+                    onClick={function() { setZoomImage(imgUrl(style, "top")); }}
+                    alt={style.name}
+                  />
+                </div>
+              </div>
+              <div className="px-6 py-3 flex gap-5 text-[10px] font-black uppercase tracking-widest text-[#C9963A]/80 border-b border-white/5">
+                <span>\uD83D\uDC41\uFE0F 2.4K vues</span>
+                <span>\u2764\uFE0F 892 likes</span>
+              </div>
+              <div className="p-6">
+                <div className="flex justify-between items-start mb-3">
+                  <h3 className="font-display font-bold text-xl leading-none">{style.name}</h3>
+                  <span className="text-[10px] bg-[#C9963A] text-[#2C1A0E] px-2.5 py-1 rounded-md font-black uppercase">{style.duration}</span>
+                </div>
+                <p className="text-[11px] opacity-70 mb-6 font-body leading-relaxed">{style.description}</p>
+                <button
+                  onClick={function() { handleTryStyle(style); }}
+                  disabled={loadingId === style.id}
+                  className="w-full py-4 rounded-2xl font-display font-bold text-base shadow-xl active:scale-[0.98] transition-all disabled:opacity-50"
+                  style={{ background: "linear-gradient(135deg,#C9963A,#E8B96A)", color: "#2C1A0E" }}>
+                  {loadingId === style.id ? "G\u00e9n\u00e9ration... \u23F3" : "Essayer virtuellement \u2728"}
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* PAGINATION — footer bas de page */}
+      <div className="mt-10 mb-4">
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between bg-[#3D2616] rounded-2xl px-4 py-3"
+            style={{ border: "1px solid rgba(201,150,58,0.3)" }}>
+            <button
+              onClick={function() { setPageIdx(function(i) { return i - 1; }); setResultImage(null); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+              disabled={pageIdx === 0}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold disabled:opacity-30"
+              style={{ color: "#C9963A", background: "rgba(201,150,58,0.12)", fontSize: 14, minWidth: 110 }}>
+              <svg viewBox="0 0 24 24" style={{ width: 16, height: 16, flexShrink: 0 }} fill="none" stroke="currentColor" strokeWidth="2.5">
+                <polyline points="15 18 9 12 15 6"/>
+              </svg>
+              <span>Pr\u00e9c\u00e9dent</span>
+            </button>
+            <span style={{ color: "#E8B96A", fontSize: 15, fontWeight: 700 }}>
+              {pageIdx + 1} / {totalPages}
+            </span>
+            <button
+              onClick={function() { setPageIdx(function(i) { return i + 1; }); setResultImage(null); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+              disabled={pageIdx >= totalPages - 1}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold disabled:opacity-30"
+              style={{ color: "#C9963A", background: "rgba(201,150,58,0.12)", fontSize: 14, minWidth: 110, justifyContent: "flex-end" }}>
+              <span>Suivant</span>
+              <svg viewBox="0 0 24 24" style={{ width: 16, height: 16, flexShrink: 0 }} fill="none" stroke="currentColor" strokeWidth="2.5">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* BOUTON CREDITS FLOTTANT + BOUTON GENERER EN DESSOUS */}
+      <div className="fixed bottom-28 right-5 z-40 flex flex-col items-center gap-2">
+
+        {/* Bouton credits */}
+        <motion.div
+          initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+          onClick={function() { navigate("/credits"); }}
+          className="bg-[#C9963A] text-[#2C1A0E] w-14 h-14 rounded-2xl flex flex-col items-center justify-center shadow-2xl border-2 border-[#2C1A0E]/20 active:scale-95 transition-all cursor-pointer">
+          <div className="text-[7px] font-black uppercase opacity-60">Solde</div>
+          <div className="text-3xl font-display font-black leading-none">{credits}</div>
+          <div className="text-[7px] font-bold tracking-tight">CR\u00c9DITS</div>
+          {saveCount > 0 && (
+            <div className="absolute -top-2 -left-2 bg-[#2C1A0E] text-[#C9963A] text-[8px] font-black px-1.5 py-0.5 rounded-md border border-[#C9963A]/20">
+              {saveCount}/3
+            </div>
+          )}
+        </motion.div>
+
+        {/* Bouton generer 3 autres styles — juste en dessous */}
+        <motion.button
+          initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+          onClick={handleGetNewStyles}
+          className="flex flex-col items-center justify-center w-14 h-14 rounded-2xl shadow-2xl active:scale-95 transition-all border-2"
+          style={{ background: "#2C1A0E", borderColor: "#C9963A" }}>
+          <span style={{ fontSize: 18 }}>\u2728</span>
+          <div style={{ color: "#C9963A", fontSize: 7, fontWeight: 900, lineHeight: 1.2, textAlign: "center" }}>
+            +3<br/>styles
+          </div>
+        </motion.button>
+
+      </div>
+
+      {/* LIGHTBOX ZOOM — seulement Sauvegarder + Fermer */}
+      <AnimatePresence>
+        {zoomImage && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black/98 flex flex-col items-center justify-center p-6 backdrop-blur-xl"
+            onClick={function() { setZoomImage(null); }}>
+            <motion.img
+              initial={{ scale: 0.9 }} animate={{ scale: 1 }}
+              src={zoomImage}
+              alt="Zoom"
+              className="max-w-full max-h-[70vh] rounded-3xl shadow-2xl border border-white/10 object-contain"
+              onClick={function(e) { e.stopPropagation(); }}
+            />
+            <div className="mt-8 flex gap-4 w-full max-w-xs" onClick={function(e) { e.stopPropagation(); }}>
+              <button
+                onClick={function(e) { e.stopPropagation(); handleSave(zoomImage); }}
+                className="flex-1 py-4 rounded-2xl font-black shadow-xl flex items-center justify-center gap-2"
+                style={{ background: "linear-gradient(135deg,#C9963A,#E8B96A)", color: "#2C1A0E" }}>
+                \uD83D\uDCE5 Sauvegarder
+              </button>
+              <button
+                onClick={function() { setZoomImage(null); }}
+                className="px-8 py-4 bg-white/10 text-white rounded-2xl font-bold backdrop-blur-md border border-white/10">
+                \u2715
+              </button>
+            </div>
+            <p className="text-[10px] text-white/40 mt-4 uppercase font-bold tracking-widest">3 saves = 1 cr\u00e9dit</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }
