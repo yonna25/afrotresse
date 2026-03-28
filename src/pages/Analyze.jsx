@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-// IMPORT CRUCIAL
 import { incrementAnalyses } from '../services/credits.js' 
 
 export default function Analyze() {
@@ -9,13 +8,14 @@ export default function Analyze() {
   const [progress, setProgress] = useState(0)
 
   useEffect(() => {
+    const photoUrl = sessionStorage.getItem('afrotresse_photo')
+
     const interval = setInterval(() => {
       setProgress(prev => {
         if (prev >= 100) {
           clearInterval(interval)
           
-          // --- C'EST ICI QUE CA SE JOUE ---
-          // On enregistre l'analyse AUTOMATIQUEMENT ici
+          // INCRÉMENTATION AUTOMATIQUE ICI
           incrementAnalyses() 
           
           setTimeout(() => navigate('/results'), 500)
@@ -23,26 +23,40 @@ export default function Analyze() {
         }
         return prev + 1
       })
-    }, 40) // Environ 4 secondes d'analyse
+    }, 40) // Vitesse de l'analyse (env. 4s)
+
     return () => clearInterval(interval)
   }, [navigate])
 
   return (
     <div className="min-h-screen bg-[#1A0A00] flex flex-col items-center justify-center p-8">
-       <div className="relative mb-10">
-          <div className="w-32 h-32 rounded-full border-2 border-[#C9963A]/30 p-1">
-             <img src={sessionStorage.getItem('afrotresse_photo')} className="w-full h-full rounded-full object-cover" />
+       <div className="relative mb-12">
+          <div className="w-32 h-32 rounded-full border-2 border-[#C9963A]/30 p-1 relative z-10">
+             <img 
+               src={sessionStorage.getItem('afrotresse_photo') || '/avatar.png'} 
+               className="w-full h-full rounded-full object-cover shadow-2xl" 
+               alt="Analyse"
+             />
           </div>
           <motion.div 
-            animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.6, 0.3] }}
+            animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }}
             transition={{ repeat: Infinity, duration: 2 }}
-            className="absolute inset-0 rounded-full bg-[#C9963A]/20 blur-xl"
+            className="absolute inset-0 rounded-full bg-[#C9963A] blur-2xl z-0"
           />
        </div>
-       <h2 className="text-[#FAF4EC] font-display text-lg font-medium mb-2">Analyse de ta beauté...</h2>
-       <p className="text-[#C9963A] font-mono text-sm mb-8">{progress}%</p>
-       <div className="w-full max-w-xs h-1 bg-white/5 rounded-full overflow-hidden">
-          <motion.div className="h-full bg-[#C9963A]" style={{ width: `${progress}%` }} />
+
+       <h2 className="text-[#FAF4EC] font-display text-xl font-bold mb-2 tracking-tight">Analyse en cours...</h2>
+       <p className="text-[#C9963A] font-mono text-sm mb-8 font-bold">{progress}%</p>
+
+       <div className="w-full max-w-xs h-1.5 bg-white/5 rounded-full overflow-hidden shadow-inner">
+          <motion.div 
+            className="h-full bg-gradient-to-r from-[#C9963A] to-[#E8B96A]" 
+            style={{ width: `${progress}%` }} 
+          />
+       </div>
+
+       <div className="mt-10 space-y-3 opacity-40">
+          <p className="text-[10px] uppercase font-black tracking-[0.2em] text-[#FAF4EC]">Intelligence Artificielle AfroTresse</p>
        </div>
     </div>
   )
