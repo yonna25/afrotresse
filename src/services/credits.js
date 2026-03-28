@@ -167,3 +167,12 @@ export function applyReferralCode(code) {
 export function getReferralCount() {
   return parseInt(localStorage.getItem(KEY_REFERRALS) || '0', 10)
 }
+// ... (garde ton code actuel et ajoute ceci à la fin)
+
+/**
+ * Enregistre une nouvelle analyse et incrémente le compteur
+ */
+export function incrementAnalyses() {
+  const current = getTotalUsed();
+  localStorage.setItem('afrotresse_used_tests', (current + 1).toString());
+}
