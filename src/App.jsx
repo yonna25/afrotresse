@@ -103,7 +103,7 @@ function AnimatedRoutes() {
           <Route path="/analyze"         element={<Analyze />} />
           <Route path="/results"         element={<Results />} />
           <Route path="/library"         element={<Library />} />
-          <Route path="/profile"          element={<Profile />} />
+          <Route path="/profil"          element={<Profil />} />
           <Route path="/credits"         element={<Credits />} />
           <Route path="/privacy-policy"  element={<PrivacyPolicy  />} />
           <Route path="/terms-of-service" element={<TermsOfService />} />
