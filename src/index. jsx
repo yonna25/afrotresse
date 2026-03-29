@@ -1,8 +1,10 @@
+// src/index.jsx
 import React, { useState, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 
+// ✅ Import des pages
 import Home     from './pages/Home.jsx';
 import Camera   from './pages/Camera.jsx';
 import Analyze  from './pages/Analyze.jsx';
@@ -10,6 +12,7 @@ import Results  from './pages/Results.jsx';
 import Library  from './pages/Library.jsx';
 import Profile  from './pages/Profile.jsx';
 
+// App principale avec animations de route
 function App() {
   const location = useLocation();
 
@@ -27,6 +30,7 @@ function App() {
   );
 }
 
+// Point d’entrée React 18+
 const container = document.getElementById('root');
 const root = createRoot(container);
 root.render(
