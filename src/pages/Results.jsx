@@ -1,19 +1,24 @@
-import React, { useState, useEffect } from "react";
+import { useState } from "react";
 
 export default function Results() {
-  const [test, setTest] = useState("ÇA MARCHE!");
+  const [message, setMessage] = useState("âœ¨ Results Page - useState fonctionne! âœ¨");
 
   return (
-    <div className="min-h-screen bg-[#2C1A0E] text-[#FAF4EC] flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">✨ Results Page ✨</h1>
-        <p className="text-xl">{test}</p>
+    <div className="min-h-screen bg-[#2C1A0E] text-[#FAF4EC] flex items-center justify-center p-4">
+      <div className="text-center max-w-md">
+        <h1 className="text-4xl font-bold mb-6">Tes RÃ©sultats</h1>
+        <p className="text-xl mb-8 text-[#C9963A]">{message}</p>
+        
         <button
-          onClick={() => setTest("useState fonctionne!")}
-          className="mt-6 px-6 py-3 rounded-full font-bold text-sm text-[#2C1A0E]"
+          onClick={() => setMessage("useState + onClick fonctionne! ðŸŽ‰")}
+          className="px-8 py-4 rounded-full font-bold text-lg text-[#2C1A0E] transition-all active:scale-95"
           style={{ background: 'linear-gradient(135deg, #C9963A, #E8B96A)' }}>
-          Test useState
+          Clique-moi
         </button>
+
+        <p className="text-sm text-gray-400 mt-8">
+          Si tu vois ce message, le build est OK!
+        </p>
       </div>
     </div>
   );
