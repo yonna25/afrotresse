@@ -38,24 +38,21 @@ export const BRAIDS_DB = [
       top: "/styles/cornrows-top.jpg"
     }
   }
-  // Ajoutez vos autres styles ici en suivant strictement cette structure
 ];
 
 export async function analyzeFace(photoBlob) {
   try {
-    // Simulation ou appel au hook de détection
     const result = await useFaceAnalysis(photoBlob, 5000); 
     const faceShape = detectFaceShape(result.landmarks);
     const confidence = calculateConfidence(result.landmarks);
     
     return {
       faceShape,
-      confidence: Math.round(confidence * 100),
+      confidence: Math.round((confidence || 0.85) * 100),
       recommendations: BRAIDS_DB.filter(b => b.faceShapes.includes(faceShape))
     };
   } catch (err) {
     console.error("Erreur analyse:", err);
-    // Retour par défaut pour éviter le crash
     return { faceShape: "oval", confidence: 75, recommendations: BRAIDS_DB };
   }
 }
