@@ -7,6 +7,7 @@ import Home from './pages/Home.jsx'
 import Camera from './pages/Camera.jsx'
 import Analyze from './pages/Analyze.jsx'
 import Results from './pages/Results.jsx'
+import Profile from './pages/Profile.jsx'
 
 // Import de la navigation
 import BottomNav from './components/BottomNav.jsx'
@@ -88,6 +89,7 @@ function AnimatedRoutes() {
           <Route path="/camera" element={<Camera />} />
           <Route path="/analyze" element={<Analyze />} />
           <Route path="/results" element={<Results />} />
+          <Route path="/profile" element={<Profile />} />
         </Routes>
       </AnimatePresence>
       
@@ -112,8 +114,13 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      {showWelcome && <WelcomePopup onDone={() => setShowWelcome(false)} />}
-      <AnimatedRoutes />
+      {/* Wrapper desktop : max 430px centré, comme un vrai mobile app */}
+      <div className="min-h-screen bg-black flex justify-center">
+        <div className="w-full max-w-[430px] relative bg-[#2C1A0E] min-h-screen overflow-hidden shadow-2xl">
+          {showWelcome && <WelcomePopup onDone={() => setShowWelcome(false)} />}
+          <AnimatedRoutes />
+        </div>
+      </div>
     </BrowserRouter>
   )
 }
