@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { analyzeFace } from "../services/faceAnalysis.js";
+import { consumeAnalysis } from "../services/credits.js";
 
 const STEPS = [
   "Analyse des traits uniques...",
@@ -29,11 +30,30 @@ export default function Analyze() {
 
     const run = async () => {
       try {
+        // 1. Analyser le selfie
         const result = await analyzeFace(selfieUrl);
+        
+        // 2. SAUVEGARDER LE RÉSULTAT COMPLET dans sessionStorage ✅
+        sessionStorage.setItem("afrotresse_results", JSON.stringify(result));
+        
+        // 3. Sauvegarder aussi la forme du visage dans localStorage
         localStorage.setItem("afrotresse_face_shape", result.faceShape);
+        
+        // 4. Consommer un crédit d'analyse
+        consumeAnalysis();
+        
+        // 5. Naviguer vers /results
         setTimeout(() => navigate("/results"), 1000);
       } catch (err) {
-        navigate("/");
+        console.error("Analysis error:", err);
+        // Fallback: envoyer quand même à /results (Analyze.js a un fallback)
+        const fallback = {
+          faceShape: "oval",
+          faceShapeName: "Ovale",
+          recommendations: []
+        };
+        sessionStorage.setItem("afrotresse_results", JSON.stringify(fallback));
+        navigate("/results");
       }
     };
 
