@@ -115,3 +115,36 @@ export function applyReferralCode(code) {
   addCredits(PRICING.referral.receiver)
   return { success: true, message: `Code validé ! +${PRICING.referral.receiver} crédits offerts.` }
 }
+
+// ─── Fonctions manquantes utilisées dans Analyze / Results ──────
+export function hasCredits() {
+  return getCredits() > 0
+}
+
+export function canTransform() {
+  return getCredits() >= PRICING.transformCost
+}
+
+export function consumeAnalysis() {
+  incrementAnalyses()
+  useCredits(PRICING.analysisCost)
+}
+
+export function consumeTransform() {
+  useCredits(PRICING.transformCost)
+}
+
+const KEY_SEEN_STYLES = 'afrotresse_seen_styles'
+
+export function getSeenStyleIds() {
+  const s = localStorage.getItem(KEY_SEEN_STYLES)
+  return s ? JSON.parse(s) : []
+}
+
+export function addSeenStyleId(styleId) {
+  const seen = getSeenStyleIds()
+  if (!seen.includes(styleId)) {
+    seen.push(styleId)
+    localStorage.setItem(KEY_SEEN_STYLES, JSON.stringify(seen))
+  }
+}
