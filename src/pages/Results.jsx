@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { BRAIDS_DB, FACE_SHAPE_NAMES } from "../services/faceAnalysis.js";
-import { getCredits, consumeTransform, hasCredits, canTransform, addSeenStyleId, getSeenStyleIds } from "../services/credits.js";
+import { getCredits, consumeTransform, hasCredits, canTransform, addSeenStyleId, getSeenStyleIds, PRICING } from "../services/credits.js";
 
 const FACE_SHAPE_TEXTS = {
   oval:    "Ton visage est de forme Ovale. C'est une structure très équilibrée qui s'adapte à presque tous les styles.",
@@ -49,6 +49,7 @@ const SparkleEffect = ({ active }) => (
 export default function Results() {
   const navigate = useNavigate();
   const [faceShape, setFaceShape] = useState('oval');
+  const [faceShapeName, setFaceShapeName] = useState('');
   const [selfieUrl, setSelfieUrl] = useState(null);
   const [styles, setStyles] = useState([]);
   const [loadingIdx, setLoadingIdx] = useState(null);
@@ -61,6 +62,7 @@ export default function Results() {
   const [isSparkling, setIsSparkling] = useState(false);
   const resultRef = useRef(null);
   const waitingIntervalRef = useRef(null);
+  const [page, setPage] = useState(0);
 
   const userName = localStorage.getItem('afrotresse_user_name') || 'Reine';
 
@@ -70,6 +72,7 @@ export default function Results() {
       try {
         const parsed = JSON.parse(raw);
         setFaceShape(parsed.faceShape || 'oval');
+        setFaceShapeName(parsed.faceShapeName || '');
         setStyles(parsed.recommendations || []);
       } catch (e) { console.error('Error parsing results:', e); }
     }
@@ -78,7 +81,7 @@ export default function Results() {
     setCredits(getCredits());
   }, []);
 
-  // --- LOGIQUE : NOUVEAUX STYLES ---
+  // --- LOGIQUE : NOUVEAUX STYLES (RAFRAÎCHISSEMENT) ---
   const handleGetNewStyles = () => {
     if (!hasCredits()) { navigate('/credits'); return; }
 
@@ -86,8 +89,10 @@ export default function Results() {
     setTimeout(() => setIsSparkling(false), 800);
 
     const seenIds = getSeenStyleIds();
-    styles.forEach(s => addSeenStyleId(s.id)); // Marque les actuels comme vus
+    // Marquer les styles actuels comme "vus"
+    styles.forEach(s => addSeenStyleId(s.id)); 
 
+    // Filtrer pour obtenir des styles jamais vus adaptés au visage
     const available = BRAIDS_DB.filter(s => 
       !seenIds.includes(s.id) && 
       (!s.faceShapes || s.faceShapes.includes(faceShape))
@@ -96,12 +101,13 @@ export default function Results() {
     const nextStyles = [...available].sort(() => 0.5 - Math.random()).slice(0, 3);
 
     if (nextStyles.length > 0) {
-      consumeTransform();
+      consumeTransform(); // Consomme 1 crédit
       setCredits(getCredits());
       setStyles(nextStyles);
+      setPage(0);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-      setErrorMsg("Incroyable ! Tu as déjà exploré tous nos styles.");
+      setErrorMsg("Incroyable ! Tu as déjà exploré tous nos styles disponibles.");
     }
   };
 
@@ -109,6 +115,7 @@ export default function Results() {
     if (!hasCredits() || !canTransform()) { navigate('/credits'); return; }
     
     setErrorMsg("");
+    setResultImage(null);
     setLoadingIdx(index);
     setWaitingMsgIdx(0);
 
@@ -133,7 +140,7 @@ export default function Results() {
       const data = await res.json();
       clearInterval(waitingIntervalRef.current);
 
-      if (!res.ok) throw new Error(data.error);
+      if (!res.ok) throw new Error(data.error || "Génération échouée");
 
       consumeTransform();
       addSeenStyleId(style.id);
@@ -143,7 +150,7 @@ export default function Results() {
       setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     } catch (err) {
       clearInterval(waitingIntervalRef.current);
-      setErrorMsg("Erreur de génération. Réessaie.");
+      setErrorMsg("Connexion impossible. Réessaie.");
     } finally {
       setLoadingIdx(null);
     }
@@ -152,25 +159,25 @@ export default function Results() {
   if (!styles.length) return null;
 
   return (
-    <div className="min-h-[100dvh] bg-[#2C1A0E] text-[#FAF4EC] p-4 pb-40 relative">
+    <div className="min-h-[100dvh] bg-[#2C1A0E] text-[#FAF4EC] p-4 sm:p-6 pb-40 relative">
       
       {/* HEADER */}
-      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-10 flex gap-5 items-center bg-white/5 p-5 rounded-[2.5rem] border border-white/10 shadow-xl">
-        {selfieUrl && <img src={selfieUrl} className="w-16 h-16 rounded-2xl border-2 border-[#C9963A] object-cover" alt="Moi" />}
-        <div>
+      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-10 flex gap-5 items-center bg-white/5 p-5 rounded-[2.5rem] border border-white/10">
+        {selfieUrl && <img src={selfieUrl} className="w-20 h-20 rounded-2xl border-2 border-[#C9963A] object-cover" alt="Moi" />}
+        <div className="flex-1">
           <h1 className="font-bold text-2xl text-[#C9963A]">{userName} ✨</h1>
-          <p className="text-[10px] opacity-70 leading-tight mt-1">{FACE_SHAPE_TEXTS[faceShape]}</p>
+          <p className="text-[11px] opacity-80 leading-tight mt-1">{FACE_SHAPE_TEXTS[faceShape]}</p>
         </div>
       </motion.div>
 
-      {/* RESULTAT GÉNÉRÉ */}
+      {/* RESULTAT */}
       <AnimatePresence>
         {resultImage && (
-          <motion.div ref={resultRef} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="mb-8 bg-[#3D2616] rounded-[2.5rem] overflow-hidden border-2 border-[#C9963A] shadow-2xl">
-            <div className="p-6">
-              <h3 className="text-[#C9963A] font-bold text-xl mb-3">{resultMsg}</h3>
-              <img src={resultImage} className="w-full rounded-2xl object-cover shadow-lg" alt="Résultat" />
-              <button onClick={() => setResultImage(null)} className="w-full py-3 mt-4 text-white/40 text-sm">Fermer</button>
+          <motion.div ref={resultRef} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="mb-6 bg-[#3D2616] rounded-[2.5rem] overflow-hidden border-2 border-[#C9963A]">
+            <div className="p-5">
+              <h3 className="text-[#C9963A] font-bold text-xl">{resultMsg}</h3>
+              <img src={resultImage} className="w-full rounded-2xl mt-3 object-cover" alt="Résultat" />
+              <button onClick={() => setResultImage(null)} className="w-full py-3 mt-4 text-white/50 text-sm">Fermer</button>
             </div>
           </motion.div>
         )}
@@ -182,14 +189,16 @@ export default function Results() {
           const styleKey = style.id?.replace(/-/g, '') || style.id;
           const isL = loadingIdx === index;
           return (
-            <motion.div key={style.id} className="bg-[#3D2616] rounded-[2.5rem] overflow-hidden border border-[#C9963A]/10">
-              <img src={`/styles/${styleKey}-face.jpg`} className="w-full h-64 object-cover" alt={style.name} />
+            <motion.div key={style.id} className="bg-[#3D2616] rounded-[2.5rem] overflow-hidden border border-[#C9963A]/20 shadow-2xl">
+              <div className="h-72 bg-black/40">
+                <img src={`/styles/${styleKey}-face.jpg`} className="w-full h-full object-cover object-top" alt={style.name} />
+              </div>
               <div className="p-6">
                 <h3 className="font-bold text-xl mb-4">{style.name}</h3>
                 <button 
                   onClick={() => handleTransform(style, index)}
                   disabled={isL}
-                  className="w-full py-4 rounded-2xl font-bold text-[#2C1A0E]"
+                  className="w-full py-4 rounded-2xl font-bold text-[#2C1A0E] disabled:opacity-50"
                   style={{ background: 'linear-gradient(135deg, #C9963A, #E8B96A)' }}
                 >
                   {isL ? WAITING_MSGS[waitingMsgIdx] : "Essayer virtuellement ✨"}
@@ -204,20 +213,22 @@ export default function Results() {
       <div className="fixed bottom-6 right-5 z-50 flex flex-col items-center gap-4">
         {/* BOUTON CRÉDITS */}
         <motion.div 
+          initial={{ y: 20, opacity: 0 }} 
+          animate={{ y: 0, opacity: 1 }}
           onClick={() => navigate('/credits')}
-          className="bg-[#C9963A] text-[#2C1A0E] w-14 h-14 rounded-2xl flex flex-col items-center justify-center shadow-2xl border-2 border-[#2C1A0E]/20 cursor-pointer"
+          className="bg-[#C9963A] text-[#2C1A0E] w-14 h-14 rounded-2xl flex flex-col items-center justify-center shadow-2xl border-2 border-[#2C1A0E]/20 cursor-pointer active:scale-95 transition-all"
         >
           <span className="text-[7px] font-black opacity-60">SOLDE</span>
           <span className="text-2xl font-black">{credits}</span>
         </motion.div>
 
-        {/* BOUTON REFRESH AVEC ÉTINCELLES */}
+        {/* BOUTON REFRESH (Nouveaux Styles) */}
         <div className="relative">
           <SparkleEffect active={isSparkling} />
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={handleGetNewStyles}
-            className="w-14 h-14 rounded-full bg-[#3D2616] border-2 border-[#C9963A] shadow-xl flex flex-col items-center justify-center text-[#C9963A] overflow-hidden"
+            className="w-14 h-14 rounded-full bg-[#3D2616] border-2 border-[#C9963A] shadow-xl flex flex-col items-center justify-center text-[#C9963A]"
           >
             <motion.span animate={isSparkling ? { rotate: 360 } : {}} className="text-xl">✨</motion.span>
             <span className="text-[7px] font-black uppercase tracking-tighter">Nouveaux</span>
