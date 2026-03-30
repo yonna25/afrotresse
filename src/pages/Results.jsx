@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { BRAIDS_DB, FACE_SHAPE_NAMES } from "../services/faceAnalysis.js";
 import { getCredits, consumeTransform, hasCredits, canTransform, addSeenStyleId, getSeenStyleIds, PRICING } from "../services/credits.js";
-
+ 
 const FACE_SHAPE_TEXTS = {
   oval:    "Ton visage est de forme Ovale. C'est une structure très équilibrée qui s'adapte à presque tous les styles.",
   round:   "Ton visage est de forme Ronde. Pour allonger et affiner visuellement tes traits, les tresses hautes sont parfaites.",
