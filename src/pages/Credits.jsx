@@ -251,7 +251,7 @@ export default function Results() {
       </AnimatePresence>
 
       {/* STYLES - GRID 3 COLONNES */}
-      <div className="grid grid-cols-1 gap-8">
+      <div className="grid grid-cols-1 gap-8 max-w-lg mx-auto">
         {styles.map((style, index) => {
           const styleKey = style.id?.replace(/-/g, '') || style.id;
           const faceImg = style.views?.face || `/styles/${styleKey}-face.jpg`;
