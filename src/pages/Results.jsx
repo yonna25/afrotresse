@@ -40,6 +40,7 @@ export default function Results() {
   const [zoomImage, setZoomImage] = useState(null);
   const resultRef = useRef(null);
   const waitingIntervalRef = useRef(null);
+  const [page, setPage] = useState(0);
 
   const userName = localStorage.getItem('afrotresse_user_name') || 'Reine';
 
@@ -250,14 +251,21 @@ export default function Results() {
         )}
       </AnimatePresence>
 
-      {/* STYLES - GRID 3 COLONNES */}
-      <div className="flex flex-col gap-8">
-        {styles.map((style, index) => {
+      {/* STYLES PAGINÉS */}
+      {(() => {
+        const PAGE_SIZE = 3;
+        const totalPages = Math.ceil(styles.length / PAGE_SIZE);
+        const paged = styles.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+        return (
+          <>
+            <div className="flex flex-col gap-8">
+              {paged.map((style, index) => {
+                const globalIndex = page * PAGE_SIZE + index;
           const styleKey = style.id?.replace(/-/g, '') || style.id;
           const faceImg = style.views?.face || `/styles/${styleKey}-face.jpg`;
           const backImg = style.views?.back || `/styles/${styleKey}-back.jpg`;
           const topImg = style.views?.top || `/styles/${styleKey}-top.jpg`;
-          const isLoading = loadingIdx === index;
+          const isLoading = loadingIdx === globalIndex;
 
           return (
             <motion.div
@@ -310,7 +318,7 @@ export default function Results() {
                 </div>
 
                 <button
-                  onClick={() => handleTransform(style, index)}
+                  onClick={() => handleTransform(style, globalIndex)}
                   disabled={isLoading || !hasCredits() || !canTransform()}
                   className="w-full py-4 rounded-2xl font-bold text-base shadow-xl active:scale-[0.98] transition-all disabled:opacity-60 text-[#2C1A0E]"
                   style={{ background: 'linear-gradient(135deg, #C9963A, #E8B96A)' }}>
@@ -329,8 +337,31 @@ export default function Results() {
               </div>
             </motion.div>
           );
-        })}
-      </div>
+              })}
+            </div>
+
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-4 mt-8 mb-4">
+                <button
+                  onClick={() => { setPage(p => p - 1); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                  disabled={page === 0}
+                  className="px-5 py-3 rounded-2xl font-bold text-sm bg-white/10 text-white/70 border border-white/10 disabled:opacity-30 active:scale-95 transition-all">
+                  ← Précédent
+                </button>
+                <span className="text-[#C9963A] font-black text-sm">
+                  {page + 1} / {totalPages}
+                </span>
+                <button
+                  onClick={() => { setPage(p => p + 1); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                  disabled={page >= totalPages - 1}
+                  className="px-5 py-3 rounded-2xl font-bold text-sm bg-white/10 text-white/70 border border-white/10 disabled:opacity-30 active:scale-95 transition-all">
+                  Suivant →
+                </button>
+              </div>
+            )}
+          </>
+        );
+      })()}
 
       {/* FLOATING CREDITS */}
       <motion.div
