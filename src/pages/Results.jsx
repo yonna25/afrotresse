@@ -51,7 +51,7 @@ export default function Results() {
         const parsed = JSON.parse(raw);
         setFaceShape(parsed.faceShape || 'oval');
         setFaceShapeName(parsed.faceShapeName || '');
-        const recs = (parsed.recommendations || []).slice(0, 3);
+        const recs = parsed.recommendations || [];
         setStyles(recs);
       } catch (e) {
         console.error('Error parsing results:', e);
@@ -251,7 +251,7 @@ export default function Results() {
       </AnimatePresence>
 
       {/* STYLES - GRID 3 COLONNES */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="flex flex-col gap-8">
         {styles.map((style, index) => {
           const styleKey = style.id?.replace(/-/g, '') || style.id;
           const faceImg = style.views?.face || `/styles/${styleKey}-face.jpg`;
