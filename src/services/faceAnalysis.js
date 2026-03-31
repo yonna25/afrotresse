@@ -6,8 +6,8 @@ export const FACE_SHAPE_NAMES = {
   oval: "Ovale",
   round: "Ronde",
   square: "Carrée",
-  heart: "Coeur",
-  long: "Longue",
+  heart: "Cœur",
+  long: "Allongée",
   diamond: "Diamant"
 };
 
@@ -21,12 +21,13 @@ export const FACE_SHAPE_DESCRIPTIONS = {
 };
 
 export const BRAIDS_DB = [
+  // --- TES 5 NOUVEAUX STYLES ---
   {
     id: "pompom",
     name: "Pompom Braids",
-    description: "Un style ludique qui ajoute de la hauteur pour affiner et allonger visuellement le visage.",
+    description: "Un style ludique qui ajoute de la hauteur pour affiner le visage.",
     tags: ["Volume", "Jeune", "Tendance"],
-    faceShapes: ["round", "square", "oval"],
+    faceShapes: ["round", "square", "oval", "heart", "diamond"],
     duration: "2-3h",
     difficulty: "Facile",
     views: {
@@ -39,9 +40,9 @@ export const BRAIDS_DB = [
   {
     id: "tresseplaquees",
     name: "Tresses Plaquées",
-    description: "Un classique indémodable, net et précis pour un look soigné qui ne surcharge pas le visage.",
+    description: "Un look net qui met en valeur la structure osseuse sans surcharge.",
     tags: ["Minimaliste", "Sport", "Nette"],
-    faceShapes: ["oval", "long", "diamond"],
+    faceShapes: ["oval", "long", "diamond", "square", "heart"],
     duration: "2-4h",
     difficulty: "Intermédiaire",
     views: {
@@ -54,9 +55,9 @@ export const BRAIDS_DB = [
   {
     id: "ghanabraids",
     name: "Ghana Braids",
-    description: "Des tresses sculpturales qui commencent fines et s'épaississent pour adoucir les traits.",
+    description: "Des tresses sculpturales qui adoucissent les traits et encadrent le regard.",
     tags: ["Sculptural", "Élégant", "Durable"],
-    faceShapes: ["square", "heart", "oval", "diamond"],
+    faceShapes: ["square", "heart", "oval", "diamond", "round", "long"],
     duration: "3-5h",
     difficulty: "Avancée",
     views: {
@@ -69,9 +70,9 @@ export const BRAIDS_DB = [
   {
     id: "tressecollees",
     name: "Tresses Collées",
-    description: "Idéal pour protéger vos cheveux tout en gardant un style sophistiqué proche du cuir chevelu.",
-    tags: ["Protectrice", "Quotidien", "Chic"],
-    faceShapes: ["oval", "long", "diamond", "heart"],
+    description: "Style versatile qui suit les courbes naturelles de ton visage.",
+    tags: ["Protectrice", "Chic", "Classique"],
+    faceShapes: ["oval", "long", "diamond", "heart", "round", "square"],
     duration: "2-4h",
     difficulty: "Intermédiaire",
     views: {
@@ -84,9 +85,9 @@ export const BRAIDS_DB = [
   {
     id: "cornrowspuffs",
     name: "Cornrows & Puffs",
-    description: "Le mélange parfait entre tresses nettes et volume naturel pour attirer le regard vers le haut.",
+    description: "Le volume des puffs attire le regard vers le haut, idéal pour harmoniser le visage.",
     tags: ["Mixte", "Volume", "Moderne"],
-    faceShapes: ["round", "heart", "oval"],
+    faceShapes: ["round", "heart", "oval", "square", "diamond"],
     duration: "3-4h",
     difficulty: "Intermédiaire",
     views: {
@@ -95,6 +96,68 @@ export const BRAIDS_DB = [
       top:  "/styles/cornowspuffs-top.jpg"
     },
     matchScore: 94
+  },
+  
+  // --- TES STYLES PRÉCÉDENTS (RE-SYNCHRONISÉS) ---
+  {
+    id: "box-braids",
+    name: "Box Braids",
+    description: "Intemporelles et protectrices, elles s'adaptent à toutes les occasions.",
+    tags: ["Protectrice", "Classique", "Polyvalente"],
+    faceShapes: ["oval", "round", "square", "heart", "long", "diamond"],
+    duration: "4-6h",
+    difficulty: "Intermédiaire",
+    views: {
+      face: "/styles/boxbraids-face.jpg",
+      back: "/styles/boxbraids-back.jpg",
+      top:  "/styles/boxbraids-top.jpg"
+    },
+    matchScore: 97
+  },
+  {
+    id: "coco-twists",
+    name: "Coco Twists",
+    description: "Des vanilles volumineuses pour un look naturel et plein de mouvement.",
+    tags: ["Volume", "Légèreté", "Texture"],
+    faceShapes: ["round", "square", "heart", "oval", "diamond"],
+    duration: "5-7h",
+    difficulty: "Intermédiaire",
+    views: {
+      face: "/styles/cocotwists-face.jpg",
+      back: "/styles/cocotwists-back.jpg",
+      top:  "/styles/cocotwists-top.jpg"
+    },
+    matchScore: 91
+  },
+  {
+    id: "fulani-braids",
+    name: "Fulani Style",
+    description: "Tresses artistiques inspirées de la culture peule, souvent ornées de perles.",
+    tags: ["Culturel", "Perles", "Artistique"],
+    faceShapes: ["oval", "heart", "diamond", "long"],
+    duration: "3-5h",
+    difficulty: "Avancée",
+    views: {
+      face: "/styles/fulani-face.jpg",
+      back: "/styles/fulani-back.jpg",
+      top:  "/styles/fulani-top.jpg"
+    },
+    matchScore: 89
+  },
+  {
+    id: "stitch-braids",
+    name: "Stitch Braids",
+    description: "Une technique de tresses plaquées ultra-précise avec des lignes graphiques.",
+    tags: ["Graphique", "Précision", "Moderne"],
+    faceShapes: ["oval", "long", "square", "diamond", "round"],
+    duration: "3-5h",
+    difficulty: "Avancée",
+    views: {
+      face: "/styles/stitchbraids-face.jpg",
+      back: "/styles/stitchbraids-back.jpg",
+      top:  "/styles/stitchbraids-top.jpg"
+    },
+    matchScore: 88
   }
 ];
 
