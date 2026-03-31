@@ -29,7 +29,6 @@ export default function Results() {
   const [credits, setCredits] = useState(getCredits());
   const [zoomImage, setZoomImage] = useState(null);
   const resultRef = useRef(null);
-
   const userName = localStorage.getItem('afrotresse_user_name') || 'Reine';
 
   // 1. CHARGEMENT INITIAL (LOT 1)
@@ -39,7 +38,6 @@ export default function Results() {
       try {
         const parsed = JSON.parse(raw);
         setFaceShape(parsed.faceShape || 'oval');
-        // On prend les 3 premiers styles du scan initial
         const firstBatch = parsed.recommendations.slice(0, 3);
         setUnlockedStyles(firstBatch);
         setHasMoreInDb(parsed.recommendations.length > 3);
@@ -56,7 +54,6 @@ export default function Results() {
       return;
     }
 
-    // On consomme le crédit pour voir plus de conseils
     consumeTransform();
     setCredits(getCredits());
 
@@ -67,7 +64,6 @@ export default function Results() {
       const updatedList = [...unlockedStyles, ...batch];
       setUnlockedStyles(updatedList);
       setHasMoreInDb(hasMore);
-      // On passe au nouveau lot (nouvelle page)
       setPage(Math.floor((updatedList.length - 1) / PAGE_SIZE));
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -76,7 +72,7 @@ export default function Results() {
   // 3. TRANSFORMATION IA (ESSAYAGE VIRTUEL)
   const handleTransform = async (style, index) => {
     if (!hasCredits()) { navigate('/credits'); return; }
-    // Logique de transformation FAL... (ton code actuel de fetch API)
+    // Logique de transformation FAL...
   };
 
   const totalPages = Math.ceil(unlockedStyles.length / PAGE_SIZE);
@@ -100,7 +96,6 @@ export default function Results() {
       <div className="flex flex-col gap-8">
         {currentBatch.map((style, idx) => (
           <div key={style.id} className="bg-[#3D2616] rounded-[2.5rem] overflow-hidden border border-[#C9963A]/20">
-             {/* Tes visuels de tresses ici (Grid images) */}
              <div className="p-6">
                 <h3 className="font-bold text-xl mb-2">{style.name}</h3>
                 <button 
@@ -113,10 +108,8 @@ export default function Results() {
         ))}
       </div>
 
-      {/* PAGINATION & ACTION GÉNÉRER */}
+      {/* PAGINATION CENTRALE */}
       <div className="mt-10 flex flex-col items-center gap-6">
-        
-        {/* Navigation entre lots débloqués */}
         <div className="flex items-center gap-6">
           <button 
             disabled={page === 0} 
@@ -131,25 +124,38 @@ export default function Results() {
             className="p-4 bg-white/5 rounded-2xl disabled:opacity-20">→</button>
         </div>
 
-        {/* BOUTON PAYANT : GÉNÉRER PLUS */}
-        {page === totalPages - 1 && hasMoreInDb && (
-          <button
-            onClick={handleUnlockMore}
-            className="w-full py-5 rounded-[2rem] font-black text-[#2C1A0E] shadow-2xl transition-transform active:scale-95"
-            style={{ background: 'linear-gradient(135deg, #C9963A, #E8B96A)' }}>
-            Générer 3 autres styles (1 Crédit 🪙)
-          </button>
-        )}
-
         <button onClick={() => navigate('/')} className="text-xs opacity-40 underline">
           Refaire un scan complet
         </button>
       </div>
 
-      {/* SOLDE FLOTTANT */}
-      <div onClick={() => navigate('/credits')} className="fixed bottom-28 right-5 bg-[#C9963A] text-[#2C1A0E] w-14 h-14 rounded-2xl flex flex-col items-center justify-center font-black shadow-2xl cursor-pointer">
-        <span className="text-[10px] opacity-60">SOLDE</span>
-        {credits}
+      {/* ACTIONS FLOTTANTES (À DROITE) */}
+      <div className="fixed bottom-10 right-5 flex flex-col items-center gap-3 z-50">
+        
+        {/* BOUTON SOLDE FLOTTANT */}
+        <div 
+          onClick={() => navigate('/credits')} 
+          className="w-14 h-14 bg-[#C9963A] text-[#2C1A0E] rounded-2xl flex flex-col items-center justify-center font-black shadow-2xl cursor-pointer"
+        >
+          <span className="text-[10px] opacity-60">SOLDE</span>
+          {credits}
+        </div>
+
+        {/* BOUTON GÉNÉRER (SOUS LE SOLDE) */}
+        {hasMoreInDb && (
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={handleUnlockMore}
+            className="w-14 h-14 rounded-2xl flex flex-col items-center justify-center shadow-2xl relative border border-white/10"
+            style={{ background: 'linear-gradient(135deg, #C9963A, #E8B96A)' }}
+          >
+            <span className="text-[8px] font-black text-[#2C1A0E] mb-1 leading-none text-center uppercase">Générer</span>
+            <span className="text-lg">✨</span>
+            <div className="absolute -top-1 -right-1 bg-[#2C1A0E] text-[#C9963A] text-[9px] px-1.5 py-0.5 rounded-full font-bold border border-[#C9963A]">
+              -1
+            </div>
+          </motion.button>
+        )}
       </div>
 
     </div>
