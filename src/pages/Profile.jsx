@@ -1,17 +1,22 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { getCredits } from "../services/credits.js";
+import { getCredits, getTotalUsed, getSavedStyles } from "../services/credits.js";
 
 export default function Profile() {
   const navigate = useNavigate();
 
   const [credits, setCredits] = useState(0);
+  const [analyses, setAnalyses] = useState(0);
+  const [favoris, setFavoris] = useState(0);
   const [userName, setUserName] = useState("Ma Reine");
   const [selfieUrl, setSelfieUrl] = useState(null);
   const [activeTab, setActiveTab] = useState("styles");
 
   useEffect(() => {
     setCredits(getCredits());
+    setAnalyses(getTotalUsed());
+    setFavoris(getSavedStyles().length);
+
     const savedName = localStorage.getItem("afrotresse_user_name");
     if (savedName) setUserName(savedName);
     const photo = sessionStorage.getItem("afrotresse_photo");
@@ -44,11 +49,11 @@ export default function Profile() {
       {/* STATS */}
       <div className="grid grid-cols-3 w-full max-w-sm mt-8 bg-white/5 border border-white/10 rounded-[2rem] p-5 text-center backdrop-blur-sm">
         <div>
-          <p className="text-xl font-black text-[#C9963A]">0</p>
+          <p className="text-xl font-black text-[#C9963A]">{analyses}</p>
           <p className="text-[9px] uppercase font-bold opacity-40">Analyses</p>
         </div>
         <div className="border-x border-white/10">
-          <p className="text-xl font-black text-[#C9963A]">0</p>
+          <p className="text-xl font-black text-[#C9963A]">{favoris}</p>
           <p className="text-[9px] uppercase font-bold opacity-40">Favoris</p>
         </div>
         <div>
