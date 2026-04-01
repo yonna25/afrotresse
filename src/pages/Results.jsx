@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { getNextBatch, FACE_SHAPE_NAMES } from "../services/faceAnalysis.js";
-import { getCredits, consumeTransform, hasCredits, canTransform } from "../services/credits.js";
+import { getCredits, consumeTransform, hasCredits } from "../services/credits.js";
 
 const FACE_SHAPE_TEXTS = {
   oval:    "Ton visage est de forme Ovale. C'est une structure équilibrée qui s'adapte à tout.",
@@ -17,17 +17,18 @@ export default function Results() {
   const navigate = useNavigate();
   const [faceShape, setFaceShape] = useState('oval');
   const [selfieUrl, setSelfieUrl] = useState(null);
-  
   const [unlockedStyles, setUnlockedStyles] = useState([]);
   const [hasMoreInDb, setHasMoreInDb] = useState(true);
   const [page, setPage] = useState(0);
-  const PAGE_SIZE = 3;
-
   const [credits, setCredits] = useState(getCredits());
+  const PAGE_SIZE = 3;
   const userName = localStorage.getItem('afrotresse_user_name') || 'Reine';
 
   useEffect(() => {
     const raw = sessionStorage.getItem('afrotresse_results');
+    const photo = sessionStorage.getItem('afrotresse_photo');
+    if (photo) setSelfieUrl(photo);
+
     if (raw) {
       try {
         const parsed = JSON.parse(raw);
@@ -35,10 +36,10 @@ export default function Results() {
         const firstBatch = parsed.recommendations.slice(0, 3);
         setUnlockedStyles(firstBatch);
         setHasMoreInDb(parsed.recommendations.length > 3);
-      } catch (e) { console.error(e); }
+      } catch (e) {
+        console.error("Erreur de parsing", e);
+      }
     }
-    const photo = sessionStorage.getItem('afrotresse_photo');
-    if (photo) setSelfieUrl(photo);
   }, []);
 
   const handleUnlockMore = () => {
@@ -58,16 +59,18 @@ export default function Results() {
       setUnlockedStyles(updatedList);
       setHasMoreInDb(hasMore);
       setPage(Math.floor((updatedList.length - 1) / PAGE_SIZE));
+      // Correction ici : On s'assure que le point-virgule est bien présent
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
-  const handleTransform = async (style) => {
-    if (!hasCredits()) { 
+  const handleTransform = (style) => {
+    if (!hasCredits()) {
       navigate('/credits');
-      return; 
+      return;
     }
-    // Logique de transformation ici
+    console.log("Transformation pour :", style.name);
+    // Ta logique FAL ici
   };
 
   const totalPages = Math.ceil(unlockedStyles.length / PAGE_SIZE);
@@ -87,7 +90,7 @@ export default function Results() {
         </div>
       </div>
 
-      {/* LISTE DES STYLES */}
+      {/* GRILLE D'IMAGES (TA STRUCTURE) */}
       <div className="flex flex-col gap-8">
         {currentBatch.map((style) => (
           <div key={style.id} className="bg-[#3D2616] rounded-[2.5rem] overflow-hidden border border-[#C9963A]/20">
@@ -132,10 +135,10 @@ export default function Results() {
         </button>
       </div>
 
-      {/* ACTIONS FLOTTANTES À DROITE */}
+      {/* ACTIONS FLOTTANTES (À DROITE) */}
       <div className="fixed bottom-8 right-5 flex flex-col items-center gap-4 z-50">
         
-        {/* SOLDE (HAUT) */}
+        {/* BOUTON SOLDE (HAUT) */}
         <div 
           onClick={() => navigate('/credits')} 
           className="w-16 h-16 bg-[#2C1A0E] border-2 border-[#C9963A] text-[#FAF4EC] rounded-2xl flex flex-col items-center justify-center shadow-2xl cursor-pointer"
@@ -144,14 +147,14 @@ export default function Results() {
           <span className="font-black text-lg text-[#C9963A]">{credits}</span>
         </div>
 
-        {/* GÉNÉRER (BAS) */}
+        {/* BOUTON GÉNÉRER (BAS) */}
         <motion.button
           whileTap={{ scale: 0.9 }}
           onClick={handleUnlockMore}
           className="w-16 h-16 rounded-2xl flex flex-col items-center justify-center shadow-2xl relative border border-white/10"
           style={{ background: 'linear-gradient(135deg, #C9963A, #E8B96A)' }}
         >
-          <span className="text-[9px] font-black text-[#2C1A0E] mb-1 uppercase">Générer</span>
+          <span className="text-[9px] font-black text-[#2C1A0E] mb-1 uppercase leading-none">Générer</span>
           <span className="text-xl">✨</span>
           <div className="absolute -top-1 -right-1 bg-[#2C1A0E] text-[#C9963A] text-[9px] px-1.5 py-0.5 rounded-full font-bold border border-[#C9963A]">
             -1
