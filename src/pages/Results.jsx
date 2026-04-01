@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { BRAIDS_DB } from "../services/faceAnalysis.js";
-import { getCredits, consumeTransform, consumeCredits, hasCredits, canTransform, addSeenStyleId, PRICING } from "../services/credits.js";
+import { getCredits, consumeTransform, consumeCredits, hasCredits, canTransform, addSeenStyleId, incrementAnalyses, PRICING } from "../services/credits.js";
 
 const FACE_SHAPE_TEXTS = {
   oval:    "Ton visage est de forme Ovale. C'est une structure très équilibrée qui s'adapte à presque tous les styles.",
@@ -72,6 +72,9 @@ export default function Results() {
         setFaceShape(parsed.faceShape || "oval");
         setFaceShapeName(parsed.faceShapeName || "");
         setStyles(parsed.recommendations || []);
+        
+        // Incrémenter le compteur d'analyses une seule fois au chargement
+        incrementAnalyses();
       } catch (e) {
         console.error("Error parsing results:", e);
       }
@@ -81,9 +84,13 @@ export default function Results() {
     setCredits(getCredits());
   }, []);
 
-  const displayedStyles = styles.filter((s) => !shownIds.includes(s.id)).slice(0, 3);
-  const canGenerateMore =
-    styles.filter((s) => !shownIds.includes(s.id)).length > 3 || shownIds.length > 0;
+  // Calculer les styles à afficher (max 3, excluant ceux déjà vus)
+  const remainingStyles = styles.filter((s) => !shownIds.includes(s.id));
+  const displayedStyles = remainingStyles.slice(0, 3);
+  
+  // Vérifier s'il y a d'autres styles à générer
+  const hasMoreStyles = remainingStyles.length > 3;
+  const canGenerateMore = (displayedStyles.length > 0) && (hasMoreStyles || shownIds.length === 0);
 
   const handleTransform = async (style, globalIndex) => {
     if (!hasCredits() || !canTransform()) {
@@ -183,12 +190,20 @@ export default function Results() {
       navigate("/credits");
       return;
     }
+    
+    // Marquer les styles actuels comme vus
     const newShown = [...shownIds, ...displayedStyles.map((s) => s.id)];
     setShownIds(newShown);
+    
+    // Consommer 1 crédit pour la génération
     consumeCredits(1);
     setCredits(getCredits());
+    
     setErrorMsg("✨ Nouveaux styles chargés!");
     window.scrollTo({ top: 0, behavior: "smooth" });
+    
+    // DEBUG: Log pour vérifier la pagination
+    console.log(`Styles affichés: ${displayedStyles.length}, Styles restants: ${remainingStyles.length - displayedStyles.length}, ShownIds: ${newShown.length}`);
   };
 
   const faceText = FACE_SHAPE_TEXTS[faceShape] || "";
@@ -199,15 +214,13 @@ export default function Results() {
         <div className="text-center px-6">
           <p className="text-4xl mb-4">💆🏾‍♀️</p>
           <p className="text-white text-xl font-bold mb-2">Quelle tresse aujourd'hui ?</p>
-          <p className="text-gray-400 text-sm mb-6">
-            Prends un selfie pour découvrir les styles qui te conviennent.
-          </p>
+          <p className="text-white/50 text-sm mb-6">Retourne analyser ton visage pour découvrir tes styles.</p>
           <button
             onClick={() => navigate("/")}
-            className="px-6 py-3 rounded-full font-bold text-sm text-[#2C1A0E]"
+            className="px-6 py-3 rounded-full font-bold text-sm text-[#2C1A0E] shadow-lg"
             style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}
           >
-            Découvrir ma tresse parfaite
+            Analyser mon visage 🤳🏾
           </button>
         </div>
       </div>
@@ -215,107 +228,91 @@ export default function Results() {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-[#2C1A0E] text-[#FAF4EC] p-4 sm:p-6 pb-40 relative">
+    <div className="min-h-screen bg-[#2C1A0E] text-white py-6 px-4 pb-32">
 
       {/* HEADER */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-10 flex flex-row gap-5 items-center bg-white/5 p-5 rounded-[2.5rem] border border-white/10"
-        style={{ boxShadow: "0 0 40px rgba(201,150,58,0.2)" }}
-      >
-        <div className="relative shrink-0">
-          {selfieUrl ? (
-            <img
-              src={selfieUrl}
-              className="w-20 h-20 rounded-2xl border-2 border-[#C9963A] object-cover"
-              alt="Moi"
-              draggable={false}
-              onContextMenu={(e) => e.preventDefault()}
-            />
-          ) : (
-            <div className="w-20 h-20 rounded-2xl border-2 border-white/10 bg-white/5 flex items-center justify-center text-[10px] text-white/50">
-              Photo
-            </div>
-          )}
-          <div className="absolute -bottom-2 -right-2 bg-[#C9963A] text-[#2C1A0E] text-[10px] font-black px-2 py-1 rounded-md uppercase">
-            Moi
-          </div>
+      <div className="flex items-center gap-3 mb-8">
+        <div className="w-10 h-10 rounded-full border-2 border-[#C9963A] flex items-center justify-center bg-white/10">
+          <span className="text-xs font-bold text-[#C9963A]">AT</span>
         </div>
-        <div className="flex flex-col flex-1">
-          <h1 className="font-bold text-3xl text-[#C9963A]">
-            Tes résultats
-            <br />
-            <span className="text-[#FAF4EC]">{userName} ✨</span>
+        <div>
+          <h1 className="text-lg font-bold">
+            <span className="text-white">Afro</span>
+            <span className="text-[#C9963A]">Tresse</span>
           </h1>
-          <p className="text-[11px] opacity-80 font-body leading-tight mt-1 max-w-xs">{faceText}</p>
+          <p className="text-[10px] text-white/40">Résultats pour {userName}</p>
         </div>
-      </motion.div>
+      </div>
 
-      {/* ERROR / MESSAGE */}
-      <AnimatePresence>
-        {errorMsg && (
-          <motion.div
-            ref={errorRef}
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`mb-4 border rounded-xl p-3 ${
-              errorMsg.includes("✅") || errorMsg.includes("✨")
-                ? "bg-green-900/30 border-green-500/50"
-                : "bg-red-900/30 border-red-500/50"
-            }`}
-          >
-            <p
-              className={
-                errorMsg.includes("✅") || errorMsg.includes("✨")
-                  ? "text-green-200 text-sm"
-                  : "text-red-200 text-sm"
-              }
-            >
-              {errorMsg}
-            </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* FACE SHAPE INFO */}
+      <div className="bg-white/5 rounded-2xl p-4 mb-8 border border-[#C9963A]/20">
+        <p className="text-sm leading-relaxed">{faceText}</p>
+      </div>
 
-      {/* RESULT */}
+      {/* SELFIE DISPLAY */}
+      {selfieUrl && (
+        <div className="mb-8 rounded-3xl overflow-hidden border-2 border-[#C9963A]/30 bg-black/30">
+          <img src={selfieUrl} alt="Ton selfie" className="w-full h-64 object-cover" />
+        </div>
+      )}
+
+      {/* ERROR MESSAGE */}
+      {errorMsg && (
+        <motion.div
+          ref={errorRef}
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6 p-4 rounded-2xl text-sm bg-white/5 border border-white/10 text-center"
+        >
+          {errorMsg}
+        </motion.div>
+      )}
+
+      {/* RESULT IMAGE OVERLAY */}
       <AnimatePresence>
         {resultImage && (
           <motion.div
-            ref={resultRef}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="mb-6 bg-[#3D2616] rounded-[2.5rem] overflow-hidden border-2 border-[#C9963A]"
-            style={{ boxShadow: "0 0 40px rgba(201,150,58,0.2)" }}
+            className="fixed inset-0 z-50 bg-black/95 flex flex-col items-center justify-center p-6 backdrop-blur-xl"
+            onClick={() => setResultImage(null)}
+            onContextMenu={(e) => e.preventDefault()}
           >
-            <div className="px-5 pt-5 pb-3">
-              <h3 className="text-[#C9963A] font-bold text-xl">{resultMsg || "Magnifique !"}</h3>
-              <p className="text-[11px] mt-1 opacity-70">
-                Ce style te met vraiment en valeur. Montre-le à ta coiffeuse !
-              </p>
-            </div>
-            <div className="relative select-none" onContextMenu={(e) => e.preventDefault()}>
+            <motion.div
+              ref={resultRef}
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              className="relative w-full max-w-sm"
+              onClick={(e) => e.stopPropagation()}
+            >
               <img
                 src={resultImage}
                 alt="Résultat"
-                className="w-full object-cover"
+                className="w-full rounded-3xl shadow-2xl"
                 draggable={false}
                 onContextMenu={(e) => e.preventDefault()}
-                style={{ userSelect: "none", WebkitUserSelect: "none" }}
               />
-              <div
-                className="absolute inset-0"
-                onContextMenu={(e) => e.preventDefault()}
-                onDragStart={(e) => e.preventDefault()}
-              />
-            </div>
-            <div className="p-5 space-y-2">
+              <p className="text-center mt-4 text-lg font-bold">{resultMsg}</p>
+            </motion.div>
+
+            <div className="mt-10 flex flex-col gap-3 w-full max-w-sm">
               <button
-                onClick={() =>
-                  handleShare("Regarde le style que j'ai choisi avec AfroTresse !", resultImage)
-                }
-                className="w-full py-4 rounded-2xl font-bold text-base shadow-xl text-[#2C1A0E]"
+                onClick={() => {
+                  const l = document.createElement("a");
+                  l.href = resultImage;
+                  l.download = `afrotresse-${Date.now()}.jpg`;
+                  l.click();
+                  handleSave();
+                }}
+                className="w-full py-3 rounded-2xl text-sm font-semibold text-[#2C1A0E]"
+                style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}
+              >
+                📥 Télécharger
+              </button>
+              <button
+                onClick={() => handleShare("Regarde mon nouveau look ! 👑", resultImage)}
+                className="w-full py-3 rounded-2xl text-sm font-semibold text-[#2C1A0E]"
                 style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}
               >
                 Envoyer à ma coiffeuse
