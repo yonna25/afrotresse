@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
+import { setCredits, getCredits, PRICING } from './services/credits.js'
 
 // Import des pages ESSENTIELLES
 import Home from './pages/Home.jsx'
@@ -21,22 +22,28 @@ import BottomNav from './components/BottomNav.jsx'
 // ═══════════════════════════════════════════════════════════════════════════
 function WelcomePopup({ onDone }) {
   const [name, setName] = useState('')
-  
+
   const handleSubmit = () => {
     const finalName = name.trim() || 'Reine'
     localStorage.setItem('afrotresse_user_name', finalName)
+
+    // Attribuer les 2 crédits gratuits UNIQUEMENT si pas encore initialisés
+    if (localStorage.getItem('afrotresse_credits') === null) {
+      setCredits(PRICING.freeCredits)
+    }
+
     onDone()
   }
 
   return (
     <motion.div
-      initial={{ opacity: 0 }} 
+      initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       className="fixed inset-0 z-50 flex items-end justify-center"
       style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)' }}
     >
       <motion.div
-        initial={{ y: 300 }} 
+        initial={{ y: 300 }}
         animate={{ y: 0 }}
         transition={{ type: 'spring', stiffness: 200, damping: 25 }}
         className="w-full max-w-sm rounded-t-3xl p-6 pb-10 overflow-y-auto"
@@ -45,25 +52,29 @@ function WelcomePopup({ onDone }) {
         <div className="flex justify-center mb-4">
           <img src="/logo.png" alt="AfroTresse" className="h-28 w-auto object-contain" onError={(e) => e.target.style.display = 'none'} />
         </div>
-        
+
         <h2 className="font-bold text-center mb-2 text-3xl" style={{ color: '#FAF4EC' }}>
           Stop à l'hésitation ! ✋
         </h2>
-        
-        <p className="text-center text-sm mb-4" style={{ color: 'rgba(250,244,236,0.8)' }}>
+
+        <p className="text-center text-sm mb-1" style={{ color: 'rgba(250,244,236,0.8)' }}>
           Trouve ta tresse idéale en 10 secondes.
         </p>
-        
+
+        <p className="text-center text-xs mb-4 font-bold" style={{ color: '#C9963A' }}>
+          🎁 2 essais gratuits offerts à l'inscription
+        </p>
+
         <input
-          type="text" 
+          type="text"
           placeholder="Ton prénom, Reine..."
-          value={name} 
+          value={name}
           onChange={e => setName(e.target.value)}
           className="w-full px-4 py-3 rounded-2xl mb-4 outline-none"
           style={{ background: 'rgba(92,51,23,0.5)', border: '1px solid rgba(201,150,58,0.35)', color: '#FAF4EC' }}
           onKeyPress={e => e.key === 'Enter' && handleSubmit()}
         />
-        
+
         <button
           onClick={handleSubmit}
           className="w-full py-4 rounded-2xl font-bold"
@@ -81,7 +92,7 @@ function WelcomePopup({ onDone }) {
 // ═══════════════════════════════════════════════════════════════════════════
 function AnimatedRoutes() {
   const location = useLocation()
-  
+
   // Routes où la BottomNav doit être CACHÉE
   const hideNav = ['/camera', '/analyze'].includes(location.pathname)
 
@@ -100,7 +111,7 @@ function AnimatedRoutes() {
           <Route path="/cookie-policy" element={<CookiePolicy />} />
         </Routes>
       </AnimatePresence>
-      
+
       {/* BottomNav visible partout sauf sur les routes spécifiées */}
       {!hideNav && <BottomNav />}
     </>
@@ -113,7 +124,7 @@ function AnimatedRoutes() {
 export default function App() {
   const [showWelcome, setShowWelcome] = useState(false)
 
-  // Affiche le Welcome popup si c'est la première visite
+  // Affiche le Welcome popup si le prénom n'a jamais été enregistré
   useEffect(() => {
     if (!localStorage.getItem('afrotresse_user_name')) {
       setShowWelcome(true)
