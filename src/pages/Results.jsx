@@ -369,22 +369,21 @@ export default function Results() {
 
       {/* ═══════════════════════════════════════════════════════════════════════════
           BOUTONS FLOTTANTS — Positionnés à droite en bas
-          ✅ Bouton Solde (haut) + Bouton Générer (bas) — IDENTIQUES en forme
+          ✅ Bouton Solde (haut) + Bouton Générer (bas) — IDENTIQUES en forme (COMPACT)
           ═══════════════════════════════════════════════════════════════════════════ */}
-      <div className="fixed bottom-8 right-5 z-40 flex flex-col items-center gap-4">
+      <div className="fixed bottom-6 right-4 z-40 flex flex-col items-center gap-2">
         
-        {/* BOUTON SOLDE (HAUT) — w-16 h-16 rounded-2xl */}
+        {/* BOUTON SOLDE (HAUT) — w-12 h-12 rounded-lg (COMPACT) */}
         <motion.div
           initial={{ y: 100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           onClick={() => navigate('/credits')}
-          className="w-16 h-16 bg-[#C9963A] text-[#2C1A0E] rounded-2xl flex flex-col items-center justify-center shadow-2xl border-2 border-[#2C1A0E]/20 active:scale-95 transition-all cursor-pointer">
-          <div className="text-[7px] font-black uppercase opacity-60">Solde</div>
-          <div className="text-3xl font-black leading-none">{credits}</div>
-          <div className="text-[7px] font-bold tracking-tight">CRÉDITS</div>
+          className="w-12 h-12 bg-[#C9963A] text-[#2C1A0E] rounded-lg flex flex-col items-center justify-center shadow-lg border border-[#2C1A0E]/20 active:scale-95 transition-all cursor-pointer">
+          <div className="text-[5px] font-black uppercase opacity-60 leading-tight">Solde</div>
+          <div className="text-xl font-black leading-none">{credits}</div>
         </motion.div>
 
-        {/* BOUTON GÉNÉRER (BAS) — MÊME TAILLE: w-16 h-16 rounded-2xl */}
+        {/* BOUTON GÉNÉRER (BAS) — MÊME TAILLE: w-12 h-12 rounded-lg (COMPACT) */}
         {canGenerateMore && (
           <motion.button
             initial={{ y: 100, opacity: 0 }}
@@ -392,12 +391,12 @@ export default function Results() {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={handleGenerateMore}
-            className="w-16 h-16 rounded-2xl flex flex-col items-center justify-center shadow-2xl relative border border-white/10 active:scale-95 transition-all"
+            className="w-12 h-12 rounded-lg flex flex-col items-center justify-center shadow-lg relative border border-white/10 active:scale-95 transition-all"
             style={{ background: 'linear-gradient(135deg, #C9963A, #E8B96A)' }}>
-            <span className="text-[9px] font-black text-[#2C1A0E] mb-1 uppercase leading-none">Générer</span>
-            <span className="text-xl">✨</span>
+            <span className="text-[6px] font-black text-[#2C1A0E] uppercase leading-none">Gen</span>
+            <span className="text-base">✨</span>
             {/* Badge "-1 crédit" */}
-            <div className="absolute -top-2 -right-2 bg-[#2C1A0E] text-[#C9963A] text-[9px] px-2 py-1 rounded-full font-bold border border-[#C9963A] whitespace-nowrap">
+            <div className="absolute -top-1 -right-1 bg-[#2C1A0E] text-[#C9963A] text-[7px] px-1 py-0 rounded-full font-bold border border-[#C9963A]">
               -1
             </div>
           </motion.button>
