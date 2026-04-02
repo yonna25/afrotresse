@@ -156,11 +156,20 @@ export default function Results() {
   const [savesCount, setSavesCount] = useState(0);
   const [creditPopup, setCreditPopup] = useState(null);
 
-  // ── Pagination ──────────────────────────────────────────────────────────
-  const [currentPage, setCurrentPage] = useState(1);
-  // unlockedPages grandit à chaque fois que l'utilisatrice génère de nouveaux styles
-  // Il n'est PAS limité par styles.length — la pagination est infinie tant qu'il y a des crédits
-  const [unlockedPages, setUnlockedPages] = useState(1);
+  // ── Pagination — persistée dans localStorage ───────────────────────────
+  const [currentPage, setCurrentPage] = useState(() => {
+    return parseInt(localStorage.getItem("afrotresse_current_page") || "1", 10);
+  });
+  const [unlockedPages, setUnlockedPages] = useState(() => {
+    return parseInt(localStorage.getItem("afrotresse_unlocked_pages") || "1", 10);
+  });
+
+  // ── Vues et likes par style (persistés) ─────────────────────────────────
+  const [styleStats, setStyleStats] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("afrotresse_style_stats") || "{}");
+    } catch { return {}; }
+  });
 
   const resultRef = useRef(null);
   const errorRef = useRef(null);
@@ -175,7 +184,25 @@ export default function Results() {
       try {
         const parsed = JSON.parse(raw);
         setFaceShape(parsed.faceShape || "oval");
-        setStyles(parsed.recommendations || []);
+        const recs = parsed.recommendations || [];
+        setStyles(recs);
+
+        // Initialiser les stats (vues/likes) pour chaque style si pas encore fait
+        setStyleStats(prev => {
+          const next = { ...prev };
+          let changed = false;
+          recs.forEach(s => {
+            if (!next[s.id]) {
+              next[s.id] = {
+                views: Math.floor(Math.random() * 3000) + 800,
+                likes: Math.floor(Math.random() * 1200) + 200,
+              };
+              changed = true;
+            }
+          });
+          if (changed) localStorage.setItem("afrotresse_style_stats", JSON.stringify(next));
+          return next;
+        });
       } catch (e) {
         console.error("Error parsing results:", e);
       }
@@ -183,6 +210,36 @@ export default function Results() {
     const photo = sessionStorage.getItem("afrotresse_photo");
     if (photo) setSelfieUrl(photo);
     setCredits(getCredits());
+  }, []);
+
+  // ── Incrémenter vues toutes les 8s, likes toutes les 20s ─────────────────
+  useEffect(() => {
+    const viewInterval = setInterval(() => {
+      setStyleStats(prev => {
+        const next = { ...prev };
+        Object.keys(next).forEach(id => {
+          next[id] = { ...next[id], views: next[id].views + Math.floor(Math.random() * 3) + 1 };
+        });
+        localStorage.setItem("afrotresse_style_stats", JSON.stringify(next));
+        return next;
+      });
+    }, 8000);
+
+    const likeInterval = setInterval(() => {
+      setStyleStats(prev => {
+        const next = { ...prev };
+        // Incrémenter 1 style aléatoire
+        const ids = Object.keys(next);
+        if (ids.length > 0) {
+          const id = ids[Math.floor(Math.random() * ids.length)];
+          next[id] = { ...next[id], likes: next[id].likes + 1 };
+        }
+        localStorage.setItem("afrotresse_style_stats", JSON.stringify(next));
+        return next;
+      });
+    }, 20000);
+
+    return () => { clearInterval(viewInterval); clearInterval(likeInterval); };
   }, []);
 
   // ── Polling pop-up crédit (déclenché depuis Credits.jsx) ────────────────
@@ -218,6 +275,7 @@ export default function Results() {
 
   const goToPage = (page) => {
     setCurrentPage(page);
+    localStorage.setItem("afrotresse_current_page", String(page));
     topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
@@ -232,6 +290,8 @@ export default function Results() {
     const nextPage = unlockedPages + 1;
     setUnlockedPages(nextPage);
     setCurrentPage(nextPage);
+    localStorage.setItem("afrotresse_unlocked_pages", String(nextPage));
+    localStorage.setItem("afrotresse_current_page", String(nextPage));
     topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
@@ -445,7 +505,8 @@ export default function Results() {
               </div>
 
               <div className="px-6 py-3 flex gap-5 text-[10px] font-black uppercase tracking-widest text-[#C9963A]/80 border-b border-white/5">
-                <span>👁️ 2.4K vues</span><span>❤️ 892 likes</span>
+                <span>👁️ {(styleStats[style.id]?.views || 0).toLocaleString("fr-FR")} vues</span>
+                <span>❤️ {(styleStats[style.id]?.likes || 0).toLocaleString("fr-FR")} likes</span>
               </div>
 
               <div className="p-6">
