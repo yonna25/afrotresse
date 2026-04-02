@@ -573,6 +573,8 @@ export default function Results() {
 
       {/* BOUTONS FLOTTANTS */}
       <div className="fixed bottom-24 right-4 z-40 flex flex-col items-center gap-2">
+
+        {/* BOUTON SOLDE */}
         <motion.div
           initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
           onClick={() => navigate("/credits")}
@@ -581,6 +583,25 @@ export default function Results() {
           <div className="text-[5px] font-black uppercase opacity-60 leading-tight">Solde</div>
           <div className="text-xl font-black leading-none">{credits}</div>
         </motion.div>
+
+        {/* BOUTON GÉNÉRER — page suivante si dispo */}
+        {currentPage < totalPages && (
+          <motion.button
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => goToPage(currentPage + 1)}
+            className="w-12 h-12 rounded-lg flex flex-col items-center justify-center shadow-lg relative border border-white/10 active:scale-95 transition-all"
+            style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}
+          >
+            <span className="text-[6px] font-black text-[#2C1A0E] uppercase leading-none">Gen</span>
+            <span className="text-base">✨</span>
+            <div className="absolute -top-1 -right-1 bg-[#2C1A0E] text-[#C9963A] text-[7px] px-1 py-0 rounded-full font-bold border border-[#C9963A]">
+              -1
+            </div>
+          </motion.button>
+        )}
       </div>
 
     </div>
