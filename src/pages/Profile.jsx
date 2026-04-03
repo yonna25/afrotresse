@@ -15,6 +15,8 @@ const getReferralCode = () => {
 };
 const getReferralCount = () => parseInt(localStorage.getItem("afrotresse_referral_count") || "0", 10);
 const getReviewDone = () => localStorage.getItem("afrotresse_review_done") === "true";
+const getCreditsEarned = () => parseInt(localStorage.getItem("afrotresse_credits_earned") || "0", 10);
+const getStylesGenerated = () => parseInt(localStorage.getItem("afrotresse_styles_generated") || "0", 10);
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -26,6 +28,8 @@ export default function Profile() {
   const [referralCode, setReferralCode] = useState("");
   const [referralCount, setReferralCount] = useState(0);
   const [reviewDone, setReviewDone] = useState(false);
+  const [creditsEarned, setCreditsEarned] = useState(0);
+  const [stylesGenerated, setStylesGenerated] = useState(0);
   const [toastMsg, setToastMsg] = useState("");
   const [showReferralInfo, setShowReferralInfo] = useState(false);
 
@@ -35,12 +39,25 @@ export default function Profile() {
     setReferralCode(getReferralCode());
     setReferralCount(getReferralCount());
     setReviewDone(getReviewDone());
+    setCreditsEarned(getCreditsEarned());
+    setStylesGenerated(getStylesGenerated());
 
     const savedName = localStorage.getItem("afrotresse_user_name");
     if (savedName) setUserName(savedName);
 
     const photo = sessionStorage.getItem("afrotresse_photo");
     if (photo) setSelfieUrl(photo);
+  }, []);
+
+  // ── Mise à jour en temps réel des compteurs (polling 1s) ────────────────
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCredits(getCredits());
+      setStylesGenerated(getStylesGenerated());
+      setCreditsEarned(getCreditsEarned());
+      setReferralCount(getReferralCount());
+    }, 1000);
+    return () => clearInterval(interval);
   }, []);
 
   const showToast = (msg) => {
@@ -82,11 +99,15 @@ export default function Profile() {
     window.open("https://afrotresse.com", "_blank");
     // Crédite après 2s (laisser le temps d'ouvrir)
     setTimeout(() => {
-      addCredits(PRICING.reviewBonus || 1);
+      const bonus = PRICING.reviewBonus || 1;
+      addCredits(bonus);
       setCredits(getCredits());
+      const newEarned = getCreditsEarned() + bonus;
+      localStorage.setItem("afrotresse_credits_earned", String(newEarned));
+      setCreditsEarned(newEarned);
       localStorage.setItem("afrotresse_review_done", "true");
       setReviewDone(true);
-      showToast(`✅ Merci ! +${PRICING.reviewBonus || 1} crédit offert 🎁`);
+      showToast(`✅ Merci ! +${bonus} crédit offert 🎁`);
     }, 2000);
   };
 
@@ -140,24 +161,37 @@ export default function Profile() {
 
       {/* ── STATS RÉELLES ── */}
       <div className="grid grid-cols-2 w-full max-w-sm mt-6 px-5 gap-3">
-        {/* Crédits */}
+          {/* Bande compteurs compacte — une seule ligne */}
         <motion.div
-          whileTap={{ scale: 0.97 }}
-          onClick={() => navigate("/credits")}
-          className="bg-[#C9963A] rounded-3xl p-5 flex flex-col items-center cursor-pointer shadow-lg"
-          style={{ boxShadow: "0 0 20px rgba(201,150,58,0.3)" }}
+          className="w-full flex items-center justify-between bg-white/5 border border-white/10 rounded-2xl px-4 py-3"
+          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
         >
-          <p className="text-3xl font-black text-[#1a0f0a]">{credits}</p>
-          <p className="text-[9px] uppercase font-black text-[#1a0f0a]/70 tracking-widest mt-0.5">Crédits</p>
-          <p className="text-[9px] text-[#1a0f0a]/50 mt-1">Appuie pour recharger</p>
-        </motion.div>
+          {/* 💰 Crédits — principal */}
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={() => navigate("/credits")}
+            className="flex flex-col items-center gap-0.5"
+          >
+            <span className="text-xl font-black text-[#C9963A] leading-none">{credits}</span>
+            <span className="text-[9px] font-black text-[#C9963A]/70 uppercase tracking-wider">💰 Crédits</span>
+          </motion.button>
 
-        {/* Essais IA */}
-        <div className="bg-white/5 border border-white/10 rounded-3xl p-5 flex flex-col items-center">
-          <p className="text-3xl font-black text-[#C9963A]">{aiTrials}</p>
-          <p className="text-[9px] uppercase font-black opacity-40 tracking-widest mt-0.5">Essais IA</p>
-          <p className="text-[9px] opacity-30 mt-1">Transformations réalisées</p>
-        </div>
+          <div className="w-px h-8 bg-white/10" />
+
+          {/* ✨ Styles générés */}
+          <div className="flex flex-col items-center gap-0.5">
+            <span className="text-xl font-black text-white/80 leading-none">{stylesGenerated}</span>
+            <span className="text-[9px] font-bold text-white/30 uppercase tracking-wider">✨ Styles</span>
+          </div>
+
+          <div className="w-px h-8 bg-white/10" />
+
+          {/* 🎁 Crédits gagnés */}
+          <div className="flex flex-col items-center gap-0.5">
+            <span className="text-xl font-black text-white/80 leading-none">+{creditsEarned}</span>
+            <span className="text-[9px] font-bold text-white/30 uppercase tracking-wider">🎁 Gagnés</span>
+          </div>
+        </motion.div>
       </div>
 
       {/* ── ACTIONS PRINCIPALES ── */}
