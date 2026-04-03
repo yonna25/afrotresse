@@ -377,14 +377,22 @@ export default function Results() {
       navigate("/credits");
       return false;
     }
-    const debited = consumeCredits(1);
-    if (!debited) {
-      setErrorMsg("❌ Pas assez de crédits pour sauvegarder.");
-      setTimeout(() => errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
-      return false;
+    const newCount = savesCount + 1;
+    setSavesCount(newCount);
+
+    // 3 sauvegardes = 1 crédit débité
+    if (newCount % 3 === 0) {
+      const debited = consumeCredits(1);
+      if (!debited) {
+        setErrorMsg("❌ Pas assez de crédits pour sauvegarder.");
+        setTimeout(() => errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
+        return false;
+      }
+      setCredits(getCredits());
+      setErrorMsg("✅ 3 sauvegardes = 1 crédit débité !");
+    } else {
+      setErrorMsg(`💾 Sauvegarde ${newCount % 3}/3 — prochain crédit dans ${3 - (newCount % 3)} save(s)`);
     }
-    setCredits(getCredits());
-    setErrorMsg("✅ Sauvegarde effectuée — 1 crédit débité.");
     setTimeout(() => errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
     return true;
   };
