@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const SLIDES = [
-  { id: 1, image: '/Afrotresse1.jpg', style: 'Knotless Braids', badge: '⚡ TENDANCE #1', accent: '#C9963A' },
+  { id: 1, image: '/Afrotresse1.jpg', style: 'Knotless Braids', badge: '⚡️ TENDANCE #1', accent: '#C9963A' },
   { id: 2, image: '/Afrotresse2.jpg', style: 'Box Braids', badge: '🔥 POPULAIRE', accent: '#E8B96A' },
   { id: 3, image: '/Afrotresse3.jpg', style: 'Cornrows', badge: '✨ COUP DE CŒUR', accent: '#C9963A' },
   { id: 4, image: '/Afrotresse4.jpg', style: 'Fulani Braids', badge: '👑 PREMIUM', accent: '#E8B96A' },
@@ -95,12 +95,22 @@ export default function Home() {
         <div className="absolute inset-x-0 bottom-0 h-1/2 z-10" style={{ background: 'linear-gradient(to top, rgba(44,26,14,0.98), transparent)' }} />
 
         {/* Logo & Header */}
-        <div className="absolute inset-x-0 top-0 z-30 px-5 pt-4 flex items-center gap-2">
-          <div className="w-10 h-10 bg-[#C9963A] rounded-full flex items-center justify-center font-bold text-white">AT</div>
-          <div className="flex flex-col">
+        <div className="absolute inset-x-0 top-0 z-30 px-5 pt-4 flex items-center gap-3">
+          <div className="w-12 h-12 flex-shrink-0">
+            <img
+              src="/icons/Logo.png"
+              alt="AfroTresse"
+              className="w-full h-full object-contain"
+            />
+          </div>
+
+          <div className="flex flex-col leading-tight">
             <span className="font-display text-2xl leading-none">
               <span className="text-white font-bold">Afro</span>
               <span className="text-[#C9963A] font-bold">Tresse</span>
+            </span>
+            <span className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.75)' }}>
+              Chaque visage a sa tresse
             </span>
           </div>
         </div>
@@ -118,17 +128,20 @@ export default function Home() {
             Découvre les coiffures qui te vont vraiment en quelques secondes.
           </p>
 
+          {/* Indicateurs */}
           <div className="mt-4 flex gap-1.5">
             {SLIDES.map((_, i) => (
               <div
                 key={i}
-                className={`h-1 rounded-full transition-all duration-300 ${i === current ? 'w-8 bg-[#C9963A]' : 'w-2 bg-white/30'}`}
+                className={`h-1 rounded-full transition-all duration-300 ${
+                  i === current ? 'w-8 bg-[#C9963A]' : 'w-2 bg-white/30'
+                }`}
               />
             ))}
           </div>
         </div>
 
-        {/* Bouton Analyser */}
+        {/* Bouton */}
         <div className="absolute bottom-16 left-0 right-0 z-40 flex flex-col items-center pointer-events-none">
           <div className="relative pointer-events-auto">
             <button
