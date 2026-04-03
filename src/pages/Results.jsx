@@ -391,7 +391,7 @@ export default function Results() {
       setCredits(getCredits());
       setErrorMsg("✅ 3 sauvegardes = 1 crédit débité !");
     } else {
-      setErrorMsg(`💾 Sauvegarde ${newCount % 3}/3 — prochain crédit dans ${3 - (newCount % 3)} save(s)`);
+      setErrorMsg(`💾 ${newCount % 3}/3 sauvegardes — 1 crédit bientôt utilisé`);
     }
     setTimeout(() => errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
     return true;
