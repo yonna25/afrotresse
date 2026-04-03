@@ -258,15 +258,27 @@ export default function Results() {
     return () => clearInterval(interval);
   }, []);
 
-  // ── Pagination helpers ──────────────────────────────────────────────────
-  // Les styles affichés tournent en boucle sur les styles disponibles
+  // ── Pagination helpers — SANS DOUBLONS ──────────────────────────────────
+  // Chaque page reçoit 3 styles distincts. On mélange avec un seed par page
+  // pour que chaque page soit différente mais reproductible (stable au reload).
   const getPageStyles = (page) => {
     const total = styles.length;
     if (total === 0) return [];
+
+    // Mélange déterministe basé sur la page (Fisher-Yates avec seed)
+    const seeded = (seed) => {
+      let s = seed;
+      return () => { s = (s * 1664525 + 1013904223) & 0xffffffff; return (s >>> 0) / 0xffffffff; };
+    };
+
+    const rand = seeded(page * 7919); // nombre premier pour varier le seed
+    const shuffled = [...styles].sort(() => rand() - 0.5);
+
+    // Prendre les 3 styles de cette page dans la liste mélangée (rotation)
     const start = ((page - 1) * STYLES_PER_PAGE) % total;
     const result = [];
     for (let i = 0; i < STYLES_PER_PAGE; i++) {
-      result.push(styles[(start + i) % total]);
+      result.push(shuffled[(start + i) % total]);
     }
     return result;
   };
@@ -360,19 +372,19 @@ export default function Results() {
   };
 
   const handleSave = () => {
-    const newCount = savesCount + 1;
-    setSavesCount(newCount);
-    if (newCount % 3 === 0) {
-      const debited = consumeCredits(1);
-      if (debited) {
-        setCredits(getCredits());
-        setErrorMsg("✅ 3 sauvegardes = 1 crédit débité!");
-      } else {
-        setErrorMsg("❌ Pas assez de crédits pour sauvegarder.");
-      }
-    } else {
-      setErrorMsg(`💾 Sauvegarde ${newCount % 3}/3 avant déduction`);
+    // ✅ Vérification crédit AVANT toute sauvegarde
+    if (!hasCredits()) {
+      navigate("/credits");
+      return;
     }
+    const debited = consumeCredits(1);
+    if (!debited) {
+      setErrorMsg("❌ Pas assez de crédits pour sauvegarder.");
+      setTimeout(() => errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
+      return;
+    }
+    setCredits(getCredits());
+    setErrorMsg("✅ Sauvegarde effectuée — 1 crédit débité.");
     setTimeout(() => errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
   };
 
