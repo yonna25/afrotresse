@@ -14,10 +14,43 @@ function loadFedaPay() {
   })
 }
 
+// Données des packs avec descriptions et CTA personnalisés
+const PACKS_CONFIG = {
+  decouverte: {
+    label: 'Découverte',
+    description: '3 essais pour découvrir ton style unique',
+    credits: 3,
+    price: 300,
+    currency: 'FCFA',
+    cta: 'Je teste maintenant',
+    popular: false,
+  },
+  allie: {
+    label: '🤝 Allié',
+    description: '10 essais + 2 bonus exclusifs',
+    credits: 10,
+    price: 900,
+    currency: 'FCFA',
+    cta: 'Je rejoins l\'aventure',
+    popular: true,
+    tagline: 'Profite vite, stock limité !',
+  },
+  vip: {
+    label: '🚀 Accès VIP',
+    description: '50 essais + 10 crédits / mois',
+    credits: 50,
+    price: 2500,
+    currency: 'FCFA',
+    cta: 'Je passe VIP',
+    popular: false,
+    tagline: 'Passe au niveau supérieur et démarque-toi',
+  },
+}
+
 export default function Credits() {
   const navigate = useNavigate()
   const [credits, setCredits] = useState(getCredits())
-  const [selected, setSelected] = useState(null)
+  const [selected, setSelected] = useState('decouverte')
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
@@ -25,7 +58,7 @@ export default function Credits() {
   const userName = localStorage.getItem('afrotresse_user_name') || 'Reine'
 
   const handleBuy = async () => {
-    const pack = PRICING.packs.find(p => p.id === selected)
+    const pack = PACKS_CONFIG[selected]
     if (!pack) return
 
     setLoading(true)
@@ -71,6 +104,8 @@ export default function Credits() {
     }
   }
 
+  const currentPack = PACKS_CONFIG[selected]
+
   return (
     <div className="min-h-screen bg-[#1A0A00] text-[#FAF4EC] pb-32">
 
@@ -99,13 +134,13 @@ export default function Credits() {
 
       {/* Packs */}
       <div className="px-6 space-y-4">
-        {PRICING.packs.map((pack) => (
+        {Object.entries(PACKS_CONFIG).map(([key, pack]) => (
           <motion.div
-            key={pack.id}
+            key={key}
             whileTap={{ scale: 0.98 }}
-            onClick={() => setSelected(pack.id)}
+            onClick={() => setSelected(key)}
             className={`relative p-5 rounded-3xl border-2 cursor-pointer transition-all ${
-              selected === pack.id
+              selected === key
                 ? 'border-[#C9963A] bg-[#C9963A]/10'
                 : 'border-white/10 bg-white/5'
             }`}>
@@ -116,21 +151,35 @@ export default function Credits() {
               </div>
             )}
 
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-black text-lg">{pack.label}</p>
-                <p className="text-[#C9963A] text-sm font-bold mt-1">
-                  {pack.credits} crédits
-                  {pack.monthly && <span className="ml-2 opacity-60 text-xs">/ mois</span>}
+            <div className="space-y-3">
+              {/* Titre et prix */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-black text-lg">{pack.label}</p>
+                  <p className="text-[#C9963A] text-sm font-bold mt-1">
+                    {pack.credits} crédits
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="font-black text-2xl">{pack.price}</p>
+                  <p className="text-xs opacity-50">{pack.currency}</p>
+                </div>
+              </div>
+
+              {/* Description */}
+              <p className="text-xs opacity-70 leading-relaxed">
+                {pack.description}
+              </p>
+
+              {/* Tagline optionnel */}
+              {pack.tagline && (
+                <p className="text-xs font-semibold text-[#C9963A]/80 italic">
+                  {pack.tagline}
                 </p>
-              </div>
-              <div className="text-right">
-                <p className="font-black text-2xl">{pack.price}</p>
-                <p className="text-xs opacity-50">{PRICING.currency}</p>
-              </div>
+              )}
             </div>
 
-            {selected === pack.id && (
+            {selected === key && (
               <div className="absolute top-4 right-4 w-5 h-5 rounded-full bg-[#C9963A] flex items-center justify-center">
                 <svg viewBox="0 0 24 24" className="w-3 h-3" fill="none" stroke="#1A0A00" strokeWidth="3">
                   <polyline points="20 6 9 17 4 12"/>
@@ -151,12 +200,12 @@ export default function Credits() {
         )}
       </AnimatePresence>
 
-      {/* Bouton acheter */}
+      {/* Bouton acheter avec CTA personnalisé */}
       <div className="px-6 mt-8">
         <motion.button
           whileTap={{ scale: 0.97 }}
           onClick={handleBuy}
-          disabled={!selected || loading || success}
+          disabled={loading || success}
           className="w-full py-5 rounded-2xl font-black text-lg disabled:opacity-30 transition-all text-[#1A0A00] flex items-center justify-center gap-2"
           style={{ background: 'linear-gradient(135deg, #C9963A, #E8B96A)' }}>
           {success
@@ -166,7 +215,7 @@ export default function Credits() {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
               </svg> Chargement...</>
-            : 'Payer avec FedaPay 💳'}
+            : currentPack.cta}
         </motion.button>
       </div>
 
