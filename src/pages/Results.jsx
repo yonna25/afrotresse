@@ -372,20 +372,21 @@ export default function Results() {
   };
 
   const handleSave = () => {
-    // ✅ Vérification crédit AVANT toute sauvegarde
-    if (!hasCredits()) {
+    // Bloque si 0 crédit — retourne false pour stopper le download
+    if (!hasCredits() || getCredits() <= 0) {
       navigate("/credits");
-      return;
+      return false;
     }
     const debited = consumeCredits(1);
     if (!debited) {
       setErrorMsg("❌ Pas assez de crédits pour sauvegarder.");
       setTimeout(() => errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
-      return;
+      return false;
     }
     setCredits(getCredits());
     setErrorMsg("✅ Sauvegarde effectuée — 1 crédit débité.");
     setTimeout(() => errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
+    return true;
   };
 
   const faceText = FACE_SHAPE_TEXTS[faceShape] || "";
@@ -631,7 +632,8 @@ export default function Results() {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleSave();
+                  const saved = handleSave();
+                  if (!saved) return; // 🚫 0 crédit = pas de download
                   const l = document.createElement("a");
                   l.href = zoomImage;
                   l.download = `afrotresse-${Date.now()}.jpg`;
