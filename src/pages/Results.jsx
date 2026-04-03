@@ -391,19 +391,191 @@ export default function Results() {
 
   const faceText = FACE_SHAPE_TEXTS[faceShape] || "";
 
+  // ── ÉCRAN VIDE INTELLIGENT — Option C si photo, Option A sinon ────────
   if (!styles.length) {
+    const hasPreviousPhoto = !!selfieUrl;
+
+    // Styles de teaser pour la mosaïque (Option A)
+    const TEASER_STYLES = [
+      { key: "boxbraids", label: "Box Braids" },
+      { key: "cornrows", label: "Cornrows" },
+      { key: "knotlessbraids", label: "Knotless Braids" },
+      { key: "twists", label: "Twists" },
+      { key: "fulanibraids", label: "Fulani Braids" },
+      { key: "goddessbraids", label: "Goddess Braids" },
+    ];
+
     return (
-      <div className="min-h-screen bg-[#2C1A0E] flex items-center justify-center">
-        <div className="text-center px-6">
-          <p className="text-4xl mb-4">💆🏾‍♀️</p>
-          <p className="text-white text-xl font-bold mb-2">Quelle tresse aujourd'hui ?</p>
-          <p className="text-gray-400 text-sm mb-6">Prends un selfie pour découvrir les styles qui te conviennent.</p>
-          <button onClick={() => navigate("/")}
-            className="px-6 py-3 rounded-full font-bold text-sm text-[#2C1A0E]"
-            style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}>
-            Découvrir ma tresse parfaite
-          </button>
-        </div>
+      <div className="min-h-[100dvh] bg-[#2C1A0E] text-[#FAF4EC] flex flex-col relative overflow-hidden">
+
+        {/* ── OPTION C — Photo existante ── */}
+        {hasPreviousPhoto ? (
+          <div className="flex flex-col min-h-[100dvh]">
+
+            {/* Hero avec la photo de l'utilisatrice */}
+            <div className="relative h-72 overflow-hidden">
+              <img src={selfieUrl} alt="Mon selfie" className="w-full h-full object-cover object-top"
+                style={{ filter: "brightness(0.45)" }} draggable={false} onContextMenu={e => e.preventDefault()} />
+              {/* Gradient bas */}
+              <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent 40%, #2C1A0E 100%)" }} />
+
+              {/* Badge */}
+              <div className="absolute top-5 left-5 bg-[#C9963A] text-[#2C1A0E] text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest">
+                ✨ Prête pour ton look ?
+              </div>
+
+              {/* Photo miniature + nom */}
+              <div className="absolute bottom-6 left-5 flex items-center gap-3">
+                <img src={selfieUrl} alt="moi" className="w-14 h-14 rounded-2xl border-2 border-[#C9963A] object-cover"
+                  draggable={false} onContextMenu={e => e.preventDefault()} />
+                <div>
+                  <p className="font-black text-xl text-white leading-none">{userName}</p>
+                  <p className="text-[11px] text-[#C9963A] font-bold mt-0.5">Ta dernière photo est prête 👑</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Contenu */}
+            <div className="flex flex-col flex-1 px-5 pt-2 pb-32">
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                <h2 className="text-2xl font-black text-white mb-1">
+                  Relance ton analyse <span className="text-[#C9963A]">✨</span>
+                </h2>
+                <p className="text-[12px] text-white/50 mb-6 leading-relaxed">
+                  Ta photo est déjà là. Relance l'analyse pour découvrir de nouveaux styles adaptés à ta morphologie.
+                </p>
+              </motion.div>
+
+              {/* CTA principal — relancer avec la même photo */}
+              <motion.button
+                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => navigate("/analyze")}
+                className="w-full py-5 rounded-2xl font-black text-lg text-[#2C1A0E] shadow-2xl mb-3"
+                style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)", boxShadow: "0 0 30px rgba(201,150,58,0.4)" }}
+              >
+                🔍 Relancer l'analyse
+              </motion.button>
+
+              {/* CTA secondaire — nouveau selfie */}
+              <motion.button
+                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => navigate("/camera")}
+                className="w-full py-4 rounded-2xl font-bold text-sm text-white/70 bg-white/5 border border-white/10"
+              >
+                📸 Prendre un nouveau selfie
+              </motion.button>
+
+              {/* Aperçu mosaïque des styles possibles */}
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
+                className="mt-8">
+                <p className="text-[10px] text-white/30 uppercase tracking-widest mb-3 text-center">Styles qui t'attendent</p>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {TEASER_STYLES.map((s, i) => (
+                    <motion.div key={s.key}
+                      initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.4 + i * 0.06 }}
+                      className="relative h-24 rounded-2xl overflow-hidden">
+                      <img src={`/styles/${s.key}-face.jpg`} alt={s.label}
+                        className="w-full h-full object-cover"
+                        style={{ filter: "brightness(0.5) blur(1px)" }}
+                        draggable={false} onContextMenu={e => e.preventDefault()} />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-white/60 text-lg">🔒</span>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+            </div>
+          </div>
+
+        ) : (
+          /* ── OPTION A — Aucune photo, teaser mosaïque ── */
+          <div className="flex flex-col min-h-[100dvh]">
+
+            {/* Mosaïque hero floutée */}
+            <div className="relative h-80 overflow-hidden">
+              <div className="grid grid-cols-3 h-full gap-0.5">
+                {TEASER_STYLES.map((s, i) => (
+                  <div key={s.key} className="relative overflow-hidden">
+                    <img src={`/styles/${s.key}-face.jpg`} alt={s.label}
+                      className="w-full h-full object-cover"
+                      style={{ filter: "brightness(0.35) blur(2px)", transform: "scale(1.05)" }}
+                      draggable={false} onContextMenu={e => e.preventDefault()} />
+                  </div>
+                ))}
+              </div>
+
+              {/* Overlay doré */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center"
+                style={{ background: "linear-gradient(160deg, rgba(201,150,58,0.15) 0%, rgba(44,26,14,0.7) 100%)" }}>
+                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
+                  transition={{ type: "spring", stiffness: 200, damping: 18 }}
+                  className="text-5xl mb-3">👑</motion.div>
+                <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+                  className="text-white font-black text-2xl text-center px-4 leading-tight">
+                  Tes styles parfaits<br /><span className="text-[#C9963A]">t'attendent</span>
+                </motion.p>
+              </div>
+
+              {/* Gradient bas */}
+              <div className="absolute bottom-0 left-0 right-0 h-24"
+                style={{ background: "linear-gradient(to bottom, transparent, #2C1A0E)" }} />
+            </div>
+
+            {/* Contenu */}
+            <div className="flex flex-col flex-1 px-5 pt-4 pb-32">
+
+              {/* Message */}
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+                className="mb-6">
+                <h2 className="text-xl font-black text-white mb-2">
+                  Découvre les tresses faites pour toi 💛
+                </h2>
+                <p className="text-[12px] text-white/50 leading-relaxed">
+                  Un selfie suffit. Notre IA analyse la forme de ton visage et te recommande les styles qui te mettront le plus en valeur.
+                </p>
+              </motion.div>
+
+              {/* 3 étapes */}
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
+                className="flex flex-col gap-3 mb-8">
+                {[
+                  { icon: "📸", label: "Prends un selfie", sub: "Ou uploade une photo existante" },
+                  { icon: "🔍", label: "Analyse IA instantanée", sub: "Forme de visage détectée en secondes" },
+                  { icon: "✨", label: "Styles personnalisés", sub: "3 recommandations taillées pour toi" },
+                ].map((step, i) => (
+                  <motion.div key={i}
+                    initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.3 + i * 0.08 }}
+                    className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl px-4 py-3">
+                    <span className="text-2xl">{step.icon}</span>
+                    <div>
+                      <p className="text-sm font-bold text-white leading-none">{step.label}</p>
+                      <p className="text-[10px] text-white/40 mt-0.5">{step.sub}</p>
+                    </div>
+                    <div className="ml-auto w-6 h-6 rounded-full bg-[#C9963A]/20 border border-[#C9963A]/40 flex items-center justify-center">
+                      <span className="text-[#C9963A] text-[10px] font-black">{i + 1}</span>
+                    </div>
+                  </motion.div>
+                ))}
+              </motion.div>
+
+              {/* CTA principal */}
+              <motion.button
+                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => navigate("/camera")}
+                className="w-full py-5 rounded-2xl font-black text-lg text-[#2C1A0E] shadow-2xl"
+                style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)", boxShadow: "0 0 30px rgba(201,150,58,0.4)" }}
+              >
+                📸 Prendre mon selfie
+              </motion.button>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
