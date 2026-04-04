@@ -519,9 +519,9 @@ export default function Results() {
           /* ── OPTION A — Aucune photo, teaser mosaïque ── */
           <div className="flex flex-col min-h-[100dvh]">
 
-            {/* Mosaïque hero floutée - CENTRÉE */}
-            <div className="relative h-80 overflow-hidden flex items-center justify-center">
-              <div className="grid grid-cols-3 h-full gap-0.5 w-full">
+            {/* Mosaïque hero floutée */}
+            <div className="relative h-80 overflow-hidden">
+              <div className="grid grid-cols-3 w-full h-full gap-0.5">
                 {TEASER_STYLES.map((s, i) => (
                   <div key={s.key} className="relative overflow-hidden">
                     <img src={`/styles/${s.key}-face.jpg`} alt={s.label}
