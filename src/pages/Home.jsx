@@ -65,7 +65,7 @@ export default function Home() {
   // Popup apres 5 secondes si premiere visite
   useEffect(() => {
     if (!storedName) {
-      const t = setTimeout(() => setShowPopup(true), 5000);
+      const t = setTimeout(() => setShowPopup(true), 10000);
       return () => clearTimeout(t);
     }
   }, []);
@@ -197,14 +197,14 @@ export default function Home() {
                 }}
               >
                 {/* Titre */}
-                <h2 className="text-center font-display font-black mb-1"
-                  style={{ color: "#FAF4EC", fontSize: 20 }}>
+                <p className="text-center font-semibold mb-1"
+                  style={{ color: "rgba(250,244,236,0.55)", fontSize: 12 }}>
                   Salut ! 👋🏾
-                </h2>
-                <p className="text-center text-xs mb-4 leading-relaxed"
-                  style={{ color: "rgba(250,244,236,0.65)" }}>
-                  Je t’aide en 10 secondes à trouver ta tresse parfaite ⏱
                 </p>
+                <h2 className="text-center font-display font-black mb-4 leading-tight"
+                  style={{ color: "#FAF4EC", fontSize: 22 }}>
+                  Je t’aide en 10 secondes à trouver ta tresse parfaite ! ⏱
+                </h2>
 
                 {/* Input */}
                 <input
