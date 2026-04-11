@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { getCredits, addCredits, PRICING } from '../services/credits.js'
+import { getCurrentUser, addSupabaseCredits } from '../services/useSupabaseCredits.js'
 
 function loadFedaPay() {
   return new Promise((resolve, reject) => {
@@ -75,11 +76,25 @@ export default function Credits() {
         },
         customer: { firstname: userName },
         environment: 'sandbox',
-        onComplete: (response) => {
+        onComplete: async (response) => {
           setLoading(false)
           if (response.reason === FedaPay.CHECKOUT_COMPLETED) {
+
+            // 1. Créditer localStorage (affichage immédiat)
             addCredits(pack.credits)
             setCredits(getCredits())
+
+            // 2. Créditer Supabase si l'utilisatrice est connectée
+            try {
+              const user = await getCurrentUser()
+              if (user) {
+                await addSupabaseCredits(user.id, pack.credits)
+              }
+            } catch (err) {
+              console.error('Supabase credit sync error:', err)
+              // On ne bloque pas — le localStorage est déjà crédité
+            }
+
             setSuccess(true)
 
             // ✅ Stocker les infos du succès pour le pop-up global dans App.jsx
@@ -89,7 +104,7 @@ export default function Credits() {
               userName,
             }))
 
-            // Retour à la page précédente après 2s (le pop-up se déclenchera là-bas)
+            // Retour à la page précédente après 2s
             setTimeout(() => navigate(-1), 2000)
           } else {
             setErrorMsg('Paiement annulé ou échoué. Réessaie.')
@@ -233,4 +248,5 @@ export default function Credits() {
 
     </div>
   )
-}
+        }
+          
