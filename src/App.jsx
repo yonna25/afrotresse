@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { setCredits, getCredits, PRICING } from './services/credits.js'
+import { getCurrentUser, getSupabaseCredits, ensureUserExists } from './services/useSupabaseCredits.js'
 
 // Import des pages
 import Home from './pages/Home.jsx'
@@ -153,6 +154,23 @@ function AnimatedRoutes() {
 // ═══════════════════════════════════════════════════════════════════════════
 export default function App() {
   const [creditSuccess, setCreditSuccess] = useState(null)
+
+  // Synchro Supabase -> localStorage au démarrage (reconnexion MagicLink)
+  useEffect(() => {
+    getCurrentUser().then(async (user) => {
+      if (user) {
+        try {
+          await ensureUserExists(user.id, user.email)
+          const balance = await getSupabaseCredits(user.id)
+          if (balance > 0) {
+            setCredits(balance)
+          }
+        } catch (err) {
+          console.error('Supabase sync error:', err)
+        }
+      }
+    })
+  }, [])
 
   // Popup félicitation — polling toutes les 500ms, fiable sur mobile
   useEffect(() => {
