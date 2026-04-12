@@ -345,7 +345,7 @@ export default function Profile() {
         </motion.button>
       </div>
 
-      {/* ── INFORMATIONS LÉGALES ── */
+      {/* ── INFORMATIONS LÉGALES ── */}
       <div className="mt-10 pb-4 flex flex-col items-center gap-2 opacity-30">
         <div className="flex gap-4 text-[9px] font-medium uppercase tracking-tighter">
           <button onClick={() => navigate("/privacy-policy")}>Mentions Légales</button>
