@@ -211,7 +211,7 @@ export default function Home() {
                 </p>
                 <h2 className="text-center font-display font-black mb-4 leading-tight"
                   style={{ color: '#FAF4EC', fontSize: 19 }}>
-                  Je t’aide en 10 secondes à trouver ta tresse parfaite ! ⏱
+                  10 secondes pour trouver ta tresse parfaite ! ⏱
                 </h2>
 
                 <input
