@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { setCredits, getCredits, PRICING } from './services/credits.js'
 import { getCurrentUser, getSupabaseCredits, ensureUserExists } from './services/useSupabaseCredits.js'
+import { supabase } from './services/supabase.js'
 
 // Import des pages
 import Home from './pages/Home.jsx'
@@ -157,8 +158,9 @@ function AnimatedRoutes() {
 export default function App() {
   const [creditSuccess, setCreditSuccess] = useState(null)
 
-  // Synchro Supabase -> localStorage au démarrage (reconnexion MagicLink)
+  // Synchro Supabase -> localStorage au démarrage ET quand l'utilisateur se connecte (Magic Link)
   useEffect(() => {
+    // 1. Synchro au démarrage
     getCurrentUser().then(async (user) => {
       if (user) {
         try {
@@ -172,6 +174,27 @@ export default function App() {
         }
       }
     })
+
+    // 2. Écoute les changements d'authentification (Magic Link, connexion, etc.)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user?.id) {
+          try {
+            await ensureUserExists(session.user.id, session.user.email)
+            const balance = await getSupabaseCredits(session.user.id)
+            if (balance > 0) {
+              setCredits(balance)
+              console.log('✅ Crédits restaurés depuis Supabase:', balance)
+            }
+          } catch (err) {
+            console.error('Auth sync error:', err)
+          }
+        }
+      }
+    )
+
+    // Cleanup subscription quand le composant se démonte
+    return () => subscription?.unsubscribe()
   }, [])
 
   // Popup félicitation — polling toutes les 500ms, fiable sur mobile
