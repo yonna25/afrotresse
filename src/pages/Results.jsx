@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { getCredits, consumeTransform, consumeCredits, hasCredits, canTransform, addSeenStyleId, PRICING } from "../services/credits.js";
+import OptimizedImage from "../components/OptimizedImage.jsx";
 
 const FACE_SHAPE_TEXTS = {
   oval:    "Ton visage est de forme Ovale. C'est une structure très équilibrée qui s'adapte à presque tous les styles.",
@@ -691,14 +692,14 @@ export default function Results() {
             >
               <div className="grid grid-cols-3 gap-0.5 h-72 bg-black/40">
                 <div className="col-span-2 h-full overflow-hidden">
-                  <ProtectedImg src={faceImg} alt={style.name} className="w-full h-full object-cover object-top" onClick={() => setZoomImage(faceImg)} />
+                  <OptimizedImage src={faceImg} alt={style.name} className="w-full h-full" onClick={() => setZoomImage(faceImg)} />
                 </div>
                 <div className="col-span-1 grid grid-rows-2 gap-0.5">
                   <div className="overflow-hidden">
-                    <ProtectedImg src={backImg} alt="dos" className="w-full h-full object-cover" onClick={() => setZoomImage(backImg)} />
+                    <OptimizedImage src={backImg} alt="dos" className="w-full h-full" onClick={() => setZoomImage(backImg)} />
                   </div>
                   <div className="overflow-hidden">
-                    <ProtectedImg src={topImg} alt="dessus" className="w-full h-full object-cover" onClick={() => setZoomImage(topImg)} />
+                    <OptimizedImage src={topImg} alt="dessus" className="w-full h-full" onClick={() => setZoomImage(topImg)} />
                   </div>
                 </div>
               </div>
@@ -801,15 +802,18 @@ export default function Results() {
             onContextMenu={(e) => e.preventDefault()}
           >
             <div className="relative" onClick={(e) => e.stopPropagation()}>
-              <motion.img
+              <motion.div
                 initial={{ scale: 0.9 }} animate={{ scale: 1 }}
-                src={zoomImage}
-                className="max-w-full max-h-[70vh] rounded-3xl shadow-2xl border border-white/10 object-contain"
-                alt="Zoom"
-                draggable={false}
-                onContextMenu={(e) => e.preventDefault()}
-                style={{ userSelect: "none", WebkitUserSelect: "none" }}
-              />
+              >
+                <OptimizedImage
+                  src={zoomImage}
+                  alt="Zoom"
+                  className="max-w-full max-h-[70vh] rounded-3xl shadow-2xl border border-white/10"
+                  draggable={false}
+                  onContextMenu={(e) => e.preventDefault()}
+                  style={{ objectFit: 'contain', userSelect: 'none', WebkitUserSelect: 'none' }}
+                />
+              </motion.div>
               <div className="absolute inset-0 rounded-3xl"
                 onContextMenu={(e) => e.preventDefault()}
                 onDragStart={(e) => e.preventDefault()} />
