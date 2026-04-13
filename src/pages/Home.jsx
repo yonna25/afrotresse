@@ -144,7 +144,7 @@ export default function Home() {
                 className="flex flex-col items-center pointer-events-none">
                 <p className="text-white/80 text-xs font-bold mb-1">Appuie ici pour commencer</p>
                 <motion.div animate={{ y: [0, 10, 0] }} transition={{ duration: 1, repeat: Infinity, ease: 'easeInOut' }}>
-                  <svg width="52" height="52" viewBox="0 0 24 24" fill="none">
+                  <svg width="52" height="32" viewBox="0 0 24 24" fill="none">
                     <path d="M12 4v16M4 12l8 8 8-8" stroke="#C9963A" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </motion.div>
