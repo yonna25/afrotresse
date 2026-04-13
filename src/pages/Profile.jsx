@@ -2,12 +2,14 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { getCredits, addCredits, PRICING } from "../services/credits.js";
-import SecureCredits from "../components/SecureCredits.jsx";
-
-const FREE_FAV_LIMIT = 3;
 
 // ── Helpers localStorage ─────────────────────────────────────────────────────
-const getAiTrials = () => parseInt(localStorage.getItem("afrotresse_ai_trials") || "0", 10);
+const getAiTrials = () => {
+  // Combine analyses IA + styles générés (transformations)
+  const trials = parseInt(localStorage.getItem("afrotresse_ai_trials") || "0", 10);
+  const generated = parseInt(localStorage.getItem("afrotresse_styles_generated") || "0", 10);
+  return trials + generated;
+};
 const getReferralCode = () => {
   let code = localStorage.getItem("afrotresse_referral_code");
   if (!code) {
@@ -17,6 +19,14 @@ const getReferralCode = () => {
   return code;
 };
 const getReferralCount = () => parseInt(localStorage.getItem("afrotresse_referral_count") || "0", 10);
+const getTotalEarned = () => {
+  // Crédits gagnés = parrainage + avis + credits_earned explicite
+  const referrals = parseInt(localStorage.getItem("afrotresse_referral_count") || "0", 10);
+  const referralCredits = referrals * 2; // PRICING.referral.sender
+  const reviewCredits = localStorage.getItem("afrotresse_review_done") === "true" ? 2 : 0;
+  const extra = parseInt(localStorage.getItem("afrotresse_credits_earned") || "0", 10);
+  return referralCredits + reviewCredits + extra;
+};
 const getReviewDone = () => localStorage.getItem("afrotresse_review_done") === "true";
 
 export default function Profile() {
@@ -28,17 +38,17 @@ export default function Profile() {
   const [aiTrials, setAiTrials] = useState(0);
   const [referralCode, setReferralCode] = useState("");
   const [referralCount, setReferralCount] = useState(0);
+  const [totalEarned, setTotalEarned] = useState(0);
   const [reviewDone, setReviewDone] = useState(false);
   const [toastMsg, setToastMsg] = useState("");
   const [showReferralInfo, setShowReferralInfo] = useState(false);
-  // ── Favoris ─────────────────────────────────────────────────────────────
-  const [favorites, setFavorites] = useState([]);
 
   useEffect(() => {
     setCredits(getCredits());
     setAiTrials(getAiTrials());
     setReferralCode(getReferralCode());
     setReferralCount(getReferralCount());
+    setTotalEarned(getTotalEarned());
     setReviewDone(getReviewDone());
 
     const savedName = localStorage.getItem("afrotresse_user_name");
@@ -46,25 +56,11 @@ export default function Profile() {
 
     const photo = sessionStorage.getItem("afrotresse_photo");
     if (photo) setSelfieUrl(photo);
-
-    // Charger les favoris
-    try {
-      const favs = JSON.parse(localStorage.getItem("afrotresse_favorites") || "[]");
-      setFavorites(favs);
-    } catch {}
   }, []);
 
   const showToast = (msg) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(""), 3000);
-  };
-
-  // ── Supprimer un favori ───────────────────────────────────────────────────
-  const removeFavorite = (id) => {
-    const next = favorites.filter(f => f.id !== id);
-    setFavorites(next);
-    localStorage.setItem("afrotresse_favorites", JSON.stringify(next));
-    showToast("🤍 Favori retiré");
   };
 
   // ── Partage du lien de parrainage ─────────────────────────────────────────
@@ -81,6 +77,7 @@ export default function Profile() {
     } catch (e) {}
   };
 
+  // ── Copier le code de parrainage ──────────────────────────────────────────
   const handleCopyCode = async () => {
     try {
       await navigator.clipboard.writeText(referralCode);
@@ -90,12 +87,15 @@ export default function Profile() {
     }
   };
 
+  // ── Laisser un avis (+ 1 crédit, 1 seule fois) ───────────────────────────
   const handleReview = () => {
     if (reviewDone) {
       showToast("👑 Avis déjà donné — merci !");
       return;
     }
+    // Ouvre le store (à adapter selon la plateforme)
     window.open("https://afrotresse.com", "_blank");
+    // Crédite après 2s (laisser le temps d'ouvrir)
     setTimeout(() => {
       addCredits(PRICING.reviewBonus || 1);
       setCredits(getCredits());
@@ -124,7 +124,10 @@ export default function Profile() {
 
       {/* ── HERO — Photo + Prénom ── */}
       <div className="w-full relative">
+        {/* Fond uniforme */}
         <div className="h-48 w-full bg-[#2b1810]" />
+
+        {/* Photo centrée chevauchant le fond */}
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2">
           <div className="relative">
             <div className="w-24 h-24 rounded-full border-4 border-[#C9963A] overflow-hidden bg-[#2a1a14] shadow-2xl">
@@ -150,8 +153,9 @@ export default function Profile() {
         </p>
       </div>
 
-      {/* ── STATS ── */}
+      {/* ── STATS RÉELLES ── */}
       <div className="grid grid-cols-3 w-full max-w-sm mt-6 px-5 gap-3">
+        {/* Solde (Crédits) - CLIQUABLE */}
         <motion.div
           whileTap={{ scale: 0.97 }}
           onClick={() => navigate("/credits")}
@@ -163,107 +167,25 @@ export default function Profile() {
           <p className="text-[7px] text-[#2b1810]/50 mt-1">Appuie</p>
         </motion.div>
 
+        {/* Styles (Essais IA) - AFFICHAGE */}
         <div className="bg-white/5 border border-white/10 rounded-3xl p-4 flex flex-col items-center">
           <p className="text-2xl font-black text-[#C9963A]">{aiTrials}</p>
           <p className="text-[8px] uppercase font-black opacity-40 tracking-widest mt-0.5">Styles</p>
           <p className="text-[7px] opacity-30 mt-1">Essayés</p>
         </div>
 
+        {/* Gagnés (Referral) - AFFICHAGE */}
         <div className="bg-white/5 border border-white/10 rounded-3xl p-4 flex flex-col items-center">
-          <p className="text-2xl font-black text-[#C9963A]">{referralCount * (PRICING.referral?.sender || 2)}</p>
+          <p className="text-2xl font-black text-[#C9963A]">{totalEarned}</p>
           <p className="text-[8px] uppercase font-black opacity-40 tracking-widest mt-0.5">Gagnés</p>
           <p className="text-[7px] opacity-30 mt-1">Par parrainage</p>
         </div>
       </div>
 
-      {/* ── MES FAVORIS ── */}
-      <div className="w-full max-w-sm px-5 mt-6">
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-[11px] font-black uppercase tracking-widest text-white/40">Mes Favoris</p>
-          <span
-            className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-            style={favorites.length >= FREE_FAV_LIMIT
-              ? { background: "rgba(201,150,58,0.2)", color: "#C9963A" }
-              : { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.4)" }
-            }
-          >
-            {favorites.length}/{FREE_FAV_LIMIT}
-          </span>
-        </div>
-
-        {favorites.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="rounded-3xl border border-dashed border-white/12 p-8 flex flex-col items-center gap-2"
-          >
-            <span className="text-3xl">🤍</span>
-            <p className="text-[11px] text-white/35 text-center leading-relaxed">
-              Aucun favori pour l'instant.<br />Ajoute des styles depuis tes résultats.
-            </p>
-            <button
-              onClick={() => navigate("/results")}
-              className="mt-2 text-[11px] text-[#C9963A] font-bold"
-            >
-              Voir mes résultats →
-            </button>
-          </motion.div>
-        ) : (
-          <div className="flex flex-col gap-3">
-            {favorites.map((fav, i) => (
-              <motion.div
-                key={fav.id}
-                initial={{ opacity: 0, x: -16 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 16 }}
-                transition={{ delay: i * 0.06 }}
-                className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl px-4 py-3"
-              >
-                <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 border border-[#C9963A]/20">
-                  <img
-                    src={fav.faceImg}
-                    alt={fav.name}
-                    className="w-full h-full object-cover"
-                    draggable={false}
-                    onContextMenu={e => e.preventDefault()}
-                  />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-black text-sm text-white truncate">{fav.name}</p>
-                  <p className="text-[10px] text-[#C9963A]/70 mt-0.5">{fav.duration}</p>
-                  {fav.tags?.length > 0 && (
-                    <p className="text-[9px] text-white/30 mt-0.5 truncate">{fav.tags.slice(0, 2).join(" · ")}</p>
-                  )}
-                </div>
-                <button
-                  onClick={() => removeFavorite(fav.id)}
-                  className="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/35 hover:text-white/60 active:scale-90 transition-all shrink-0"
-                >
-                  ✕
-                </button>
-              </motion.div>
-            ))}
-
-            {/* CTA upgrade si slots pleins */}
-            {favorites.length >= FREE_FAV_LIMIT && (
-              <motion.button
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => navigate("/credits")}
-                className="w-full py-3.5 rounded-2xl font-black text-sm text-[#2b1810] mt-1"
-                style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}
-              >
-                👑 Favoris illimités — Pack Reine
-              </motion.button>
-            )}
-          </div>
-        )}
-      </div>
-
       {/* ── ACTIONS PRINCIPALES ── */}
       <div className="w-full max-w-sm px-5 mt-6 flex flex-col gap-3">
 
+        {/* Recharger les crédits */}
         <motion.button
           whileTap={{ scale: 0.97 }}
           onClick={() => navigate("/credits")}
@@ -276,6 +198,7 @@ export default function Profile() {
           </svg>
         </motion.button>
 
+        {/* Nouveau selfie */}
         <motion.button
           whileTap={{ scale: 0.97 }}
           onClick={() => navigate("/camera")}
@@ -287,6 +210,7 @@ export default function Profile() {
           </svg>
         </motion.button>
 
+        {/* Voir mes résultats */}
         <motion.button
           whileTap={{ scale: 0.97 }}
           onClick={() => navigate("/results")}
@@ -305,6 +229,7 @@ export default function Profile() {
           className="rounded-3xl overflow-hidden border border-[#C9963A]/30"
           style={{ background: "#2b1810" }}
         >
+          {/* Header parrainage */}
           <button
             onClick={() => setShowReferralInfo(!showReferralInfo)}
             className="w-full p-5 flex items-center justify-between"
@@ -325,6 +250,7 @@ export default function Profile() {
             </motion.div>
           </button>
 
+          {/* Détails parrainage */}
           <AnimatePresence>
             {showReferralInfo && (
               <motion.div
@@ -334,9 +260,12 @@ export default function Profile() {
                 className="overflow-hidden"
               >
                 <div className="px-5 pb-5 flex flex-col gap-3">
+                  {/* Explication */}
                   <div className="bg-white/5 rounded-2xl p-3 text-[11px] text-white/60 leading-relaxed">
                     Partage ton code à une amie. Elle reçoit <span className="text-[#C9963A] font-bold">+{PRICING.referral?.receiver || 2} crédits</span>, et toi <span className="text-[#C9963A] font-bold">+{PRICING.referral?.sender || 2} crédits</span> dès qu'elle s'inscrit. 👑
                   </div>
+
+                  {/* Code unique */}
                   <div className="flex items-center gap-2">
                     <div className="flex-1 bg-white/10 border border-[#C9963A]/40 rounded-xl px-4 py-3 font-black text-[#C9963A] tracking-widest text-center text-sm">
                       {referralCode}
@@ -348,6 +277,8 @@ export default function Profile() {
                       📋
                     </button>
                   </div>
+
+                  {/* Filleules */}
                   <div className="flex items-center justify-between bg-white/5 rounded-2xl px-4 py-3">
                     <div>
                       <p className="text-xs font-black text-white">Filleules</p>
@@ -355,6 +286,8 @@ export default function Profile() {
                     </div>
                     <p className="text-2xl font-black text-[#C9963A]">{referralCount}</p>
                   </div>
+
+                  {/* Bouton partager */}
                   <motion.button
                     whileTap={{ scale: 0.97 }}
                     onClick={handleShare}
@@ -402,6 +335,7 @@ export default function Profile() {
         </motion.button>
       </div>
 
+
       {/* ── FAQ ── */}
       <div className="w-full max-w-sm px-5 mt-3">
         <motion.button
@@ -422,7 +356,7 @@ export default function Profile() {
         </motion.button>
       </div>
 
-      {/* ── INFORMATIONS LÉGALES ── */}
+      {/* ── INFORMATIONS LÉGALES ── */
       <div className="mt-10 pb-4 flex flex-col items-center gap-2 opacity-30">
         <div className="flex gap-4 text-[9px] font-medium uppercase tracking-tighter">
           <button onClick={() => navigate("/privacy-policy")}>Mentions Légales</button>
@@ -432,12 +366,6 @@ export default function Profile() {
           <button onClick={() => navigate("/cookie-policy")}>Confidentialité</button>
         </div>
         <p className="text-[8px]">© 2026 AfroTresse — Tous droits réservés</p>
-        <button
-          onClick={() => navigate("/debug")}
-          className="text-[7px] opacity-20 hover:opacity-40 transition-opacity mt-2 text-white/40"
-        >
-          🔧
-        </button>
       </div>
 
     </div>
