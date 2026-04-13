@@ -91,9 +91,12 @@ export default function Home() {
           </motion.div>
         ))}
 
-        <div className="absolute inset-x-0 top-0 h-40 z-10"
+        {/* 🔥 OVERLAY CONTRASTE GLOBAL */}
+        <div className="absolute inset-0 bg-black/40 z-10" />
+
+        <div className="absolute inset-x-0 top-0 h-40 z-20"
           style={{ background: 'linear-gradient(to bottom, rgba(44,26,14,0.85), transparent)' }} />
-        <div className="absolute inset-x-0 bottom-0 h-1/2 z-10"
+        <div className="absolute inset-x-0 bottom-0 h-1/2 z-20"
           style={{ background: 'linear-gradient(to top, rgba(44,26,14,0.98), transparent)' }} />
 
         <div className="absolute inset-x-0 top-0 z-30 px-5 pt-4 flex items-center gap-3">
@@ -111,17 +114,20 @@ export default function Home() {
           </div>
         </div>
 
-        {/* TEXTE AVEC FOND + COULEUR CORRIGÉE */}
+        {/* TEXTE PREMIUM HIÉRARCHISÉ */}
         <div className="absolute inset-x-0 bottom-0 z-30 px-5 pb-48">
 
-          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/50 to-transparent" />
+          <h1 className="font-display text-2xl font-medium leading-tight">
 
-          <h1 className="relative font-display text-2xl font-bold leading-tight text-white">
-            <span style={{ color: '#C9963A' }}>
+            <span style={{ color: '#C9963A', fontWeight: 600 }}>
               Un selfie, et
             </span>{' '}
-            découvre<br />
-            ta meilleure coiffure
+
+            <span style={{ color: '#FFFFFF', fontWeight: 500 }}>
+              découvre<br />
+              ta meilleure coiffure
+            </span>
+
           </h1>
 
           <div className="mt-4 flex gap-1.5 relative">
