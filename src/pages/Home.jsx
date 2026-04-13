@@ -112,7 +112,7 @@ export default function Home() {
         </div>
 
         {/* TEXTE MODIFIÉ */}
-        <div className="absolute inset-x-0 bottom-0 z-30 px-5 pb-42">
+        <div className="absolute inset-x-0 bottom-0 z-30 px-5 pb-50">
           <h1 className="font-display text-2xl font-bold leading-tight text-white">
             <span style={{ color: '#C9963A' }}>Un selfie</span>, et découvre<br />
             Ta meilleure coiffure
