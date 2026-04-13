@@ -93,7 +93,7 @@ export default function Home() {
 
         <div className="absolute inset-x-0 top-0 h-40 z-10"
           style={{ background: 'linear-gradient(to bottom, rgba(44,26,14,0.85), transparent)' }} />
-        <div className="absolute inset-x-0 bottom-0 h-1/2 z-10"
+        <div className="absolute inset-x-0 bottom-0 h-1/2 z-10" 
           style={{ background: 'linear-gradient(to top, rgba(44,26,14,0.98), transparent)' }} />
 
         <div className="absolute inset-x-0 top-0 z-30 px-5 pt-4 flex items-center gap-3">
