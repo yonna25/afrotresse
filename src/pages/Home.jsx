@@ -117,9 +117,9 @@ export default function Home() {
           {/* Fond lisibilité */}
           <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/50 to-transparent" />
 
-          <h1 className="relative font-display text-2xl font-bold leading-tight text-white">
-            <span style={{ color: '#C9963A' }}>Un selfie</span>, et découvre<br />
-            ta meilleure coiffure
+          <h1 className="relative font-display text-2xl font-bold leading-tight text-white"
+            <span style={{ color: '#C9963A' }}>Un selfie, et</span> découvre<br />
+ta meilleure coiffure
           </h1>
 
           <div className="mt-4 flex gap-1.5 relative">
