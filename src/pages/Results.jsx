@@ -157,6 +157,9 @@ export default function Results() {
   const [savesCount, setSavesCount] = useState(0);
   const [creditPopup, setCreditPopup] = useState(null);
 
+  // ── NOUVEAU — Modale Virtual Try-On Coming Soon ──────────────────────────
+  const [showTryOnModal, setShowTryOnModal] = useState(false);
+
   // ── Pagination — persistée dans localStorage ───────────────────────────
   const [currentPage, setCurrentPage] = useState(() => {
     return parseInt(localStorage.getItem("afrotresse_current_page") || "1", 10);
@@ -260,9 +263,6 @@ export default function Results() {
   }, []);
 
   // ── Pagination helpers — ZÉRO DOUBLON GARANTI ───────────────────────────
-  // On mélange UNE FOIS la liste complète avec un seed fixe (basé sur userName)
-  // puis chaque page prend une tranche de 3 styles strictement distincts.
-  // Si on dépasse la liste, on refait un mélange avec un seed différent.
   const getShuffledStyles = (shuffleSeed) => {
     const seeded = (seed) => {
       let s = seed;
@@ -281,10 +281,7 @@ export default function Results() {
     const total = styles.length;
     if (total === 0) return [];
 
-    // Seed de base basé sur le userName pour être stable au reload
     const baseSeed = userName.split("").reduce((acc, c) => acc + c.charCodeAt(0), 12345);
-
-    // Quelle "série" de mélange ? (tous les N pages on recrée un mélange différent)
     const stylesPerShuffle = Math.floor(total / STYLES_PER_PAGE) * STYLES_PER_PAGE || STYLES_PER_PAGE;
     const shuffleIndex = Math.floor(((page - 1) * STYLES_PER_PAGE) / stylesPerShuffle);
     const positionInShuffle = ((page - 1) * STYLES_PER_PAGE) % stylesPerShuffle;
@@ -362,7 +359,6 @@ export default function Results() {
       consumeTransform();
       addSeenStyleId(style.id);
       setCredits(getCredits());
-      // Incrémenter le compteur styles générés (affiché sur Profil)
       const prev = parseInt(localStorage.getItem("afrotresse_styles_generated") || "0", 10);
       localStorage.setItem("afrotresse_styles_generated", String(prev + 1));
       setResultImage(data.imageUrl);
@@ -389,7 +385,6 @@ export default function Results() {
   };
 
   const handleSave = () => {
-    // Bloque si 0 crédit — retourne false pour stopper le download
     if (!hasCredits() || getCredits() <= 0) {
       navigate("/credits");
       return false;
@@ -397,7 +392,6 @@ export default function Results() {
     const newCount = savesCount + 1;
     setSavesCount(newCount);
 
-    // 3 sauvegardes = 1 crédit débité
     if (newCount % 3 === 0) {
       const debited = consumeCredits(1);
       if (!debited) {
@@ -420,7 +414,6 @@ export default function Results() {
   if (!styles.length) {
     const hasPreviousPhoto = !!selfieUrl;
 
-    // Styles de teaser pour la mosaïque (Option A)
     const TEASER_STYLES = [
       { key: "boxbraids", label: "Box Braids" },
       { key: "cornrows", label: "Cornrows" },
@@ -437,19 +430,15 @@ export default function Results() {
         {hasPreviousPhoto ? (
           <div className="flex flex-col min-h-[100dvh]">
 
-            {/* Hero avec la photo de l'utilisatrice */}
             <div className="relative h-72 overflow-hidden">
               <img src={selfieUrl} alt="Mon selfie" className="w-full h-full object-cover object-top"
                 style={{ filter: "brightness(0.45)" }} draggable={false} onContextMenu={e => e.preventDefault()} />
-              {/* Gradient bas */}
               <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent 40%, #2C1A0E 100%)" }} />
 
-              {/* Badge */}
               <div className="absolute top-5 left-5 bg-[#C9963A] text-[#2C1A0E] text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest">
                 ✨ Prête pour ton look ?
               </div>
 
-              {/* Photo miniature + nom */}
               <div className="absolute bottom-6 left-5 flex items-center gap-3">
                 <img src={selfieUrl} alt="moi" className="w-14 h-14 rounded-2xl border-2 border-[#C9963A] object-cover"
                   draggable={false} onContextMenu={e => e.preventDefault()} />
@@ -460,7 +449,6 @@ export default function Results() {
               </div>
             </div>
 
-            {/* Contenu */}
             <div className="flex flex-col flex-1 px-5 pt-2 pb-32">
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
                 <h2 className="text-2xl font-black text-white mb-1">
@@ -471,7 +459,6 @@ export default function Results() {
                 </p>
               </motion.div>
 
-              {/* CTA principal — relancer avec la même photo */}
               <motion.button
                 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
                 whileTap={{ scale: 0.97 }}
@@ -482,7 +469,6 @@ export default function Results() {
                 🔍 Relancer l'analyse
               </motion.button>
 
-              {/* CTA secondaire — nouveau selfie */}
               <motion.button
                 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
                 whileTap={{ scale: 0.97 }}
@@ -492,7 +478,6 @@ export default function Results() {
                 📸 Prendre un nouveau selfie
               </motion.button>
 
-              {/* Aperçu mosaïque des styles possibles */}
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
                 className="mt-8">
                 <p className="text-[10px] text-white/30 uppercase tracking-widest mb-3 text-center">Styles qui t'attendent</p>
@@ -520,10 +505,7 @@ export default function Results() {
           /* ── OPTION A — Aucune photo, teaser mosaïque ── */
           <div className="flex flex-col min-h-[100dvh]">
 
-            {/* Mosaïque hero - FOND UNI */}
             <div className="relative h-80 overflow-hidden bg-[#2C1A0E] flex items-center justify-center">
-
-              {/* Overlay doré */}
               <div className="absolute inset-0 flex flex-col items-center justify-center"
                 style={{ background: "linear-gradient(160deg, rgba(201,150,58,0.15) 0%, rgba(44,26,14,0.7) 100%)" }}>
                 <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
@@ -534,16 +516,11 @@ export default function Results() {
                   Tes styles parfaits<br /><span className="text-[#C9963A]">t'attendent</span>
                 </motion.p>
               </div>
-
-              {/* Gradient bas */}
               <div className="absolute bottom-0 left-0 right-0 h-24"
                 style={{ background: "linear-gradient(to bottom, transparent, #2C1A0E)" }} />
             </div>
 
-            {/* Contenu */}
             <div className="flex flex-col flex-1 px-5 pt-4 pb-32">
-
-              {/* Message */}
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
                 className="mb-6">
                 <h2 className="text-xl font-black text-white mb-2">
@@ -554,7 +531,6 @@ export default function Results() {
                 </p>
               </motion.div>
 
-              {/* 3 étapes */}
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
                 className="flex flex-col gap-3 mb-8">
                 {[
@@ -578,7 +554,6 @@ export default function Results() {
                 ))}
               </motion.div>
 
-              {/* CTA principal */}
               <motion.button
                 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55 }}
                 whileTap={{ scale: 0.97 }}
@@ -602,6 +577,100 @@ export default function Results() {
       <AnimatePresence>
         {creditPopup && (
           <CreditSuccessPopup data={creditPopup} onClose={() => setCreditPopup(null)} />
+        )}
+      </AnimatePresence>
+
+      {/* ── MODALE VIRTUAL TRY-ON COMING SOON ── */}
+      <AnimatePresence>
+        {showTryOnModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] flex items-center justify-center px-6"
+            style={{ background: "rgba(0,0,0,0.80)", backdropFilter: "blur(12px)" }}
+            onClick={() => setShowTryOnModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.85, y: 40, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.85, y: 40, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 260, damping: 22 }}
+              className="w-full max-w-sm rounded-[2.5rem] p-8 text-center relative overflow-hidden"
+              style={{
+                background: "linear-gradient(160deg, #2C1A0E 0%, #3D2616 100%)",
+                border: "2px solid #C9963A",
+                boxShadow: "0 0 60px rgba(201,150,58,0.35)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Particules décoratives */}
+              <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                {["✨","🪄","👑","💛","✨","🌟","👑","💎"].map((emoji, i) => (
+                  <motion.div
+                    key={i}
+                    className="absolute text-lg"
+                    style={{ left: `${8 + i * 11}%` }}
+                    initial={{ opacity: 0, y: 60 }}
+                    animate={{ opacity: [0, 1, 0], y: -80 }}
+                    transition={{ delay: i * 0.18, duration: 2, repeat: Infinity, repeatDelay: 2 }}
+                  >
+                    {emoji}
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* Icône principale */}
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: [0, 1.2, 1] }}
+                transition={{ delay: 0.1, duration: 0.5 }}
+                className="text-6xl mb-5"
+              >
+                🪄
+              </motion.div>
+
+              {/* Titre */}
+              <h2 className="text-2xl font-black text-[#C9963A] mb-2">
+                Virtual Try-On
+              </h2>
+              <div
+                className="inline-block px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-widest text-[#2C1A0E] mb-4"
+                style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}
+              >
+                ✨ Bientôt disponible
+              </div>
+
+              {/* Description */}
+              <p className="text-sm text-white/70 leading-relaxed mb-3">
+                Essaie n'importe quelle tresse directement sur ta photo en temps réel.
+              </p>
+              <p className="text-[11px] text-white/40 mb-6">
+                Notre IA va te transformer en quelques secondes. Sois la première à le tester ! 👑
+              </p>
+
+              {/* Barre de progression simulée */}
+              <div className="bg-white/10 rounded-full h-1.5 mb-2 overflow-hidden">
+                <motion.div
+                  className="h-full rounded-full"
+                  style={{ background: "linear-gradient(90deg, #C9963A, #E8B96A)" }}
+                  initial={{ width: "0%" }}
+                  animate={{ width: "72%" }}
+                  transition={{ delay: 0.4, duration: 1.2, ease: "easeOut" }}
+                />
+              </div>
+              <p className="text-[10px] text-[#C9963A]/60 mb-6">72% — En cours de développement</p>
+
+              {/* Bouton fermer */}
+              <button
+                onClick={() => setShowTryOnModal(false)}
+                className="w-full py-4 rounded-2xl font-black text-[#1A0A00] text-base"
+                style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}
+              >
+                J'ai hâte ! ✨
+              </button>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
 
@@ -720,19 +789,27 @@ export default function Results() {
                     <span key={i} className="text-[10px] bg-white/10 text-white/80 px-3 py-1 rounded-full">{tag}</span>
                   ))}
                 </div>
-                <button onClick={() => handleTransform(style, index)} disabled={isLoading}
-                  className="w-full py-4 rounded-2xl font-bold text-base shadow-xl active:scale-[0.98] transition-all disabled:opacity-60 text-[#2C1A0E]"
-                  style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}>
-                  {isLoading ? (
+
+                {/* ── VIRTUAL TRY-ON — Coming Soon ── */}
+                <div className="relative">
+                  <button
+                    onClick={() => setShowTryOnModal(true)}
+                    className="w-full py-4 rounded-2xl font-bold text-base shadow-xl active:scale-[0.98] transition-all text-[#FAF4EC]/80"
+                    style={{ background: "linear-gradient(135deg, #4a3520, #6b4c2a)", border: "1px solid rgba(201,150,58,0.3)" }}
+                  >
                     <span className="flex items-center justify-center gap-2">
-                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                      </svg>
-                      {WAITING_MSGS[waitingMsgIdx]}
+                      🪄 Essayer virtuellement ce style
                     </span>
-                  ) : "Essayer virtuellement ce style ✨"}
-                </button>
+                  </button>
+                  {/* Badge "Bientôt" */}
+                  <div
+                    className="absolute -top-2 -right-2 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider text-[#2C1A0E]"
+                    style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)", boxShadow: "0 0 12px rgba(201,150,58,0.6)" }}
+                  >
+                    ✨ Bientôt
+                  </div>
+                </div>
+
               </div>
             </motion.div>
           );
@@ -823,7 +900,7 @@ export default function Results() {
                 onClick={(e) => {
                   e.stopPropagation();
                   const saved = handleSave();
-                  if (!saved) return; // 🚫 0 crédit = pas de download
+                  if (!saved) return;
                   const l = document.createElement("a");
                   l.href = zoomImage;
                   l.download = `afrotresse-${Date.now()}.jpg`;
