@@ -136,7 +136,7 @@ export default function Home() {
         </div>
 
         {/* Fleche animee + bouton CTA */}
-        <div className="absolute bottom-16 left-0 right-0 z-40 flex flex-col items-center gap-3 pointer-events-none">
+        <div className="absolute bottom-24 left-0 right-0 z-40 flex flex-col items-center gap-3 pointer-events-none">
           <AnimatePresence>
             {showArrow && (
               <motion.div
@@ -163,5 +163,4 @@ export default function Home() {
       </div>
     </div>
   );
-      }
-      
+}
