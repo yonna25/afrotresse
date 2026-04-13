@@ -26,7 +26,6 @@ const RESULT_MSGS = [
 ];
 
 const STYLES_PER_PAGE = 3;
-const FREE_FAV_LIMIT = 3;
 
 const ProtectedImg = ({ src, alt, className, onClick }) => (
   <div className="relative w-full h-full" onClick={onClick}>
@@ -75,6 +74,7 @@ function CreditSuccessPopup({ data, onClose }) {
         }}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Particules */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           {["✨","💎","👑","⭐","✨","💛","👑","💎"].map((emoji, i) => (
             <motion.div
@@ -156,17 +156,7 @@ export default function Results() {
   const [zoomImage, setZoomImage] = useState(null);
   const [savesCount, setSavesCount] = useState(0);
   const [creditPopup, setCreditPopup] = useState(null);
-
-  // ── Favoris — persistés dans localStorage ─────────────────────────────────
-  const [favorites, setFavorites] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("afrotresse_favorites") || "[]"); }
-    catch { return []; }
-  });
-  const [showFavPaywall, setShowFavPaywall] = useState(false);
-  // Alerte volatile — une seule fois par session
-  const [showVolatileAlert, setShowVolatileAlert] = useState(
-    () => !sessionStorage.getItem("afrotresse_volatile_dismissed")
-  );
+  const [showVirtualTryOnModal, setShowVirtualTryOnModal] = useState(false);
 
   // ── Pagination — persistée dans localStorage ───────────────────────────
   const [currentPage, setCurrentPage] = useState(() => {
@@ -199,6 +189,7 @@ export default function Results() {
         const recs = parsed.recommendations || [];
         setStyles(recs);
 
+        // Initialiser les stats (vues/likes) pour chaque style si pas encore fait
         setStyleStats(prev => {
           const next = { ...prev };
           let changed = false;
@@ -239,6 +230,7 @@ export default function Results() {
     const likeInterval = setInterval(() => {
       setStyleStats(prev => {
         const next = { ...prev };
+        // Incrémenter 1 style aléatoire
         const ids = Object.keys(next);
         if (ids.length > 0) {
           const id = ids[Math.floor(Math.random() * ids.length)];
@@ -252,7 +244,7 @@ export default function Results() {
     return () => { clearInterval(viewInterval); clearInterval(likeInterval); };
   }, []);
 
-  // ── Polling pop-up crédit ────────────────────────────────────────────────
+  // ── Polling pop-up crédit (déclenché depuis Credits.jsx) ────────────────
   useEffect(() => {
     const interval = setInterval(() => {
       const raw = sessionStorage.getItem("afrotresse_credit_success");
@@ -268,7 +260,10 @@ export default function Results() {
     return () => clearInterval(interval);
   }, []);
 
-  // ── Pagination helpers ───────────────────────────────────────────────────
+  // ── Pagination helpers — ZÉRO DOUBLON GARANTI ───────────────────────────
+  // On mélange UNE FOIS la liste complète avec un seed fixe (basé sur userName)
+  // puis chaque page prend une tranche de 3 styles strictement distincts.
+  // Si on dépasse la liste, on refait un mélange avec un seed différent.
   const getShuffledStyles = (shuffleSeed) => {
     const seeded = (seed) => {
       let s = seed;
@@ -286,10 +281,15 @@ export default function Results() {
   const getPageStyles = (page) => {
     const total = styles.length;
     if (total === 0) return [];
+
+    // Seed de base basé sur le userName pour être stable au reload
     const baseSeed = userName.split("").reduce((acc, c) => acc + c.charCodeAt(0), 12345);
+
+    // Quelle "série" de mélange ? (tous les N pages on recrée un mélange différent)
     const stylesPerShuffle = Math.floor(total / STYLES_PER_PAGE) * STYLES_PER_PAGE || STYLES_PER_PAGE;
     const shuffleIndex = Math.floor(((page - 1) * STYLES_PER_PAGE) / stylesPerShuffle);
     const positionInShuffle = ((page - 1) * STYLES_PER_PAGE) % stylesPerShuffle;
+
     const shuffled = getShuffledStyles(baseSeed + shuffleIndex * 9973);
     const result = [];
     for (let i = 0; i < STYLES_PER_PAGE; i++) {
@@ -306,6 +306,7 @@ export default function Results() {
     topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
+  // Générer une nouvelle page de styles (coûte 1 crédit)
   const handleGenerateMore = () => {
     if (!hasCredits()) {
       navigate("/credits");
@@ -362,6 +363,7 @@ export default function Results() {
       consumeTransform();
       addSeenStyleId(style.id);
       setCredits(getCredits());
+      // Incrémenter le compteur styles générés (affiché sur Profil)
       const prev = parseInt(localStorage.getItem("afrotresse_styles_generated") || "0", 10);
       localStorage.setItem("afrotresse_styles_generated", String(prev + 1));
       setResultImage(data.imageUrl);
@@ -388,6 +390,7 @@ export default function Results() {
   };
 
   const handleSave = () => {
+    // Bloque si 0 crédit — retourne false pour stopper le download
     if (!hasCredits() || getCredits() <= 0) {
       navigate("/credits");
       return false;
@@ -395,6 +398,7 @@ export default function Results() {
     const newCount = savesCount + 1;
     setSavesCount(newCount);
 
+    // 3 sauvegardes = 1 crédit débité
     if (newCount % 3 === 0) {
       const debited = consumeCredits(1);
       if (!debited) {
@@ -411,40 +415,13 @@ export default function Results() {
     return true;
   };
 
-  // ── Favoris ───────────────────────────────────────────────────────────────
-  const toggleFavorite = (style) => {
-    const styleKey = style.id?.replace(/-/g, "") || style.id;
-    const isFav = favorites.some(f => f.id === style.id);
-
-    if (isFav) {
-      const next = favorites.filter(f => f.id !== style.id);
-      setFavorites(next);
-      localStorage.setItem("afrotresse_favorites", JSON.stringify(next));
-    } else {
-      if (favorites.length >= FREE_FAV_LIMIT) {
-        setShowFavPaywall(true);
-        return;
-      }
-      const favItem = {
-        id: style.id,
-        name: style.name,
-        faceImg: style.views?.face || `/styles/${styleKey}-face.jpg`,
-        duration: style.duration || "3-5h",
-        tags: style.tags || [],
-        description: style.description || "",
-      };
-      const next = [...favorites, favItem];
-      setFavorites(next);
-      localStorage.setItem("afrotresse_favorites", JSON.stringify(next));
-    }
-  };
-
   const faceText = FACE_SHAPE_TEXTS[faceShape] || "";
 
-  // ── ÉCRAN VIDE INTELLIGENT ────────────────────────────────────────────────
+  // ── ÉCRAN VIDE INTELLIGENT — Option C si photo, Option A sinon ────────
   if (!styles.length) {
     const hasPreviousPhoto = !!selfieUrl;
 
+    // Styles de teaser pour la mosaïque (Option A)
     const TEASER_STYLES = [
       { key: "boxbraids", label: "Box Braids" },
       { key: "cornrows", label: "Cornrows" },
@@ -457,15 +434,23 @@ export default function Results() {
     return (
       <div className="min-h-[100dvh] bg-[#2C1A0E] text-[#FAF4EC] flex flex-col relative overflow-hidden">
 
+        {/* ── OPTION C — Photo existante ── */}
         {hasPreviousPhoto ? (
           <div className="flex flex-col min-h-[100dvh]">
+
+            {/* Hero avec la photo de l'utilisatrice */}
             <div className="relative h-72 overflow-hidden">
               <img src={selfieUrl} alt="Mon selfie" className="w-full h-full object-cover object-top"
                 style={{ filter: "brightness(0.45)" }} draggable={false} onContextMenu={e => e.preventDefault()} />
+              {/* Gradient bas */}
               <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent 40%, #2C1A0E 100%)" }} />
+
+              {/* Badge */}
               <div className="absolute top-5 left-5 bg-[#C9963A] text-[#2C1A0E] text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest">
                 ✨ Prête pour ton look ?
               </div>
+
+              {/* Photo miniature + nom */}
               <div className="absolute bottom-6 left-5 flex items-center gap-3">
                 <img src={selfieUrl} alt="moi" className="w-14 h-14 rounded-2xl border-2 border-[#C9963A] object-cover"
                   draggable={false} onContextMenu={e => e.preventDefault()} />
@@ -476,6 +461,7 @@ export default function Results() {
               </div>
             </div>
 
+            {/* Contenu */}
             <div className="flex flex-col flex-1 px-5 pt-2 pb-32">
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
                 <h2 className="text-2xl font-black text-white mb-1">
@@ -486,6 +472,7 @@ export default function Results() {
                 </p>
               </motion.div>
 
+              {/* CTA principal — relancer avec la même photo */}
               <motion.button
                 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
                 whileTap={{ scale: 0.97 }}
@@ -496,6 +483,7 @@ export default function Results() {
                 🔍 Relancer l'analyse
               </motion.button>
 
+              {/* CTA secondaire — nouveau selfie */}
               <motion.button
                 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
                 whileTap={{ scale: 0.97 }}
@@ -505,6 +493,7 @@ export default function Results() {
                 📸 Prendre un nouveau selfie
               </motion.button>
 
+              {/* Aperçu mosaïque des styles possibles */}
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
                 className="mt-8">
                 <p className="text-[10px] text-white/30 uppercase tracking-widest mb-3 text-center">Styles qui t'attendent</p>
@@ -529,8 +518,13 @@ export default function Results() {
           </div>
 
         ) : (
+          /* ── OPTION A — Aucune photo, teaser mosaïque ── */
           <div className="flex flex-col min-h-[100dvh]">
+
+            {/* Mosaïque hero - FOND UNI */}
             <div className="relative h-80 overflow-hidden bg-[#2C1A0E] flex items-center justify-center">
+
+              {/* Overlay doré */}
               <div className="absolute inset-0 flex flex-col items-center justify-center"
                 style={{ background: "linear-gradient(160deg, rgba(201,150,58,0.15) 0%, rgba(44,26,14,0.7) 100%)" }}>
                 <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
@@ -541,11 +535,16 @@ export default function Results() {
                   Tes styles parfaits<br /><span className="text-[#C9963A]">t'attendent</span>
                 </motion.p>
               </div>
+
+              {/* Gradient bas */}
               <div className="absolute bottom-0 left-0 right-0 h-24"
                 style={{ background: "linear-gradient(to bottom, transparent, #2C1A0E)" }} />
             </div>
 
+            {/* Contenu */}
             <div className="flex flex-col flex-1 px-5 pt-4 pb-32">
+
+              {/* Message */}
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
                 className="mb-6">
                 <h2 className="text-xl font-black text-white mb-2">
@@ -556,6 +555,7 @@ export default function Results() {
                 </p>
               </motion.div>
 
+              {/* 3 étapes */}
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
                 className="flex flex-col gap-3 mb-8">
                 {[
@@ -579,6 +579,7 @@ export default function Results() {
                 ))}
               </motion.div>
 
+              {/* CTA principal */}
               <motion.button
                 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55 }}
                 whileTap={{ scale: 0.97 }}
@@ -607,36 +608,6 @@ export default function Results() {
 
       {/* ── Ancre top pour scroll pagination ── */}
       <div ref={topRef} />
-
-      {/* ── ALERTE VOLATILE — résultats non sauvegardés ── */}
-      <AnimatePresence>
-        {showVolatileAlert && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="mb-5 flex items-start gap-3 rounded-2xl p-4 border"
-            style={{
-              background: "rgba(201,150,58,0.08)",
-              borderColor: "rgba(201,150,58,0.25)",
-            }}
-          >
-            <span className="text-base shrink-0 mt-0.5">⚠️</span>
-            <p className="text-[11px] text-[#FAF4EC]/65 leading-relaxed flex-1">
-              Vos résultats ne sont pas sauvegardés. Ajoutez vos styles en favoris pour les conserver.
-            </p>
-            <button
-              onClick={() => {
-                sessionStorage.setItem("afrotresse_volatile_dismissed", "1");
-                setShowVolatileAlert(false);
-              }}
-              className="shrink-0 text-white/30 hover:text-white/60 text-sm font-bold transition-colors leading-none mt-0.5"
-            >
-              ✕
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* HEADER */}
       <motion.div
@@ -713,7 +684,6 @@ export default function Results() {
           const backImg = style.views?.back || `/styles/${styleKey}-back.jpg`;
           const topImg  = style.views?.top  || `/styles/${styleKey}-top.jpg`;
           const isLoading = loadingIdx === index;
-          const isFav = favorites.some(f => f.id === style.id);
 
           return (
             <motion.div key={style.id || index}
@@ -751,35 +721,21 @@ export default function Results() {
                     <span key={i} className="text-[10px] bg-white/10 text-white/80 px-3 py-1 rounded-full">{tag}</span>
                   ))}
                 </div>
-
-                {/* ── BOUTON FAVORI ── */}
+                {/* ── Virtual Try-On — Coming Soon ── */}
                 <button
-                  onClick={() => toggleFavorite(style)}
-                  className="w-full py-3 rounded-2xl font-bold text-sm mb-3 flex items-center justify-center gap-2 transition-all active:scale-95"
-                  style={isFav
-                    ? { background: "rgba(201,150,58,0.18)", border: "1px solid rgba(201,150,58,0.45)", color: "#C9963A" }
-                    : { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.5)" }
-                  }
+                  onClick={() => setShowVirtualTryOnModal(true)}
+                  className="w-full py-4 rounded-2xl font-bold text-base shadow-xl active:scale-[0.98] transition-all relative overflow-hidden text-white/60 border border-white/15"
+                  style={{ background: "linear-gradient(135deg, rgba(201,150,58,0.12), rgba(201,150,58,0.05))" }}
                 >
-                  <span>{isFav ? "❤️" : "🤍"}</span>
-                  <span>{isFav ? "Retiré des favoris" : "Ajouter aux favoris"}</span>
-                  {!isFav && favorites.length >= FREE_FAV_LIMIT && (
-                    <span className="text-[9px] bg-[#C9963A] text-[#2C1A0E] px-2 py-0.5 rounded-full font-black ml-1">MAX</span>
-                  )}
-                </button>
-
-                <button onClick={() => handleTransform(style, index)} disabled={isLoading}
-                  className="w-full py-4 rounded-2xl font-bold text-base shadow-xl active:scale-[0.98] transition-all disabled:opacity-60 text-[#2C1A0E]"
-                  style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}>
-                  {isLoading ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                      </svg>
-                      {WAITING_MSGS[waitingMsgIdx]}
+                  <span className="flex items-center justify-center gap-2">
+                    <span>🪞 Essayer virtuellement</span>
+                    <span
+                      className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
+                      style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)", color: "#2C1A0E" }}
+                    >
+                      Bientôt
                     </span>
-                  ) : "Essayer virtuellement ce style ✨"}
+                  </span>
                 </button>
               </div>
             </motion.div>
@@ -787,7 +743,44 @@ export default function Results() {
         })}
       </div>
 
-      {/* ── PAGINATION ── */}
+      {/* ── BOUTON "Voir 3 autres styles" — 2ème crédit ── */}
+      {currentPage === 1 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="mt-10 flex flex-col items-center gap-3"
+        >
+          {/* Séparateur élégant */}
+          <div className="flex items-center gap-3 w-full max-w-xs">
+            <div className="flex-1 h-px bg-white/10" />
+            <span className="text-[10px] text-white/30 uppercase tracking-widest">Envie de plus ?</span>
+            <div className="flex-1 h-px bg-white/10" />
+          </div>
+
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={handleGenerateMore}
+            className="w-full max-w-xs py-5 rounded-2xl font-black text-base relative overflow-hidden"
+            style={{
+              background: "linear-gradient(135deg, #3D2616, #4A2E1A)",
+              border: "1.5px solid rgba(201,150,58,0.4)",
+              boxShadow: "0 0 30px rgba(201,150,58,0.1)",
+            }}
+          >
+            <span className="flex items-center justify-center gap-2 text-[#C9963A]">
+              ✨ Voir 3 autres styles
+              <span className="text-[10px] bg-[#C9963A]/20 border border-[#C9963A]/40 text-[#C9963A] px-2 py-0.5 rounded-full font-black">
+                1 crédit
+              </span>
+            </span>
+            <p className="text-[10px] text-white/30 mt-1 font-normal">
+              Solde actuel : {credits} crédit{credits > 1 ? "s" : ""}
+            </p>
+          </motion.button>
+        </motion.div>
+      )}
+
+      {/* ── PAGINATION — visible si plusieurs pages débloquées ── */}
       {unlockedPages > 1 && (
         <motion.div
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
@@ -837,8 +830,121 @@ export default function Results() {
           <p className="text-[10px] text-[#C9963A]/60">
             Solde : {credits} crédit{credits > 1 ? "s" : ""}
           </p>
+
+          {/* Bouton générer encore plus */}
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={handleGenerateMore}
+            className="mt-2 px-6 py-3 rounded-2xl font-bold text-sm relative overflow-hidden"
+            style={{
+              background: "linear-gradient(135deg, #3D2616, #4A2E1A)",
+              border: "1.5px solid rgba(201,150,58,0.4)",
+            }}
+          >
+            <span className="flex items-center gap-2 text-[#C9963A]">
+              ✨ Voir 3 autres styles
+              <span className="text-[9px] bg-[#C9963A]/20 border border-[#C9963A]/40 text-[#C9963A] px-1.5 py-0.5 rounded-full font-black">
+                -1 crédit
+              </span>
+            </span>
+          </motion.button>
         </motion.div>
       )}
+
+      {/* ── MODALE VIRTUAL TRY-ON — Coming Soon ── */}
+      <AnimatePresence>
+        {showVirtualTryOnModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[150] flex items-end justify-center px-4 pb-8"
+            style={{ background: "rgba(0,0,0,0.80)", backdropFilter: "blur(12px)" }}
+            onClick={() => setShowVirtualTryOnModal(false)}
+          >
+            <motion.div
+              initial={{ y: 80, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 80, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 280, damping: 26 }}
+              className="w-full max-w-sm rounded-[2.5rem] p-8 text-center relative overflow-hidden"
+              style={{
+                background: "linear-gradient(160deg, #2C1A0E 0%, #3D2616 100%)",
+                border: "2px solid rgba(201,150,58,0.5)",
+                boxShadow: "0 0 60px rgba(201,150,58,0.3)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Particules décoratives */}
+              <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                {["✨","🪞","👑","💛","✨","🌟","👑","✨"].map((emoji, i) => (
+                  <motion.div
+                    key={i}
+                    className="absolute text-base"
+                    style={{ left: `${8 + i * 12}%` }}
+                    initial={{ opacity: 0, y: 50 }}
+                    animate={{ opacity: [0, 1, 0], y: -70 }}
+                    transition={{ delay: i * 0.2, duration: 2, repeat: Infinity, repeatDelay: 2 }}
+                  >
+                    {emoji}
+                  </motion.div>
+                ))}
+              </div>
+
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: [0, 1.2, 1] }}
+                transition={{ delay: 0.1, duration: 0.5 }}
+                className="text-5xl mb-4"
+              >
+                🪞
+              </motion.div>
+
+              <span
+                className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full mb-4 inline-block"
+                style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)", color: "#2C1A0E" }}
+              >
+                Bientôt disponible
+              </span>
+
+              <h2 className="text-2xl font-black text-white mt-3 mb-2 leading-tight">
+                Virtual Try-On ✨
+              </h2>
+
+              <p className="text-sm text-white/60 mb-6 leading-relaxed">
+                Vois-toi <span className="text-[#C9963A] font-bold">réellement</span> avec la coiffure grâce à notre IA de transformation photo — disponible très bientôt !
+              </p>
+
+              <div className="flex flex-col gap-3 mb-6">
+                {[
+                  { icon: "📸", text: "Superposition IA sur ton selfie" },
+                  { icon: "🎨", text: "Rendu réaliste en quelques secondes" },
+                  { icon: "💾", text: "Sauvegarde & partage facilement" },
+                ].map((item, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.2 + i * 0.1 }}
+                    className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-left"
+                  >
+                    <span className="text-xl">{item.icon}</span>
+                    <span className="text-sm text-white/70 font-medium">{item.text}</span>
+                  </motion.div>
+                ))}
+              </div>
+
+              <button
+                onClick={() => setShowVirtualTryOnModal(false)}
+                className="w-full py-4 rounded-2xl font-black text-[#2C1A0E] text-base"
+                style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}
+              >
+                J'ai hâte ! 🔥
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* LIGHTBOX */}
       <AnimatePresence>
@@ -850,7 +956,9 @@ export default function Results() {
             onContextMenu={(e) => e.preventDefault()}
           >
             <div className="relative" onClick={(e) => e.stopPropagation()}>
-              <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }}>
+              <motion.div
+                initial={{ scale: 0.9 }} animate={{ scale: 1 }}
+              >
                 <OptimizedImage
                   src={zoomImage}
                   alt="Zoom"
@@ -869,7 +977,7 @@ export default function Results() {
                 onClick={(e) => {
                   e.stopPropagation();
                   const saved = handleSave();
-                  if (!saved) return;
+                  if (!saved) return; // 🚫 0 crédit = pas de download
                   const l = document.createElement("a");
                   l.href = zoomImage;
                   l.download = `afrotresse-${Date.now()}.jpg`;
@@ -889,54 +997,6 @@ export default function Results() {
         )}
       </AnimatePresence>
 
-      {/* ── MODALE PAYWALL FAVORIS ── */}
-      <AnimatePresence>
-        {showFavPaywall && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] flex items-end justify-center px-4 pb-10"
-            style={{ background: "rgba(0,0,0,0.82)", backdropFilter: "blur(14px)" }}
-            onClick={() => setShowFavPaywall(false)}
-          >
-            <motion.div
-              initial={{ y: 80, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 80, opacity: 0 }}
-              transition={{ type: "spring", stiffness: 280, damping: 26 }}
-              className="w-full max-w-sm rounded-[2rem] p-7 text-center"
-              style={{
-                background: "linear-gradient(160deg, #2C1A0E 0%, #3D2616 100%)",
-                border: "2px solid #C9963A",
-                boxShadow: "0 0 60px rgba(201,150,58,0.35)",
-              }}
-              onClick={e => e.stopPropagation()}
-            >
-              <div className="text-5xl mb-3">💛</div>
-              <h3 className="text-xl font-black text-[#C9963A] mb-2">3 favoris atteints</h3>
-              <p className="text-[12px] text-white/60 leading-relaxed mb-6">
-                Tu as utilisé tes <span className="text-white font-bold">3 favoris gratuits</span>.
-                Passe au Pack Reine pour des favoris illimités et ne plus perdre tes styles. 👑
-              </p>
-              <button
-                onClick={() => { setShowFavPaywall(false); navigate("/credits"); }}
-                className="w-full py-4 rounded-2xl font-black text-[#2C1A0E] text-base mb-3"
-                style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}
-              >
-                Débloquer les favoris illimités ✨
-              </button>
-              <button
-                onClick={() => setShowFavPaywall(false)}
-                className="w-full py-3 rounded-2xl text-sm text-white/40 bg-white/5 border border-white/10"
-              >
-                Continuer avec 3 favoris
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* BOUTONS FLOTTANTS */}
       <div className="fixed bottom-24 right-4 z-40 flex flex-col items-center gap-2">
 
@@ -949,23 +1009,6 @@ export default function Results() {
           <div className="text-[5px] font-black uppercase opacity-60 leading-tight">Solde</div>
           <div className="text-xl font-black leading-none">{credits}</div>
         </motion.div>
-
-        {/* BOUTON GÉNÉRER */}
-        <motion.button
-          initial={{ y: 100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={handleGenerateMore}
-          className="w-12 h-12 rounded-lg flex flex-col items-center justify-center shadow-lg relative border border-white/10 active:scale-95 transition-all"
-          style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}
-        >
-          <span className="text-[6px] font-black text-[#2C1A0E] uppercase leading-none">Gen</span>
-          <span className="text-base">✨</span>
-          <div className="absolute -top-1 -right-1 bg-[#2C1A0E] text-[#C9963A] text-[7px] px-1 py-0 rounded-full font-bold border border-[#C9963A]">
-            -1
-          </div>
-        </motion.button>
       </div>
 
     </div>
