@@ -71,6 +71,17 @@ export default function Analyze() {
     setShowForm(false);
   };
 
+  // résultat en attente : on stocke et on navigue seulement quand le form est terminé
+  const pendingNavigateRef = useRef(false);
+
+  // Dès que le form se ferme ET qu'un résultat est prêt → on navigue
+  useEffect(() => {
+    if (pendingNavigateRef.current && !showForm) {
+      pendingNavigateRef.current = false;
+      navigate("/results");
+    }
+  }, [showForm, navigate]);
+
   useEffect(() => {
     if (!selfieUrl) { navigate("/"); return; }
 
@@ -91,18 +102,23 @@ export default function Analyze() {
         const prevTrials = parseInt(localStorage.getItem('afrotresse_ai_trials') || '0', 10);
         localStorage.setItem('afrotresse_ai_trials', String(prevTrials + 1));
         sessionStorage.setItem("afrotresse_fresh_results", "1");
-        navigate("/results");
       } catch (err) {
         console.error("Analysis error:", err);
         const fallback = { faceShape: "oval", faceShapeName: "Ovale", recommendations: [] };
         sessionStorage.setItem("afrotresse_results", JSON.stringify(fallback));
         sessionStorage.setItem("afrotresse_fresh_results", "1");
+      }
+      // Si le formulaire est encore visible → on attend qu'il se ferme
+      if (formShownRef.current && !formDone) {
+        pendingNavigateRef.current = true;
+      } else {
         navigate("/results");
       }
     };
 
     run();
     return () => { clearInterval(interval); clearInterval(stepInterval); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate, selfieUrl]);
 
   return (
