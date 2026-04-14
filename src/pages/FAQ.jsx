@@ -119,6 +119,16 @@ const FAQ_DATA = [
   },
 ]
 
+// Labels courts pour les filtres mobiles
+const FILTER_LABELS = {
+  '✨ Analyse & styles':       '✨ Styles',
+  '💎 Crédits':               '💎 Crédits',
+  '🔐 Connexion & compte':    '🔐 Compte',
+  '🤝 Parrainage':            '🤝 Parrainage',
+  '🔒 Confidentialité & données': '🔒 Données',
+  '📩 Contact & support':     '📩 Contact',
+}
+
 function FAQItem({ question, answer }) {
   const [open, setOpen] = useState(false)
 
@@ -195,12 +205,11 @@ export default function FAQ() {
         </p>
       </div>
 
-      {/* Filtres catégories */}
-      <div className="flex gap-2 overflow-x-auto px-5 pb-4 scrollbar-none"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+      {/* Filtres catégories — flex wrap responsive */}
+      <div className="flex flex-wrap gap-2 px-5 pb-4">
         <button
           onClick={() => setActiveCategory(null)}
-          className="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
+          className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
           style={{
             background: !activeCategory ? '#C9963A' : 'rgba(201,150,58,0.15)',
             color: !activeCategory ? '#2C1A0E' : '#C9963A',
@@ -213,14 +222,14 @@ export default function FAQ() {
           <button
             key={cat.category}
             onClick={() => setActiveCategory(cat.category === activeCategory ? null : cat.category)}
-            className="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
+            className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
             style={{
               background: activeCategory === cat.category ? '#C9963A' : 'rgba(201,150,58,0.15)',
               color: activeCategory === cat.category ? '#2C1A0E' : '#C9963A',
               border: '1px solid rgba(201,150,58,0.3)'
             }}
           >
-            {cat.category}
+            {FILTER_LABELS[cat.category] || cat.category}
           </button>
         ))}
       </div>
