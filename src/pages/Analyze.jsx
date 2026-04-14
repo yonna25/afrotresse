@@ -22,13 +22,10 @@ export default function Analyze() {
   // Formulaire 60%
   const [showForm, setShowForm]   = useState(false);
   const [formDone, setFormDone]   = useState(
-    () => !!localStorage.getItem("afrotresse_email")
+    () => !!localStorage.getItem("afrotresse_user_name")
   );
   const [prenom, setPrenom]       = useState(
     () => localStorage.getItem("afrotresse_user_name") || ""
-  );
-  const [email, setEmail]         = useState(
-    () => localStorage.getItem("afrotresse_email") || ""
   );
   const formShownRef = useRef(false);
   const countdownRef = useRef(null);
@@ -70,9 +67,6 @@ export default function Analyze() {
     const name = prenom.trim() || "Reine";
     localStorage.setItem("afrotresse_user_name", name);
     setDisplayName(name);
-    if (email.trim()) {
-      localStorage.setItem("afrotresse_email", email.trim());
-    }
     setFormDone(true);
     setShowForm(false);
   };
@@ -181,19 +175,6 @@ export default function Analyze() {
                   placeholder="Ton prénom..."
                   value={prenom}
                   onChange={e => setPrenom(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl text-sm font-semibold outline-none"
-                  style={{
-                    background: "rgba(92,51,23,0.55)",
-                    border: "1px solid rgba(201,150,58,0.3)",
-                    color: "#FAF4EC",
-                  }}
-                />
-                <input
-                  type="email"
-                  placeholder="Ton email..."
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && handleFormSubmit()}
                   className="w-full px-4 py-2.5 rounded-xl text-sm font-semibold outline-none"
                   style={{
                     background: "rgba(92,51,23,0.55)",
