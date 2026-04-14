@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react'
-import { motion } from "framer-motion";
+import React, { useState, useEffect, useRef } from 'react'
+import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { analyzeFace } from "../services/faceAnalysis.js";
 import { consumeAnalysis } from "../services/credits.js";
@@ -12,11 +12,48 @@ const STEPS = [
 ];
 
 export default function Analyze() {
-  const navigate = useNavigate();
-  const [progress, setProgress] = useState(0);
-  const [stepIdx, setStepIdx] = useState(0);
+  const navigate   = useNavigate();
+  const [progress, setProgress]       = useState(0);
+  const [stepIdx, setStepIdx]         = useState(0);
   const [showResults, setShowResults] = useState(false);
+  const [displayName, setDisplayName] = useState(
+    () => localStorage.getItem("afrotresse_user_name") || ""
+  );
+
+  // Formulaire 60%
+  const [showForm, setShowForm]   = useState(false);
+  const [formDone, setFormDone]   = useState(
+    () => !!localStorage.getItem("afrotresse_email")
+  );
+  const [prenom, setPrenom]       = useState(
+    () => localStorage.getItem("afrotresse_user_name") || ""
+  );
+  const [email, setEmail]         = useState(
+    () => localStorage.getItem("afrotresse_email") || ""
+  );
+  const formShownRef = useRef(false);
+
   const selfieUrl = sessionStorage.getItem("afrotresse_photo");
+
+  // Déclencher le formulaire à 60%
+  useEffect(() => {
+    if (progress >= 60 && !formShownRef.current && !formDone && !showResults) {
+      formShownRef.current = true;
+      setShowForm(true);
+    }
+  }, [progress, formDone, showResults]);
+
+  const handleFormSubmit = () => {
+    if (prenom.trim()) {
+      localStorage.setItem("afrotresse_user_name", prenom.trim());
+      setDisplayName(prenom.trim());
+    }
+    if (email.trim()) {
+      localStorage.setItem("afrotresse_email", email.trim());
+    }
+    setFormDone(true);
+    setShowForm(false);
+  };
 
   useEffect(() => {
     if (!selfieUrl) { navigate("/"); return; }
@@ -31,36 +68,20 @@ export default function Analyze() {
 
     const run = async () => {
       try {
-        // 1. Analyser le selfie
         const result = await analyzeFace(selfieUrl);
-        
-        // 2. SAUVEGARDER LE RÉSULTAT COMPLET dans sessionStorage ✅
         sessionStorage.setItem("afrotresse_results", JSON.stringify(result));
-        
-        // 3. Sauvegarder aussi la forme du visage dans localStorage
         localStorage.setItem("afrotresse_face_shape", result.faceShape);
-        
-        // 4. Consommer un crédit d'analyse
         consumeAnalysis();
-        
-        // 5. Incrémenter le compteur d'analyses (affiché sur Profil)
         const prevTrials = parseInt(localStorage.getItem('afrotresse_ai_trials') || '0', 10);
         localStorage.setItem('afrotresse_ai_trials', String(prevTrials + 1));
-        
-        // 5. Naviguer vers /results
         setShowResults(true);
-        setTimeout(() => navigate("/results"), 2000);
+        setTimeout(() => navigate("/results"), 2200);
       } catch (err) {
         console.error("Analysis error:", err);
-        // Fallback: envoyer quand même à /results (Analyze.js a un fallback)
-        const fallback = {
-          faceShape: "oval",
-          faceShapeName: "Ovale",
-          recommendations: []
-        };
+        const fallback = { faceShape: "oval", faceShapeName: "Ovale", recommendations: [] };
         sessionStorage.setItem("afrotresse_results", JSON.stringify(fallback));
         setShowResults(true);
-        setTimeout(() => navigate("/results"), 2000);
+        setTimeout(() => navigate("/results"), 2200);
       }
     };
 
@@ -68,37 +89,25 @@ export default function Analyze() {
     return () => { clearInterval(interval); clearInterval(stepInterval); };
   }, [navigate, selfieUrl]);
 
+  const finalName = displayName || prenom.trim();
+
   return (
     <div className="min-h-screen bg-[#2C1A0E] flex flex-col items-center justify-center p-10 text-[#FAF4EC]">
-      
-      {/* ÉTINCELLES + TITRE "VOICI TES RÉSULTATS" */}
+
+      {/* ÉTINCELLES + TITRE RÉSULTATS */}
       {showResults && (
         <>
-          {/* Étincelles dorées traversant l'écran */}
           {[...Array(12)].map((_, i) => (
             <motion.div
               key={i}
               className="fixed text-4xl pointer-events-none z-50"
-              initial={{ 
-                opacity: 0, 
-                x: -100, 
-                y: Math.random() * window.innerHeight 
-              }}
-              animate={{ 
-                opacity: [0, 1, 0], 
-                x: window.innerWidth + 100 
-              }}
-              transition={{ 
-                delay: i * 0.15, 
-                duration: 1.8, 
-                ease: "easeInOut" 
-              }}
+              initial={{ opacity: 0, x: -100, y: Math.random() * window.innerHeight }}
+              animate={{ opacity: [0, 1, 0], x: window.innerWidth + 100 }}
+              transition={{ delay: i * 0.15, duration: 1.8, ease: "easeInOut" }}
             >
               ✨
             </motion.div>
           ))}
-
-          {/* Titre "Voici tes résultats ✨" */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -106,26 +115,27 @@ export default function Analyze() {
             className="fixed inset-0 flex flex-col items-center justify-center z-40 pointer-events-none"
           >
             <h1 className="font-display text-5xl font-black text-center text-white mb-4">
-              Voici tes résultats
+              {finalName ? `${finalName}, voici tes résultats` : "Voici tes résultats"}
             </h1>
             <p className="text-6xl">✨</p>
           </motion.div>
         </>
       )}
 
-      {/* SCANNING (caché si résultats affichés) */}
+      {/* SCANNING */}
       {!showResults && (
         <>
           <div className="relative w-64 h-64 mb-12">
             <div className="relative w-full h-full rounded-full border-4 border-[#C9963A] overflow-hidden z-10 shadow-2xl">
               <img src={selfieUrl} className="w-full h-full object-cover" alt="Scan" />
-              <motion.div 
+              <motion.div
                 animate={{ top: ["0%", "100%", "0%"] }}
                 transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                 className="absolute left-0 right-0 h-1 bg-[#E8B96A] shadow-[0_0_15px_#C9963A] z-20"
               />
             </div>
           </div>
+
           <div className="w-full max-w-xs text-center">
             <h2 className="text-[#C9963A] font-bold text-3xl mb-2">{progress}%</h2>
             <p className="text-xs opacity-70 mb-8 uppercase tracking-widest">{STEPS[stepIdx]}</p>
@@ -133,6 +143,77 @@ export default function Analyze() {
               <motion.div className="h-full bg-[#C9963A]" animate={{ width: `${progress}%` }} />
             </div>
           </div>
+
+          {/* MINI FORMULAIRE à 60% */}
+          <AnimatePresence>
+            {showForm && (
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 30 }}
+                transition={{ type: "spring", stiffness: 260, damping: 24 }}
+                className="w-full max-w-xs mt-8 rounded-[1.75rem] p-5"
+                style={{
+                  background: "linear-gradient(160deg, #2C1A0E 0%, #3D2616 100%)",
+                  border: "1.5px solid rgba(201,150,58,0.45)",
+                  boxShadow: "0 16px 48px rgba(0,0,0,0.6)",
+                }}
+              >
+                <p className="text-center text-xs font-semibold mb-1"
+                  style={{ color: "rgba(250,244,236,0.45)" }}>
+                  Ne perds pas tes résultats 💾
+                </p>
+                <p className="text-center font-black text-base mb-4"
+                  style={{ color: "#FAF4EC" }}>
+                  Sauvegarde-les maintenant
+                </p>
+
+                <div className="flex flex-col gap-2 mb-3">
+                  <input
+                    type="text"
+                    placeholder="Ton prénom..."
+                    value={prenom}
+                    onChange={e => setPrenom(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl text-sm font-semibold outline-none"
+                    style={{
+                      background: "rgba(92,51,23,0.55)",
+                      border: "1px solid rgba(201,150,58,0.3)",
+                      color: "#FAF4EC",
+                    }}
+                  />
+                  <input
+                    type="email"
+                    placeholder="Ton email..."
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && handleFormSubmit()}
+                    className="w-full px-4 py-2.5 rounded-xl text-sm font-semibold outline-none"
+                    style={{
+                      background: "rgba(92,51,23,0.55)",
+                      border: "1px solid rgba(201,150,58,0.3)",
+                      color: "#FAF4EC",
+                    }}
+                  />
+                </div>
+
+                <button
+                  onClick={handleFormSubmit}
+                  className="w-full py-3 rounded-xl font-black text-sm text-[#2C1A0E]"
+                  style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}
+                >
+                  Sauvegarder ✨
+                </button>
+
+                <button
+                  onClick={() => { setShowForm(false); setFormDone(true); }}
+                  className="w-full py-2 mt-1 text-xs text-center"
+                  style={{ color: "rgba(250,244,236,0.3)" }}
+                >
+                  Pas maintenant
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </>
       )}
     </div>
