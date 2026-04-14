@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { getCredits, consumeTransform, consumeCredits, hasCredits, canTransform, addSeenStyleId, PRICING } from "../services/credits.js";
 import OptimizedImage from "../components/OptimizedImage.jsx";
-import { getCurrentUser } from "../services/useSupabaseCredits.js";
 
 const FACE_SHAPE_TEXTS = {
   oval:    "Ton visage est de forme Ovale. C'est une structure très équilibrée qui s'adapte à presque tous les styles.",
@@ -75,6 +74,7 @@ function CreditSuccessPopup({ data, onClose }) {
         }}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Particules */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           {["✨","💎","👑","⭐","✨","💛","👑","💎"].map((emoji, i) => (
             <motion.div
@@ -158,13 +158,14 @@ export default function Results() {
   const [creditPopup, setCreditPopup] = useState(null);
   const [showVirtualTryOnModal, setShowVirtualTryOnModal] = useState(false);
 
-  // ── Bloc sauvegarde prénom/email ──────────────────────────────────────────
+  // ── Étape 2 : Bloc sauvegarde prénom/email ────────────────────────────────
   const [savePrenom, setSavePrenom] = useState(() => localStorage.getItem("afrotresse_user_name") || "");
   const [saveEmail, setSaveEmail]   = useState(() => localStorage.getItem("afrotresse_email") || "");
   const [saveDone, setSaveDone]     = useState(() => !!localStorage.getItem("afrotresse_email"));
   const [displayName, setDisplayName] = useState(() => localStorage.getItem("afrotresse_user_name") || "");
+  const [saveOpen, setSaveOpen]     = useState(() => !localStorage.getItem("afrotresse_email"));
 
-  // ── Favoris volatils — max 3 gratuits ────────────────────────────────────
+  // ── Étape 4 : Favoris volatils — max 3 gratuits ────────────────────────────
   const FREE_FAV_LIMIT = 3;
   const [favorites, setFavorites] = useState(() => {
     try { return JSON.parse(sessionStorage.getItem("afrotresse_session_favs") || "[]"); }
@@ -193,7 +194,6 @@ export default function Results() {
 
   const userName = localStorage.getItem("afrotresse_user_name") || "Reine";
 
-  // ── Chargement résultats + détection session Supabase ───────────────────
   useEffect(() => {
     const raw = sessionStorage.getItem("afrotresse_results");
     if (raw) {
@@ -203,6 +203,7 @@ export default function Results() {
         const recs = parsed.recommendations || [];
         setStyles(recs);
 
+        // Initialiser les stats (vues/likes) pour chaque style si pas encore fait
         setStyleStats(prev => {
           const next = { ...prev };
           let changed = false;
@@ -225,26 +226,6 @@ export default function Results() {
     const photo = sessionStorage.getItem("afrotresse_photo");
     if (photo) setSelfieUrl(photo);
     setCredits(getCredits());
-
-    // ── Détecter session Supabase active → masquer bloc sauvegarde ──────
-    getCurrentUser().then(user => {
-      if (user) {
-        setSaveDone(true);
-        if (user.email) {
-          if (!localStorage.getItem("afrotresse_email")) {
-            localStorage.setItem("afrotresse_email", user.email);
-          }
-          setSaveEmail(user.email);
-        }
-        const name = user.user_metadata?.full_name || user.user_metadata?.name || "";
-        if (name && !localStorage.getItem("afrotresse_user_name")) {
-          localStorage.setItem("afrotresse_user_name", name);
-          setDisplayName(name);
-        } else if (localStorage.getItem("afrotresse_user_name")) {
-          setDisplayName(localStorage.getItem("afrotresse_user_name"));
-        }
-      }
-    });
   }, []);
 
   // ── Incrémenter vues toutes les 8s, likes toutes les 20s ─────────────────
@@ -263,6 +244,7 @@ export default function Results() {
     const likeInterval = setInterval(() => {
       setStyleStats(prev => {
         const next = { ...prev };
+        // Incrémenter 1 style aléatoire
         const ids = Object.keys(next);
         if (ids.length > 0) {
           const id = ids[Math.floor(Math.random() * ids.length)];
@@ -292,7 +274,10 @@ export default function Results() {
     return () => clearInterval(interval);
   }, []);
 
-  // ── Pagination helpers ────────────────────────────────────────────────────
+  // ── Pagination helpers — ZÉRO DOUBLON GARANTI ───────────────────────────
+  // On mélange UNE FOIS la liste complète avec un seed fixe (basé sur userName)
+  // puis chaque page prend une tranche de 3 styles strictement distincts.
+  // Si on dépasse la liste, on refait un mélange avec un seed différent.
   const getShuffledStyles = (shuffleSeed) => {
     const seeded = (seed) => {
       let s = seed;
@@ -310,10 +295,15 @@ export default function Results() {
   const getPageStyles = (page) => {
     const total = styles.length;
     if (total === 0) return [];
+
+    // Seed de base basé sur le userName pour être stable au reload
     const baseSeed = userName.split("").reduce((acc, c) => acc + c.charCodeAt(0), 12345);
+
+    // Quelle "série" de mélange ? (tous les N pages on recrée un mélange différent)
     const stylesPerShuffle = Math.floor(total / STYLES_PER_PAGE) * STYLES_PER_PAGE || STYLES_PER_PAGE;
     const shuffleIndex = Math.floor(((page - 1) * STYLES_PER_PAGE) / stylesPerShuffle);
     const positionInShuffle = ((page - 1) * STYLES_PER_PAGE) % stylesPerShuffle;
+
     const shuffled = getShuffledStyles(baseSeed + shuffleIndex * 9973);
     const result = [];
     for (let i = 0; i < STYLES_PER_PAGE; i++) {
@@ -330,8 +320,12 @@ export default function Results() {
     topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
+  // Générer une nouvelle page de styles (coûte 1 crédit)
   const handleGenerateMore = () => {
-    if (!hasCredits()) { navigate("/credits"); return; }
+    if (!hasCredits()) {
+      navigate("/credits");
+      return;
+    }
     consumeCredits(1);
     setCredits(getCredits());
     const nextPage = unlockedPages + 1;
@@ -343,7 +337,10 @@ export default function Results() {
   };
 
   const handleTransform = async (style, index) => {
-    if (!hasCredits() || !canTransform()) { navigate("/credits"); return; }
+    if (!hasCredits() || !canTransform()) {
+      navigate("/credits");
+      return;
+    }
     setErrorMsg("");
     setResultImage(null);
     setLoadingIdx(index);
@@ -380,6 +377,7 @@ export default function Results() {
       consumeTransform();
       addSeenStyleId(style.id);
       setCredits(getCredits());
+      // Incrémenter le compteur styles générés (affiché sur Profil)
       const prev = parseInt(localStorage.getItem("afrotresse_styles_generated") || "0", 10);
       localStorage.setItem("afrotresse_styles_generated", String(prev + 1));
       setResultImage(data.imageUrl);
@@ -417,7 +415,7 @@ export default function Results() {
     setSaveDone(true);
   };
 
-  // ── Favoris volatils ──────────────────────────────────────────────────────
+  // ── Favoris volatils ───────────────────────────────────────────────────────
   const isFav = (styleId) => favorites.some(f => f === styleId);
 
   const handleToggleFav = (style) => {
@@ -426,12 +424,13 @@ export default function Results() {
       const updated = favorites.filter(f => f !== style.id);
       setFavorites(updated);
       sessionStorage.setItem("afrotresse_session_favs", JSON.stringify(updated));
+      // Sync Library
       const saved = JSON.parse(localStorage.getItem("afrotresse_saved_styles") || "[]");
       localStorage.setItem("afrotresse_saved_styles", JSON.stringify(saved.filter(s => s.id !== style.id)));
       return;
     }
-    const isLoggedIn = saveDone || !!localStorage.getItem("afrotresse_email");
-    if (!isLoggedIn && favorites.length >= FREE_FAV_LIMIT) {
+    const creditsFree = !localStorage.getItem("afrotresse_email");
+    if (creditsFree && favorites.length >= FREE_FAV_LIMIT) {
       setErrorMsg("💎 Limite de 3 favoris gratuits atteinte — sauvegarde ton compte pour en ajouter plus !");
       setTimeout(() => errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
       return;
@@ -439,6 +438,7 @@ export default function Results() {
     const updated = [...favorites, style.id];
     setFavorites(updated);
     sessionStorage.setItem("afrotresse_session_favs", JSON.stringify(updated));
+    // Sync Library
     const saved = JSON.parse(localStorage.getItem("afrotresse_saved_styles") || "[]");
     if (!saved.find(s => s.id === style.id)) {
       saved.push({ ...style, savedAt: new Date().toISOString() });
@@ -447,9 +447,15 @@ export default function Results() {
   };
 
   const handleSave = () => {
-    if (!hasCredits() || getCredits() <= 0) { navigate("/credits"); return false; }
+    // Bloque si 0 crédit — retourne false pour stopper le download
+    if (!hasCredits() || getCredits() <= 0) {
+      navigate("/credits");
+      return false;
+    }
     const newCount = savesCount + 1;
     setSavesCount(newCount);
+
+    // 3 sauvegardes = 1 crédit débité
     if (newCount % 3 === 0) {
       const debited = consumeCredits(1);
       if (!debited) {
@@ -468,9 +474,11 @@ export default function Results() {
 
   const faceText = FACE_SHAPE_TEXTS[faceShape] || "";
 
-  // ── ÉCRAN VIDE ────────────────────────────────────────────────────────────
+  // ── ÉCRAN VIDE INTELLIGENT — Option C si photo, Option A sinon ────────
   if (!styles.length) {
     const hasPreviousPhoto = !!selfieUrl;
+
+    // Styles de teaser pour la mosaïque (Option A)
     const TEASER_STYLES = [
       { key: "boxbraids", label: "Box Braids" },
       { key: "cornrows", label: "Cornrows" },
@@ -482,15 +490,24 @@ export default function Results() {
 
     return (
       <div className="min-h-[100dvh] bg-[#2C1A0E] text-[#FAF4EC] flex flex-col relative overflow-hidden">
+
+        {/* ── OPTION C — Photo existante ── */}
         {hasPreviousPhoto ? (
           <div className="flex flex-col min-h-[100dvh]">
+
+            {/* Hero avec la photo de l'utilisatrice */}
             <div className="relative h-72 overflow-hidden">
               <img src={selfieUrl} alt="Mon selfie" className="w-full h-full object-cover object-top"
                 style={{ filter: "brightness(0.45)" }} draggable={false} onContextMenu={e => e.preventDefault()} />
+              {/* Gradient bas */}
               <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent 40%, #2C1A0E 100%)" }} />
+
+              {/* Badge */}
               <div className="absolute top-5 left-5 bg-[#C9963A] text-[#2C1A0E] text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest">
                 ✨ Prête pour ton look ?
               </div>
+
+              {/* Photo miniature + nom */}
               <div className="absolute bottom-6 left-5 flex items-center gap-3">
                 <img src={selfieUrl} alt="moi" className="w-14 h-14 rounded-2xl border-2 border-[#C9963A] object-cover"
                   draggable={false} onContextMenu={e => e.preventDefault()} />
@@ -500,30 +517,53 @@ export default function Results() {
                 </div>
               </div>
             </div>
+
+            {/* Contenu */}
             <div className="flex flex-col flex-1 px-5 pt-2 pb-32">
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-                <h2 className="text-2xl font-black text-white mb-1">Relance ton analyse <span className="text-[#C9963A]">✨</span></h2>
-                <p className="text-[12px] text-white/50 mb-6 leading-relaxed">Ta photo est déjà là. Relance l'analyse pour découvrir de nouveaux styles adaptés à ta morphologie.</p>
+                <h2 className="text-2xl font-black text-white mb-1">
+                  Relance ton analyse <span className="text-[#C9963A]">✨</span>
+                </h2>
+                <p className="text-[12px] text-white/50 mb-6 leading-relaxed">
+                  Ta photo est déjà là. Relance l'analyse pour découvrir de nouveaux styles adaptés à ta morphologie.
+                </p>
               </motion.div>
-              <motion.button initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-                whileTap={{ scale: 0.97 }} onClick={() => navigate("/analyze")}
+
+              {/* CTA principal — relancer avec la même photo */}
+              <motion.button
+                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => navigate("/analyze")}
                 className="w-full py-5 rounded-2xl font-black text-lg text-[#2C1A0E] shadow-2xl mb-3"
-                style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)", boxShadow: "0 0 30px rgba(201,150,58,0.4)" }}>
+                style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)", boxShadow: "0 0 30px rgba(201,150,58,0.4)" }}
+              >
                 🔍 Relancer l'analyse
               </motion.button>
-              <motion.button initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-                whileTap={{ scale: 0.97 }} onClick={() => navigate("/camera")}
-                className="w-full py-4 rounded-2xl font-bold text-sm text-white/70 bg-white/5 border border-white/10">
+
+              {/* CTA secondaire — nouveau selfie */}
+              <motion.button
+                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => navigate("/camera")}
+                className="w-full py-4 rounded-2xl font-bold text-sm text-white/70 bg-white/5 border border-white/10"
+              >
                 📸 Prendre un nouveau selfie
               </motion.button>
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="mt-8">
+
+              {/* Aperçu mosaïque des styles possibles */}
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
+                className="mt-8">
                 <p className="text-[10px] text-white/30 uppercase tracking-widest mb-3 text-center">Styles qui t'attendent</p>
                 <div className="grid grid-cols-3 gap-1.5">
                   {TEASER_STYLES.map((s, i) => (
-                    <motion.div key={s.key} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.4 + i * 0.06 }} className="relative h-24 rounded-2xl overflow-hidden">
-                      <img src={`/styles/${s.key}-face.jpg`} alt={s.label} className="w-full h-full object-cover"
-                        style={{ filter: "brightness(0.5) blur(1px)" }} draggable={false} onContextMenu={e => e.preventDefault()} />
+                    <motion.div key={s.key}
+                      initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.4 + i * 0.06 }}
+                      className="relative h-24 rounded-2xl overflow-hidden">
+                      <img src={`/styles/${s.key}-face.jpg`} alt={s.label}
+                        className="w-full h-full object-cover"
+                        style={{ filter: "brightness(0.5) blur(1px)" }}
+                        draggable={false} onContextMenu={e => e.preventDefault()} />
                       <div className="absolute inset-0 flex items-center justify-center">
                         <span className="text-white/60 text-lg">🔒</span>
                       </div>
@@ -533,33 +573,55 @@ export default function Results() {
               </motion.div>
             </div>
           </div>
+
         ) : (
+          /* ── OPTION A — Aucune photo, teaser mosaïque ── */
           <div className="flex flex-col min-h-[100dvh]">
+
+            {/* Mosaïque hero - FOND UNI */}
             <div className="relative h-52 overflow-hidden bg-[#2C1A0E] flex items-center justify-center">
+
+              {/* Overlay doré */}
               <div className="absolute inset-0 flex flex-col items-center justify-center"
                 style={{ background: "linear-gradient(160deg, rgba(201,150,58,0.15) 0%, rgba(44,26,14,0.7) 100%)" }}>
                 <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
-                  transition={{ type: "spring", stiffness: 200, damping: 18 }} className="text-5xl mb-3">👑</motion.div>
+                  transition={{ type: "spring", stiffness: 200, damping: 18 }}
+                  className="text-5xl mb-3">👑</motion.div>
                 <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
                   className="text-white font-black text-2xl text-center px-4 leading-tight">
                   Tes styles parfaits<br /><span className="text-[#C9963A]">t'attendent</span>
                 </motion.p>
               </div>
+
+              {/* Gradient bas */}
               <div className="absolute bottom-0 left-0 right-0 h-24"
                 style={{ background: "linear-gradient(to bottom, transparent, #2C1A0E)" }} />
             </div>
+
+            {/* Contenu */}
             <div className="flex flex-col flex-1 px-5 pt-2 pb-32">
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="mb-3">
-                <h2 className="text-xl font-black text-white mb-2">Découvre les tresses faites pour toi 💛</h2>
-                <p className="text-[12px] text-white/50 leading-relaxed">Un selfie suffit. Notre IA analyse la forme de ton visage et te recommande les styles qui te mettront le plus en valeur.</p>
+
+              {/* Message */}
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+                className="mb-3">
+                <h2 className="text-xl font-black text-white mb-2">
+                  Découvre les tresses faites pour toi 💛
+                </h2>
+                <p className="text-[12px] text-white/50 leading-relaxed">
+                  Un selfie suffit. Notre IA analyse la forme de ton visage et te recommande les styles qui te mettront le plus en valeur.
+                </p>
               </motion.div>
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="flex flex-col gap-3 mb-8">
+
+              {/* 3 étapes */}
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
+                className="flex flex-col gap-3 mb-8">
                 {[
                   { icon: "📸", label: "Prends un selfie", sub: "Ou uploade une photo existante" },
                   { icon: "🔍", label: "Analyse IA instantanée", sub: "Forme de visage détectée en secondes" },
                   { icon: "✨", label: "Styles personnalisés", sub: "3 recommandations taillées pour toi" },
                 ].map((step, i) => (
-                  <motion.div key={i} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
+                  <motion.div key={i}
+                    initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.3 + i * 0.08 }}
                     className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl px-4 py-3">
                     <span className="text-2xl">{step.icon}</span>
@@ -573,10 +635,15 @@ export default function Results() {
                   </motion.div>
                 ))}
               </motion.div>
-              <motion.button initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55 }}
-                whileTap={{ scale: 0.97 }} onClick={() => navigate("/camera")}
+
+              {/* CTA principal */}
+              <motion.button
+                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => navigate("/camera")}
                 className="w-full py-5 rounded-2xl font-black text-lg text-[#2C1A0E] shadow-2xl"
-                style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)", boxShadow: "0 0 30px rgba(201,150,58,0.4)" }}>
+                style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)", boxShadow: "0 0 30px rgba(201,150,58,0.4)" }}
+              >
                 📸 Prendre mon selfie
               </motion.button>
             </div>
@@ -589,17 +656,20 @@ export default function Results() {
   return (
     <div className="min-h-[100dvh] bg-[#2C1A0E] text-[#FAF4EC] p-4 sm:p-6 pb-40 relative">
 
-      {/* Pop-up crédit */}
+      {/* ── Pop-up crédit ── */}
       <AnimatePresence>
-        {creditPopup && <CreditSuccessPopup data={creditPopup} onClose={() => setCreditPopup(null)} />}
+        {creditPopup && (
+          <CreditSuccessPopup data={creditPopup} onClose={() => setCreditPopup(null)} />
+        )}
       </AnimatePresence>
 
+      {/* ── Ancre top pour scroll pagination ── */}
       <div ref={topRef} />
 
       {/* HEADER */}
       <motion.div
         initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
-        className="mb-6 flex flex-row gap-5 items-center bg-white/5 p-5 rounded-[2.5rem] border border-white/10"
+        className="mb-10 flex flex-row gap-5 items-center bg-white/5 p-5 rounded-[2.5rem] border border-white/10"
         style={{ boxShadow: "0 0 40px rgba(201,150,58,0.2)" }}
       >
         <div className="relative shrink-0">
@@ -623,60 +693,96 @@ export default function Results() {
         </div>
       </motion.div>
 
-      {/* ALERTE VOLATILITÉ — masquée si connecté */}
-      {!saveDone && (
+      {/* ── ALERTE VOLATILITÉ ── */}
+      <motion.div
+        initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+        className="mb-4 px-4 py-3 rounded-2xl flex items-start gap-3"
+        style={{ background: "rgba(201,150,58,0.08)", border: "1px solid rgba(201,150,58,0.25)" }}
+      >
+        <span className="text-lg mt-0.5">⚠️</span>
+        <p className="text-[11px] text-white/60 leading-relaxed">
+          <span className="text-[#C9963A] font-bold">Tes résultats ne sont pas sauvegardés.</span>
+          {" "}Ajoute tes styles en favoris pour les conserver, ou sauvegarde ton compte ci-dessous.
+        </p>
+      </motion.div>
+
+      {/* ── BLOC SAUVEGARDE PRÉNOM / EMAIL — pliable ── */}
+      {saveDone ? (
         <motion.div
-          initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-          className="mb-4 px-4 py-3 rounded-2xl flex items-start gap-3"
-          style={{ background: "rgba(201,150,58,0.08)", border: "1px solid rgba(201,150,58,0.25)" }}
+          initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+          className="mb-6 px-4 py-3 rounded-2xl flex items-center gap-3"
+          style={{ background: "rgba(39,174,96,0.1)", border: "1px solid rgba(39,174,96,0.3)" }}
         >
-          <span className="text-lg mt-0.5">⚠️</span>
-          <p className="text-[11px] text-white/60 leading-relaxed">
-            <span className="text-[#C9963A] font-bold">Tes résultats ne sont pas sauvegardés.</span>
-            {" "}Ajoute tes styles en favoris pour les conserver, ou sauvegarde ton compte ci-dessous.
+          <span className="text-lg">✅</span>
+          <p className="text-[12px] text-green-300 font-semibold">
+            Résultats sauvegardés pour <span className="font-black">{displayName || saveEmail}</span> !
           </p>
         </motion.div>
-      )}
-
-      {/* BLOC SAUVEGARDE — masqué si connecté */}
-      <AnimatePresence>
-        {!saveDone ? (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-            className="mb-6 rounded-[2rem] p-5"
-            style={{ background: "linear-gradient(135deg, #3D2616, #2C1A0E)", border: "1.5px solid rgba(201,150,58,0.35)" }}
+      ) : (
+        <div
+          className="mb-6 rounded-[2rem] overflow-hidden"
+          style={{ background: "linear-gradient(135deg, #3D2616, #2C1A0E)", border: "1.5px solid rgba(201,150,58,0.35)" }}
+        >
+          {/* En-tête cliquable */}
+          <button
+            onClick={() => setSaveOpen(o => !o)}
+            className="w-full flex items-center justify-between px-5 py-4 active:opacity-80 transition-opacity"
           >
-            <p className="text-sm font-black text-white mb-1">Sauvegarder tes résultats 💾</p>
-            <p className="text-[11px] text-white/50 mb-4">Retrouve tes favoris sur n&apos;importe quel appareil.</p>
-            <div className="flex flex-col gap-2 mb-3">
-              <input
-                type="text"
-                placeholder="Ton prénom..."
-                value={savePrenom}
-                onChange={e => setSavePrenom(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl text-sm font-semibold outline-none"
-                style={{ background: "rgba(92,51,23,0.5)", border: "1px solid rgba(201,150,58,0.3)", color: "#FAF4EC" }}
-              />
-              <input
-                type="email"
-                placeholder="Ton email..."
-                value={saveEmail}
-                onChange={e => setSaveEmail(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && handleSaveProfile()}
-                className="w-full px-4 py-2.5 rounded-xl text-sm font-semibold outline-none"
-                style={{ background: "rgba(92,51,23,0.5)", border: "1px solid rgba(201,150,58,0.3)", color: "#FAF4EC" }}
-              />
-            </div>
-            <button
-              onClick={handleSaveProfile}
-              className="w-full py-3 rounded-xl font-black text-sm text-[#2C1A0E]"
-              style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}
+            <span className="font-black text-sm text-white">Sauvegarder mes résultats ✨</span>
+            <motion.span
+              animate={{ rotate: saveOpen ? 180 : 0 }}
+              transition={{ duration: 0.25 }}
+              className="text-[#C9963A] text-base leading-none"
             >
-              Sauvegarder mes résultats ✨
-            </button>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+              ▾
+            </motion.span>
+          </button>
+
+          {/* Formulaire pliable */}
+          <AnimatePresence initial={false}>
+            {saveOpen && (
+              <motion.div
+                key="save-form"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.28, ease: "easeInOut" }}
+                style={{ overflow: "hidden" }}
+              >
+                <div className="px-5 pb-5">
+                  <p className="text-[11px] text-white/50 mb-4">Retrouve tes favoris sur n&apos;importe quel appareil.</p>
+                  <div className="flex flex-col gap-2 mb-3">
+                    <input
+                      type="text"
+                      placeholder="Ton prénom..."
+                      value={savePrenom}
+                      onChange={e => setSavePrenom(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl text-sm font-semibold outline-none"
+                      style={{ background: "rgba(92,51,23,0.5)", border: "1px solid rgba(201,150,58,0.3)", color: "#FAF4EC" }}
+                    />
+                    <input
+                      type="email"
+                      placeholder="Ton email..."
+                      value={saveEmail}
+                      onChange={e => setSaveEmail(e.target.value)}
+                      onKeyDown={e => e.key === "Enter" && handleSaveProfile()}
+                      className="w-full px-4 py-2.5 rounded-xl text-sm font-semibold outline-none"
+                      style={{ background: "rgba(92,51,23,0.5)", border: "1px solid rgba(201,150,58,0.3)", color: "#FAF4EC" }}
+                    />
+                  </div>
+                  <button
+                    onClick={handleSaveProfile}
+                    className="w-full py-3 rounded-xl font-black text-sm text-[#2C1A0E]"
+                    style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}
+                  >
+                    Sauvegarder mes résultats ✨
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
 
       {/* ERROR / MESSAGE */}
       <AnimatePresence>
@@ -778,7 +884,7 @@ export default function Results() {
                     <span key={i} className="text-[10px] bg-white/10 text-white/80 px-3 py-1 rounded-full">{tag}</span>
                   ))}
                 </div>
-                {/* Virtual Try-On — Coming Soon */}
+                {/* ── Virtual Try-On — Coming Soon ── */}
                 <button
                   onClick={() => setShowVirtualTryOnModal(true)}
                   className="w-full py-4 rounded-2xl font-bold text-base active:scale-[0.98] transition-all relative overflow-hidden"
@@ -787,6 +893,7 @@ export default function Results() {
                     border: "1.5px solid rgba(201,150,58,0.25)",
                   }}
                 >
+                  {/* Shimmer effect */}
                   <motion.div
                     className="absolute inset-0 -skew-x-12 pointer-events-none"
                     style={{ background: "linear-gradient(90deg, transparent 0%, rgba(201,150,58,0.08) 50%, transparent 100%)" }}
@@ -814,18 +921,20 @@ export default function Results() {
         })}
       </div>
 
-      {/* BOUTON "Voir 3 autres styles" — page 1 uniquement */}
+      {/* ── BOUTON "Voir 3 autres styles" — 2ème crédit ── */}
       {currentPage === 1 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
           className="mt-10 flex flex-col items-center gap-3"
         >
+          {/* Séparateur élégant */}
           <div className="flex items-center gap-3 w-full max-w-xs">
             <div className="flex-1 h-px bg-white/10" />
             <span className="text-[10px] text-white/30 uppercase tracking-widest">Envie de plus ?</span>
             <div className="flex-1 h-px bg-white/10" />
           </div>
+
           <motion.button
             whileTap={{ scale: 0.97 }}
             onClick={handleGenerateMore}
@@ -849,7 +958,7 @@ export default function Results() {
         </motion.div>
       )}
 
-      {/* PAGINATION */}
+      {/* ── PAGINATION — visible si plusieurs pages débloquées ── */}
       {unlockedPages > 1 && (
         <motion.div
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
@@ -858,35 +967,58 @@ export default function Results() {
           <p className="text-[11px] text-white/40 uppercase tracking-widest">
             Page {currentPage} / {unlockedPages}
           </p>
+
           <div className="flex items-center gap-2 flex-wrap justify-center">
-            <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}
-              className="w-10 h-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center disabled:opacity-30 transition-all active:scale-95">
+            <button
+              onClick={() => goToPage(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="w-10 h-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center disabled:opacity-30 transition-all active:scale-95"
+            >
               <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <polyline points="15 18 9 12 15 6" />
               </svg>
             </button>
+
             {Array.from({ length: unlockedPages }, (_, i) => i + 1).map((page) => (
-              <button key={page} onClick={() => goToPage(page)}
+              <button
+                key={page}
+                onClick={() => goToPage(page)}
                 className={`w-10 h-10 rounded-xl font-black text-sm transition-all active:scale-95 ${
-                  page === currentPage ? "text-[#2C1A0E] shadow-lg" : "bg-white/10 border border-white/10 text-white/60"
+                  page === currentPage
+                    ? "text-[#2C1A0E] shadow-lg"
+                    : "bg-white/10 border border-white/10 text-white/60"
                 }`}
-                style={page === currentPage ? { background: "linear-gradient(135deg, #C9963A, #E8B96A)" } : {}}>
+                style={page === currentPage ? { background: "linear-gradient(135deg, #C9963A, #E8B96A)" } : {}}
+              >
                 {page}
               </button>
             ))}
-            <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === unlockedPages}
-              className="w-10 h-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center disabled:opacity-30 transition-all active:scale-95">
+
+            <button
+              onClick={() => goToPage(currentPage + 1)}
+              disabled={currentPage === unlockedPages}
+              className="w-10 h-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center disabled:opacity-30 transition-all active:scale-95"
+            >
               <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <polyline points="9 18 15 12 9 6" />
               </svg>
             </button>
           </div>
+
           <p className="text-[10px] text-[#C9963A]/60">
             Solde : {credits} crédit{credits > 1 ? "s" : ""}
           </p>
-          <motion.button whileTap={{ scale: 0.97 }} onClick={handleGenerateMore}
+
+          {/* Bouton générer encore plus */}
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={handleGenerateMore}
             className="mt-2 px-6 py-3 rounded-2xl font-bold text-sm relative overflow-hidden"
-            style={{ background: "linear-gradient(135deg, #3D2616, #4A2E1A)", border: "1.5px solid rgba(201,150,58,0.4)" }}>
+            style={{
+              background: "linear-gradient(135deg, #3D2616, #4A2E1A)",
+              border: "1.5px solid rgba(201,150,58,0.4)",
+            }}
+          >
             <span className="flex items-center gap-2 text-[#C9963A]">
               ✨ Voir 3 autres styles
               <span className="text-[9px] bg-[#C9963A]/20 border border-[#C9963A]/40 text-[#C9963A] px-1.5 py-0.5 rounded-full font-black">
@@ -897,17 +1029,21 @@ export default function Results() {
         </motion.div>
       )}
 
-      {/* MODALE VIRTUAL TRY-ON */}
+      {/* ── MODALE VIRTUAL TRY-ON — Coming Soon ── */}
       <AnimatePresence>
         {showVirtualTryOnModal && (
           <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             className="fixed inset-0 z-[150] flex items-end justify-center px-4 pb-8"
             style={{ background: "rgba(0,0,0,0.80)", backdropFilter: "blur(12px)" }}
             onClick={() => setShowVirtualTryOnModal(false)}
           >
             <motion.div
-              initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 80, opacity: 0 }}
+              initial={{ y: 80, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 80, opacity: 0 }}
               transition={{ type: "spring", stiffness: 280, damping: 26 }}
               className="w-full max-w-sm rounded-[2.5rem] p-8 text-center relative overflow-hidden"
               style={{
@@ -917,42 +1053,70 @@ export default function Results() {
               }}
               onClick={(e) => e.stopPropagation()}
             >
+              {/* Particules décoratives */}
               <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 {["✨","🪞","👑","💛","✨","🌟","👑","✨"].map((emoji, i) => (
-                  <motion.div key={i} className="absolute text-base" style={{ left: `${8 + i * 12}%` }}
-                    initial={{ opacity: 0, y: 50 }} animate={{ opacity: [0, 1, 0], y: -70 }}
-                    transition={{ delay: i * 0.2, duration: 2, repeat: Infinity, repeatDelay: 2 }}>
+                  <motion.div
+                    key={i}
+                    className="absolute text-base"
+                    style={{ left: `${8 + i * 12}%` }}
+                    initial={{ opacity: 0, y: 50 }}
+                    animate={{ opacity: [0, 1, 0], y: -70 }}
+                    transition={{ delay: i * 0.2, duration: 2, repeat: Infinity, repeatDelay: 2 }}
+                  >
                     {emoji}
                   </motion.div>
                 ))}
               </div>
-              <motion.div initial={{ scale: 0 }} animate={{ scale: [0, 1.2, 1] }}
-                transition={{ delay: 0.1, duration: 0.5 }} className="text-5xl mb-4">🪞</motion.div>
-              <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full mb-4 inline-block"
-                style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)", color: "#2C1A0E" }}>
+
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: [0, 1.2, 1] }}
+                transition={{ delay: 0.1, duration: 0.5 }}
+                className="text-5xl mb-4"
+              >
+                🪞
+              </motion.div>
+
+              <span
+                className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full mb-4 inline-block"
+                style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)", color: "#2C1A0E" }}
+              >
                 Bientôt disponible
               </span>
-              <h2 className="text-2xl font-black text-white mt-3 mb-2 leading-tight">Virtual Try-On ✨</h2>
+
+              <h2 className="text-2xl font-black text-white mt-3 mb-2 leading-tight">
+                Virtual Try-On ✨
+              </h2>
+
               <p className="text-sm text-white/60 mb-6 leading-relaxed">
                 Vois-toi <span className="text-[#C9963A] font-bold">réellement</span> avec la coiffure grâce à notre IA de transformation photo — disponible très bientôt !
               </p>
+
               <div className="flex flex-col gap-3 mb-6">
                 {[
                   { icon: "📸", text: "Superposition IA sur ton selfie" },
                   { icon: "🎨", text: "Rendu réaliste en quelques secondes" },
                   { icon: "💾", text: "Sauvegarde & partage facilement" },
                 ].map((item, i) => (
-                  <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.2 + i * 0.1 }}
-                    className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-left">
+                    className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-left"
+                  >
                     <span className="text-xl">{item.icon}</span>
                     <span className="text-sm text-white/70 font-medium">{item.text}</span>
                   </motion.div>
                 ))}
               </div>
-              <button onClick={() => setShowVirtualTryOnModal(false)}
+
+              <button
+                onClick={() => setShowVirtualTryOnModal(false)}
                 className="w-full py-4 rounded-2xl font-black text-[#2C1A0E] text-base"
-                style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}>
+                style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}
+              >
                 J'ai hâte ! 🔥
               </button>
             </motion.div>
@@ -966,24 +1130,32 @@ export default function Results() {
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] bg-black/98 flex flex-col items-center justify-center p-6 backdrop-blur-xl"
-            onClick={() => setZoomImage(null)} onContextMenu={(e) => e.preventDefault()}
+            onClick={() => setZoomImage(null)}
+            onContextMenu={(e) => e.preventDefault()}
           >
             <div className="relative" onClick={(e) => e.stopPropagation()}>
-              <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }}>
-                <OptimizedImage src={zoomImage} alt="Zoom"
+              <motion.div
+                initial={{ scale: 0.9 }} animate={{ scale: 1 }}
+              >
+                <OptimizedImage
+                  src={zoomImage}
+                  alt="Zoom"
                   className="max-w-full max-h-[70vh] rounded-3xl shadow-2xl border border-white/10"
-                  draggable={false} onContextMenu={(e) => e.preventDefault()}
-                  style={{ objectFit: 'contain', userSelect: 'none', WebkitUserSelect: 'none' }} />
+                  draggable={false}
+                  onContextMenu={(e) => e.preventDefault()}
+                  style={{ objectFit: 'contain', userSelect: 'none', WebkitUserSelect: 'none' }}
+                />
               </motion.div>
               <div className="absolute inset-0 rounded-3xl"
-                onContextMenu={(e) => e.preventDefault()} onDragStart={(e) => e.preventDefault()} />
+                onContextMenu={(e) => e.preventDefault()}
+                onDragStart={(e) => e.preventDefault()} />
             </div>
             <div className="mt-10 flex gap-4 w-full max-w-xs">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   const saved = handleSave();
-                  if (!saved) return;
+                  if (!saved) return; // 🚫 0 crédit = pas de download
                   const l = document.createElement("a");
                   l.href = zoomImage;
                   l.download = `afrotresse-${Date.now()}.jpg`;
@@ -1005,6 +1177,8 @@ export default function Results() {
 
       {/* BOUTONS FLOTTANTS */}
       <div className="fixed bottom-24 right-4 z-40 flex flex-col items-center gap-2">
+
+        {/* BOUTON SOLDE */}
         <motion.div
           initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
           onClick={() => navigate("/credits")}
@@ -1013,19 +1187,26 @@ export default function Results() {
           <div className="text-[5px] font-black uppercase opacity-60 leading-tight">Solde</div>
           <div className="text-xl font-black leading-none">{credits}</div>
         </motion.div>
+
+        {/* BOUTON GÉNÉRER — génère une nouvelle page */}
         <motion.button
-          initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-          whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+          initial={{ y: 100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={handleGenerateMore}
           className="w-12 h-12 rounded-lg flex flex-col items-center justify-center shadow-lg relative border border-white/10 active:scale-95 transition-all"
           style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}
         >
           <span className="text-[6px] font-black text-[#2C1A0E] uppercase leading-none">Gen</span>
           <span className="text-base">✨</span>
-          <div className="absolute -top-1 -right-1 bg-[#2C1A0E] text-[#C9963A] text-[7px] px-1 py-0 rounded-full font-bold border border-[#C9963A]">-1</div>
+          <div className="absolute -top-1 -right-1 bg-[#2C1A0E] text-[#C9963A] text-[7px] px-1 py-0 rounded-full font-bold border border-[#C9963A]">
+            -1
+          </div>
         </motion.button>
       </div>
 
     </div>
   );
 }
+
