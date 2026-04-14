@@ -512,6 +512,12 @@ export default function Results() {
   // ── Favoris volatils ───────────────────────────────────────────────────────
   const isFav = (styleId) => favorites.some(f => f === styleId);
 
+  // Synchronise le badge navbar à chaque changement de favoris
+  useEffect(() => {
+    sessionStorage.setItem("afrotresse_fav_count", String(favorites.length));
+    window.dispatchEvent(new Event("afrotresse_fav_update"));
+  }, [favorites]);
+
   const handleToggleFav = (style) => {
     const alreadyFav = isFav(style.id);
     if (alreadyFav) {
@@ -586,10 +592,11 @@ export default function Results() {
       <div className="min-h-[100dvh] bg-[#2C1A0E] text-[#FAF4EC] flex flex-col relative overflow-hidden">
 
         {/* ── OPTION C — Photo existante ── */}
-        {hasPreviousPhoto && (
+        {hasPreviousPhoto ? (
           <div className="flex flex-col min-h-[100dvh]">
 
             {/* Hero avec la photo de l'utilisatrice */}
+
             <div className="relative h-72 overflow-hidden">
               <img src={selfieUrl} alt="Mon selfie" className="w-full h-full object-cover object-top"
                 style={{ filter: "brightness(0.45)" }} draggable={false} onContextMenu={e => e.preventDefault()} />
@@ -669,6 +676,82 @@ export default function Results() {
                 📸 Prendre mon selfie
               </motion.button>
             </div>
+          </div>
+        ) : (
+          /* ── OPTION A — Aucune photo : mosaïque teaser ── */
+          <div className="flex flex-col min-h-[100dvh] px-5 pt-10 pb-32">
+            <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} className="mb-6 text-center">
+              <span className="text-4xl mb-3 block">👑</span>
+              <h2 className="text-2xl font-black text-white mb-2">Découvre ta prochaine coiffure</h2>
+              <p className="text-[12px] text-white/50 leading-relaxed max-w-xs mx-auto">
+                Prends un selfie et notre IA te recommande les tresses faites pour ta morphologie.
+              </p>
+            </motion.div>
+
+            {/* Mosaïque teaser floue */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+              className="grid grid-cols-3 gap-1.5 mb-8 rounded-[2rem] overflow-hidden relative"
+            >
+              {TEASER_STYLES.map((s, i) => (
+                <div key={s.key} className="relative aspect-square overflow-hidden bg-white/5">
+                  <img
+                    src={`/styles/${s.key}-face.jpg`}
+                    alt={s.label}
+                    className="w-full h-full object-cover"
+                    style={{ filter: "blur(4px) brightness(0.55)", transform: "scale(1.08)" }}
+                    draggable={false}
+                    onContextMenu={e => e.preventDefault()}
+                  />
+                  {i === 2 && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-[10px] font-black text-white/60 uppercase tracking-widest">?</span>
+                    </div>
+                  )}
+                </div>
+              ))}
+              {/* Overlay gradient + badge */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center"
+                style={{ background: "linear-gradient(to bottom, rgba(44,26,14,0.3), rgba(44,26,14,0.75))" }}>
+                <span className="text-xs font-black text-[#C9963A] uppercase tracking-widest bg-[#2C1A0E]/80 px-3 py-1.5 rounded-full border border-[#C9963A]/40">
+                  🔒 Débloque tes résultats
+                </span>
+              </div>
+            </motion.div>
+
+            {/* 3 étapes */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
+              className="flex flex-col gap-3 mb-8">
+              {[
+                { icon: "📸", label: "Prends un selfie", sub: "Ou uploade une photo existante" },
+                { icon: "🔍", label: "Analyse IA instantanée", sub: "Forme de visage détectée en secondes" },
+                { icon: "✨", label: "Styles personnalisés", sub: "3 recommandations taillées pour toi" },
+              ].map((step, i) => (
+                <motion.div key={i}
+                  initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3 + i * 0.08 }}
+                  className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl px-4 py-3">
+                  <span className="text-2xl">{step.icon}</span>
+                  <div>
+                    <p className="text-sm font-bold text-white leading-none">{step.label}</p>
+                    <p className="text-[10px] text-white/40 mt-0.5">{step.sub}</p>
+                  </div>
+                  <div className="ml-auto w-6 h-6 rounded-full bg-[#C9963A]/20 border border-[#C9963A]/40 flex items-center justify-center">
+                    <span className="text-[#C9963A] text-[10px] font-black">{i + 1}</span>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+
+            <motion.button
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => navigate("/camera")}
+              className="w-full py-5 rounded-2xl font-black text-lg text-[#2C1A0E] shadow-2xl"
+              style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)", boxShadow: "0 0 30px rgba(201,150,58,0.4)" }}
+            >
+              📸 Prendre mon selfie
+            </motion.button>
           </div>
         )}
       </div>
