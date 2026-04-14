@@ -578,7 +578,7 @@ export default function Results() {
           <div className="flex flex-col min-h-[100dvh]">
 
             {/* Mosaïque hero - FOND UNI */}
-            <div className="relative h-80 overflow-hidden bg-[#2C1A0E] flex items-center justify-center">
+            <div className="relative h-52 overflow-hidden bg-[#2C1A0E] flex items-center justify-center">
 
               {/* Overlay doré */}
               <div className="absolute inset-0 flex flex-col items-center justify-center"
@@ -598,11 +598,11 @@ export default function Results() {
             </div>
 
             {/* Contenu */}
-            <div className="flex flex-col flex-1 px-5 pt-4 pb-32">
+            <div className="flex flex-col flex-1 px-5 pt-2 pb-32">
 
               {/* Message */}
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-                className="mb-6">
+                className="mb-3">
                 <h2 className="text-xl font-black text-white mb-2">
                   Découvre les tresses faites pour toi 💛
                 </h2>
