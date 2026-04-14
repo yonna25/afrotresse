@@ -140,6 +140,104 @@ function CreditSuccessPopup({ data, onClose }) {
   );
 }
 
+// ─── Feu d'artifice canvas ───────────────────────────────────────────────────
+function Fireworks({ onDone }) {
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const W = canvas.width  = window.innerWidth;
+    const H = canvas.height = window.innerHeight;
+
+    const COLORS = ["#C9963A","#E8B96A","#FAF4EC","#FFFFFF","#FFD700","#A87B28","#FFF0C0"];
+
+    class Particle {
+      constructor(x, y) {
+        this.x = x; this.y = y;
+        this.color = COLORS[Math.floor(Math.random() * COLORS.length)];
+        const angle = Math.random() * Math.PI * 2;
+        const speed = Math.random() * 7 + 2;
+        this.vx = Math.cos(angle) * speed;
+        this.vy = Math.sin(angle) * speed;
+        this.life = 1;
+        this.decay = Math.random() * 0.018 + 0.008;
+        this.size = Math.random() * 3.5 + 1;
+        this.trail = Math.random() > 0.5;
+      }
+      update() {
+        this.x += this.vx; this.y += this.vy;
+        this.vy += 0.09; this.vx *= 0.98;
+        this.life -= this.decay;
+      }
+      draw() {
+        ctx.globalAlpha = Math.max(0, this.life);
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        if (this.trail) {
+          ctx.globalAlpha = Math.max(0, this.life * 0.3);
+          ctx.beginPath();
+          ctx.arc(this.x - this.vx * 2, this.y - this.vy * 2, this.size * 0.6, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+
+    const particles = [];
+    const BURSTS = [
+      { x: W * 0.2,  y: H * 0.28, delay: 0   },
+      { x: W * 0.8,  y: H * 0.22, delay: 180 },
+      { x: W * 0.5,  y: H * 0.15, delay: 350 },
+      { x: W * 0.15, y: H * 0.5,  delay: 520 },
+      { x: W * 0.85, y: H * 0.42, delay: 280 },
+      { x: W * 0.5,  y: H * 0.38, delay: 600 },
+    ];
+
+    const timers = BURSTS.map(b =>
+      setTimeout(() => {
+        for (let i = 0; i < 70; i++) particles.push(new Particle(b.x, b.y));
+      }, b.delay)
+    );
+
+    let animId;
+    let finished = false;
+    const animate = () => {
+      ctx.clearRect(0, 0, W, H);
+      for (let i = particles.length - 1; i >= 0; i--) {
+        particles[i].update();
+        particles[i].draw();
+        if (particles[i].life <= 0) particles.splice(i, 1);
+      }
+      ctx.globalAlpha = 1;
+      if (particles.length > 0 || !finished) {
+        animId = requestAnimationFrame(animate);
+      } else {
+        onDone?.();
+      }
+    };
+    animate();
+    // Marquer finished après le dernier burst + durée de vie max
+    const doneTimer = setTimeout(() => { finished = true; }, 3200);
+
+    return () => {
+      timers.forEach(clearTimeout);
+      clearTimeout(doneTimer);
+      cancelAnimationFrame(animId);
+    };
+  }, [onDone]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="fixed inset-0 pointer-events-none"
+      style={{ zIndex: 9999, width: "100%", height: "100%" }}
+    />
+  );
+}
+
 // ────────────────────────────────────────────────────────────────────────────
 
 export default function Results() {
@@ -157,6 +255,7 @@ export default function Results() {
   const [savesCount, setSavesCount] = useState(0);
   const [creditPopup, setCreditPopup] = useState(null);
   const [showVirtualTryOnModal, setShowVirtualTryOnModal] = useState(false);
+  const [showFireworks, setShowFireworks] = useState(false);
 
   // ── Étape 2 : Bloc sauvegarde prénom/email ────────────────────────────────
   const [savePrenom, setSavePrenom] = useState(() => localStorage.getItem("afrotresse_user_name") || "");
@@ -202,6 +301,7 @@ export default function Results() {
         setFaceShape(parsed.faceShape || "oval");
         const recs = parsed.recommendations || [];
         setStyles(recs);
+        if (recs.length > 0) setShowFireworks(true);
 
         // Initialiser les stats (vues/likes) pour chaque style si pas encore fait
         setStyleStats(prev => {
@@ -655,6 +755,11 @@ export default function Results() {
 
   return (
     <div className="min-h-[100dvh] bg-[#2C1A0E] text-[#FAF4EC] p-4 sm:p-6 pb-40 relative">
+
+      {/* ── Feu d'artifice ── */}
+      {showFireworks && (
+        <Fireworks onDone={() => setShowFireworks(false)} />
+      )}
 
       {/* ── Pop-up crédit ── */}
       <AnimatePresence>
