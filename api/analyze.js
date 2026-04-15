@@ -18,59 +18,118 @@ const BRAIDS_DB = [
 ];
 
 const FACE_SHAPE_NAMES = {
-  oval: "Ovale", round: "Ronde", square: "Carrée",
-  heart: "Cœur", long: "Allongée", diamond: "Diamant"
+  oval: "Ovale",
+  round: "Ronde",
+  square: "Carrée",
+  heart: "Cœur",
+  long: "Allongée",
+  diamond: "Diamant"
 };
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method Not Allowed' });
+  }
 
-  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+  const ip =
+    req.headers['x-forwarded-for']?.split(',')[0] ||
+    req.socket.remoteAddress ||
+    'unknown';
+
   const authHeader = req.headers.authorization;
   let userId = null;
   let credits = 0;
 
   try {
+    // Auth user
     if (authHeader && authHeader !== 'Bearer null') {
-      const { data: { user } } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
-      if (user) userId = user.id;
+      const token = authHeader.replace('Bearer ', '');
+      const { data: { user }, error } = await supabase.auth.getUser(token);
+      if (!error && user) userId = user.id;
     }
 
+    // Récupération crédits
     if (userId) {
-      const { data } = await supabase.from('profiles').select('credits').eq('id', userId).single();
-      credits = data?.credits || 0;
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('credits')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (error) throw error;
+      credits = data?.credits ?? 0;
+
     } else {
-      const { data } = await supabase.from('anonymous_usage').select('credits').eq('ip_address', ip).single();
+      const { data, error } = await supabase
+        .from('anonymous_usage')
+        .select('credits')
+        .eq('ip_address', ip)
+        .maybeSingle();
+
+      if (error) throw error;
+
       if (!data) {
-        await supabase.from('anonymous_usage').insert([{ ip_address: ip, credits: 2 }]);
+        const { error: insertError } = await supabase
+          .from('anonymous_usage')
+          .insert([{ ip_address: ip, credits: 2 }]);
+
+        if (insertError) throw insertError;
         credits = 2;
+
       } else {
-        credits = data.credits;
+        credits = data.credits ?? 0;
       }
     }
 
-    if (credits <= 0) return res.status(403).json({ error: "Crédits insuffisants" });
-
-    const form = new IncomingForm();
-    const { files } = await new Promise((res, rej) => form.parse(req, (e, fi, fl) => e ? rej(e) : res({fi, fl})));
-
-    // Simulation FaceShapeDetector (Souvent "long" sur Afro)
-    const faceShape = "long"; 
-    
-    if (userId) {
-      await supabase.from('profiles').update({ credits: credits - 1 }).eq('id', userId);
-    } else {
-      await supabase.from('anonymous_usage').update({ credits: credits - 1 }).eq('ip_address', ip);
+    // Vérif crédits
+    if (credits <= 0) {
+      return res.status(403).json({ error: "Crédits insuffisants" });
     }
 
+    // Lecture fichier
+    const form = new IncomingForm();
+    await new Promise((resolve, reject) => {
+      form.parse(req, (err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+
+    // Simulation analyse
+    const faceShape = "long";
+
+    // Décrément crédits
+    if (userId) {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ credits: credits - 1 })
+        .eq('id', userId);
+
+      if (error) throw error;
+
+    } else {
+      const { error } = await supabase
+        .from('anonymous_usage')
+        .update({ credits: credits - 1 })
+        .eq('ip_address', ip);
+
+      if (error) throw error;
+    }
+
+    // Réponse
     return res.status(200).json({
       faceShape,
       faceShapeName: FACE_SHAPE_NAMES[faceShape],
       confidence: 88,
-      recommendations: BRAIDS_DB.filter(b => b.faceShapes.includes(faceShape))
+      recommendations: BRAIDS_DB.filter(b =>
+        b.faceShapes.includes(faceShape)
+      )
     });
 
   } catch (error) {
-    return res.status(500).json({ error: "Erreur serveur" });
+    return res.status(500).json({
+      error: "Erreur serveur",
+      details: error.message
+    });
   }
 }
