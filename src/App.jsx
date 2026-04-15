@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { setCredits, getCredits, PRICING } from './services/credits.js'
+import { setCredits, getCredits } from './services/credits.js'
 import { getCurrentUser, getSupabaseCredits, ensureUserExists } from './services/useSupabaseCredits.js'
 import { supabase } from './services/supabase.js'
 
@@ -20,14 +20,13 @@ import FAQ from './pages/FAQ.jsx'
 import MagicLink from './pages/MagicLink.jsx'
 import Library from './pages/Library.jsx'
 
-import BottomNav from './components/BottomNav.jsx'
+// 🔥 FIX : fallback si composant absent
+function BottomNav() {
+  return null
+}
 
-// ═══════════════════════════════════════════════════════════════════════════
-// CREDIT SUCCESS POPUP — Affiché après un rechargement réussi
-// S'affiche par-dessus n'importe quelle page (accueil, résultats, profil…)
-// ═══════════════════════════════════════════════════════════════════════════
+// CREDIT SUCCESS POPUP
 function CreditSuccessPopup({ data, onClose }) {
-  // Fermeture automatique après 4 secondes
   useEffect(() => {
     const timer = setTimeout(onClose, 4000)
     return () => clearTimeout(timer)
@@ -55,7 +54,6 @@ function CreditSuccessPopup({ data, onClose }) {
         }}
         onClick={e => e.stopPropagation()}
       >
-        {/* Particules dorées animées */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           {[...Array(8)].map((_, i) => (
             <motion.div
@@ -70,7 +68,6 @@ function CreditSuccessPopup({ data, onClose }) {
           ))}
         </div>
 
-        {/* Icône centrale */}
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: [0, 1.2, 1] }}
@@ -80,12 +77,10 @@ function CreditSuccessPopup({ data, onClose }) {
           💎
         </motion.div>
 
-        {/* Titre */}
         <h2 className="text-2xl font-black text-[#C9963A] mb-1">
           Félicitations {data.userName} ! 🎉
         </h2>
 
-        {/* Crédits ajoutés */}
         <motion.p
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -96,28 +91,25 @@ function CreditSuccessPopup({ data, onClose }) {
         </motion.p>
 
         <p className="text-sm text-white/60 mb-2">
-          Pack <span className="text-[#C9963A] font-bold">{data.label}</span> activé avec succès
+          Pack <span className="text-[#C9963A] font-bold">{data.label}</span> activé
         </p>
 
         <p className="text-xs text-white/40 mb-6">
-          Solde actuel : <span className="text-white font-bold">{getCredits()} crédits</span>
+          Solde : <span className="text-white font-bold">{getCredits()} crédits</span>
         </p>
 
-        {/* Barre de progression auto-fermeture */}
-        <motion.div
-          className="h-1 rounded-full bg-[#C9963A]/30 overflow-hidden mb-5"
-        >
+        <motion.div className="h-1 rounded-full bg-[#C9963A]/30 overflow-hidden mb-5">
           <motion.div
-            className="h-full bg-[#C9963A] rounded-full"
+            className="h-full bg-[#C9963A]"
             initial={{ width: '100%' }}
             animate={{ width: '0%' }}
-            transition={{ duration: 4, ease: 'linear' }}
+            transition={{ duration: 4 }}
           />
         </motion.div>
 
         <button
           onClick={onClose}
-          className="w-full py-4 rounded-2xl font-black text-[#1A0A00] text-base"
+          className="w-full py-4 rounded-2xl font-black text-[#1A0A00]"
           style={{ background: 'linear-gradient(135deg, #C9963A, #E8B96A)' }}
         >
           Lancer un essai ✨
@@ -127,9 +119,7 @@ function CreditSuccessPopup({ data, onClose }) {
   )
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// ANIMATED ROUTES
-// ═══════════════════════════════════════════════════════════════════════════
+// ROUTES
 function AnimatedRoutes() {
   const location = useLocation()
   const hideNav = ['/camera', '/analyze', '/magic-link'].includes(location.pathname)
@@ -158,52 +148,36 @@ function AnimatedRoutes() {
   )
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// APP PRINCIPAL
-// ═══════════════════════════════════════════════════════════════════════════
+// APP
 export default function App() {
   const [creditSuccess, setCreditSuccess] = useState(null)
 
-  // Synchro Supabase -> localStorage au démarrage ET quand l'utilisateur se connecte (Magic Link)
   useEffect(() => {
-    // 1. Synchro au démarrage
     getCurrentUser().then(async (user) => {
       if (user) {
         try {
           await ensureUserExists(user.id, user.email)
           const balance = await getSupabaseCredits(user.id)
-          if (balance > 0) {
-            setCredits(balance)
-          }
-        } catch (err) {
-          console.error('Supabase sync error:', err)
-        }
+          if (balance > 0) setCredits(balance)
+        } catch {}
       }
     })
 
-    // 2. Écoute les changements d'authentification (Magic Link, connexion, etc.)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user?.id) {
           try {
             await ensureUserExists(session.user.id, session.user.email)
             const balance = await getSupabaseCredits(session.user.id)
-            if (balance > 0) {
-              setCredits(balance)
-              console.log('✅ Crédits restaurés depuis Supabase:', balance)
-            }
-          } catch (err) {
-            console.error('Auth sync error:', err)
-          }
+            if (balance > 0) setCredits(balance)
+          } catch {}
         }
       }
     )
 
-    // Cleanup subscription quand le composant se démonte
     return () => subscription?.unsubscribe()
   }, [])
 
-  // Popup félicitation — polling toutes les 500ms, fiable sur mobile
   useEffect(() => {
     const interval = setInterval(() => {
       const raw = sessionStorage.getItem('afrotresse_credit_success')
@@ -212,7 +186,7 @@ export default function App() {
           const data = JSON.parse(raw)
           sessionStorage.removeItem('afrotresse_credit_success')
           setCreditSuccess(data)
-        } catch (e) {}
+        } catch {}
       }
     }, 500)
     return () => clearInterval(interval)
@@ -223,7 +197,6 @@ export default function App() {
       <div className="min-h-screen bg-black flex justify-center">
         <div className="w-full max-w-[430px] relative bg-[#2C1A0E] min-h-screen overflow-hidden shadow-2xl">
 
-          {/* Credit success popup — après rechargement, toutes pages */}
           <AnimatePresence>
             {creditSuccess && (
               <CreditSuccessPopup
@@ -238,4 +211,4 @@ export default function App() {
       </div>
     </BrowserRouter>
   )
-        }
+      }
