@@ -1,13 +1,18 @@
 /**
- * API AfroTresse - version corrigée stable
+ * API AfroTresse - version corrigée stable (fix Supabase + logs)
  */
 
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+// 🔥 FIX ENV (CRITIQUE)
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  console.error("❌ ENV MANQUANTES SUPABASE");
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 const BRAIDS_DB = [
   { id: "pompom", faceShapes: ["round", "square", "oval", "heart", "diamond"] },
@@ -35,9 +40,8 @@ export default async function handler(req, res) {
   console.log("🔥 API HIT");
 
   try {
-    // 🔥 PARSE BODY ROBUSTE
+    // 🔥 BODY SAFE
     let body = req.body;
-
     if (typeof body === "string") {
       body = JSON.parse(body);
     }
@@ -55,6 +59,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "faceShape invalide" });
     }
 
+    // 🔥 IP SAFE
     const ip =
       req.headers['x-forwarded-for']?.split(',')[0] ||
       req.socket?.remoteAddress ||
@@ -62,16 +67,19 @@ export default async function handler(req, res) {
 
     console.log("👉 IP :", ip);
 
-    // 🔥 CHECK EXISTENCE
+    // 🔥 SELECT
     const { data, error } = await supabase
       .from('anonymous_usage')
-      .select('*')
+      .select('credits')
       .eq('ip_address', ip)
       .maybeSingle();
 
-    if (error) throw error;
+    if (error) {
+      console.error("❌ SELECT ERROR:", error);
+      throw error;
+    }
 
-    let credits;
+    let credits = 0;
 
     // 🔥 INSERT SI NOUVEAU
     if (!data) {
@@ -81,10 +89,14 @@ export default async function handler(req, res) {
         .from('anonymous_usage')
         .insert([{
           ip_address: ip,
-          credits: 2
+          credits: 2,
+          updated_at: new Date().toISOString()
         }]);
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error("❌ INSERT ERROR:", insertError);
+        throw insertError;
+      }
 
       credits = 2;
 
@@ -98,7 +110,7 @@ export default async function handler(req, res) {
       return res.status(403).json({ error: "Crédits insuffisants" });
     }
 
-    // 🔥 UPDATE
+    // 🔥 UPDATE (SAFE)
     const { error: updateError } = await supabase
       .from('anonymous_usage')
       .update({
@@ -107,7 +119,10 @@ export default async function handler(req, res) {
       })
       .eq('ip_address', ip);
 
-    if (updateError) throw updateError;
+    if (updateError) {
+      console.error("❌ UPDATE ERROR:", updateError);
+      throw updateError;
+    }
 
     console.log("✅ Crédit décrémenté");
 
