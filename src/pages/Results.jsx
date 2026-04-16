@@ -832,52 +832,38 @@ export default function Results() {
         </div>
       </motion.div>
 
-      {/* ── ALERTE VOLATILITÉ — remplacée par message enregistré si prénom connu ── */}
+      {/* ── ALERTE VOLATILITÉ / BLOC SAUVEGARDE ── */}
       {saveDone ? (
         <motion.div
           initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-          className="mb-4 px-4 py-3 rounded-2xl flex items-center gap-3"
-          style={{ background: "rgba(39,174,96,0.08)", border: "1px solid rgba(39,174,96,0.3)" }}
-        >
-          <span className="text-lg">✅</span>
-          <p className="text-[11px] text-green-300 font-semibold">
-            {displayName
-              ? <>Bienvenue, <span className="font-black">{displayName}</span> ! Tu es d\u00e9sormais enregistr\u00e9e. ✨</>
-              : <>Tu es d\u00e9sormais enregistr\u00e9e. ✨</>
-            }
-          </p>
-        </motion.div>
-      ) : (
-        <motion.div
-          initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-          className="mb-4 px-4 py-3 rounded-2xl flex items-start gap-3"
-          style={{ background: "rgba(201,150,58,0.08)", border: "1px solid rgba(201,150,58,0.25)" }}
-        >
-          <span className="text-lg mt-0.5">⚠️</span>
-          <p className="text-[11px] text-white/60 leading-relaxed">
-            <span className="text-[#C9963A] font-bold">Tes r\u00e9sultats ne sont pas sauvegard\u00e9s.</span>
-            {" "}Ajoute tes styles en favoris pour les conserver, ou sauvegarde ton compte ci-dessous.
-          </p>
-        </motion.div>
-      )}
-
-      {/* ── BLOC SAUVEGARDE EMAIL UNIQUEMENT — pliable ── */}
-      {saveDone ? (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
           className="mb-6 px-4 py-3 rounded-2xl flex items-center gap-3"
           style={{ background: "rgba(39,174,96,0.1)", border: "1px solid rgba(39,174,96,0.3)" }}
         >
           <span className="text-lg">✅</span>
           <p className="text-[12px] text-green-300 font-semibold">
-            Résultats sauvegardés pour <span className="font-black">{displayName || saveEmail}</span> !
+            {displayName
+              ? <>Bienvenue, <span className="font-black">{displayName}</span> ! Tu es d&eacute;sormais enregistr&eacute;e.&nbsp;✨</>
+              : <>Tu es d&eacute;sormais enregistr&eacute;e.&nbsp;✨</>
+            }
           </p>
         </motion.div>
       ) : (
-        <div
-          className="mb-6 rounded-[2rem] overflow-hidden"
-          style={{ background: "linear-gradient(135deg, #3D2616, #2C1A0E)", border: "1.5px solid rgba(201,150,58,0.35)" }}
-        >
+        <>
+          <motion.div
+            initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+            className="mb-4 px-4 py-3 rounded-2xl flex items-start gap-3"
+            style={{ background: "rgba(201,150,58,0.08)", border: "1px solid rgba(201,150,58,0.25)" }}
+          >
+            <span className="text-lg mt-0.5">⚠️</span>
+            <p className="text-[11px] text-white/60 leading-relaxed">
+              <span className="text-[#C9963A] font-bold">Tes r&eacute;sultats ne sont pas sauvegard&eacute;s.</span>
+              {" "}Ajoute tes styles en favoris pour les conserver, ou sauvegarde ton compte ci-dessous.
+            </p>
+          </motion.div>
+          <div
+            className="mb-6 rounded-[2rem] overflow-hidden"
+            style={{ background: "linear-gradient(135deg, #3D2616, #2C1A0E)", border: "1.5px solid rgba(201,150,58,0.35)" }}
+          >
           {/* En-tête cliquable */}
           <button
             onClick={() => setSaveOpen(o => !o)}
@@ -937,7 +923,8 @@ export default function Results() {
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
+          </div>
+        </>
       )}
 
       {/* ERROR / MESSAGE */}
