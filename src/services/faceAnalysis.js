@@ -25,23 +25,13 @@ export const BRAIDS_DB = [ /* inchangé */ ];
 // --- LOGIQUE D'ANALYSE ---
 export async function analyzeFace(photoBlob) {
   try {
-
-    // 🔴 FIX IMPORTANT : result contient déjà faceShape (PAS landmarks)
     const result = await analyzeFaceWithAI(photoBlob, 8000)
 
-    const faceShape = result.faceShape
+    // 🔴 FIX MINIMAL (sans casser ton flow)
+    const faceShape = result.faceShape || detectFaceShape(result.landmarks)
 
-    if (!faceShape) {
-      throw new Error("faceShape introuvable")
-    }
-
-    // ❌ SUPPRESSION BUG : tu réutilisais detectFaceShape sur mauvais input
-    // const faceShape = detectFaceShape(result.landmarks)
-
-    // ❌ SUPPRESSION BUG : landmarks inexistants dans ton pipeline actuel
-    // const confidence = calculateConfidence(result.landmarks)
-
-    const confidence = result.confidence || 0.85
+    const confidence =
+      result.confidence || calculateConfidence(result.landmarks)
 
     return buildRecommendations(faceShape, "", confidence)
 
