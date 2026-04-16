@@ -258,7 +258,7 @@ export default function Results() {
 
   // ── Étape 2 : Bloc sauvegarde email uniquement ────────────────────────────────
   const [saveEmail, setSaveEmail]   = useState(() => localStorage.getItem("afrotresse_email") || "");
-  const [saveDone, setSaveDone]     = useState(() => !!localStorage.getItem("afrotresse_email"));
+  const [saveDone, setSaveDone]     = useState(() => !!localStorage.getItem("afrotresse_email") || !!localStorage.getItem("afrotresse_user_name"));
   const [displayName, setDisplayName] = useState(() => localStorage.getItem("afrotresse_user_name") || "");
   const [saveName, setSaveName]     = useState(() => localStorage.getItem("afrotresse_user_name") || "");
   const [saveOpen, setSaveOpen]     = useState(() => !localStorage.getItem("afrotresse_email"));
@@ -832,19 +832,33 @@ export default function Results() {
         </div>
       </motion.div>
 
-      {/* ── ALERTE VOLATILITÉ — masquée si saveDone ── */}
-      {!saveDone && (
-      <motion.div
-        initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-        className="mb-4 px-4 py-3 rounded-2xl flex items-start gap-3"
-        style={{ background: "rgba(201,150,58,0.08)", border: "1px solid rgba(201,150,58,0.25)" }}
-      >
-        <span className="text-lg mt-0.5">⚠️</span>
-        <p className="text-[11px] text-white/60 leading-relaxed">
-          <span className="text-[#C9963A] font-bold">Tes résultats ne sont pas sauvegardés.</span>
-          {" "}Ajoute tes styles en favoris pour les conserver, ou sauvegarde ton compte ci-dessous.
-        </p>
-      </motion.div>
+      {/* ── ALERTE VOLATILITÉ — remplacée par message enregistré si prénom connu ── */}
+      {saveDone ? (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+          className="mb-4 px-4 py-3 rounded-2xl flex items-center gap-3"
+          style={{ background: "rgba(39,174,96,0.08)", border: "1px solid rgba(39,174,96,0.3)" }}
+        >
+          <span className="text-lg">✅</span>
+          <p className="text-[11px] text-green-300 font-semibold">
+            {displayName
+              ? <>Bienvenue, <span className="font-black">{displayName}</span> ! Tu es d\u00e9sormais enregistr\u00e9e. ✨</>
+              : <>Tu es d\u00e9sormais enregistr\u00e9e. ✨</>
+            }
+          </p>
+        </motion.div>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+          className="mb-4 px-4 py-3 rounded-2xl flex items-start gap-3"
+          style={{ background: "rgba(201,150,58,0.08)", border: "1px solid rgba(201,150,58,0.25)" }}
+        >
+          <span className="text-lg mt-0.5">⚠️</span>
+          <p className="text-[11px] text-white/60 leading-relaxed">
+            <span className="text-[#C9963A] font-bold">Tes r\u00e9sultats ne sont pas sauvegard\u00e9s.</span>
+            {" "}Ajoute tes styles en favoris pour les conserver, ou sauvegarde ton compte ci-dessous.
+          </p>
+        </motion.div>
       )}
 
       {/* ── BLOC SAUVEGARDE EMAIL UNIQUEMENT — pliable ── */}
