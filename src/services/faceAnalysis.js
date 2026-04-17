@@ -1,14 +1,10 @@
 import { analyzeFaceWithAI } from '../hooks/useFaceAnalysis.js'
 import { detectFaceShape, calculateConfidence } from '../utils/faceShapeDetector.js'
 
-// CONSTANTES (inchangées)
+// --- CONSTANTES ---
 export const FACE_SHAPE_NAMES = {
-  oval: "Ovale",
-  round: "Ronde",
-  square: "Carrée",
-  heart: "Cœur",
-  long: "Allongée",
-  diamond: "Diamant"
+  oval: "Ovale", round: "Ronde", square: "Carrée", 
+  heart: "Cœur", long: "Allongée", diamond: "Diamant"
 };
 
 export const FACE_SHAPE_DESCRIPTIONS = {
@@ -20,20 +16,47 @@ export const FACE_SHAPE_DESCRIPTIONS = {
   diamond: "Pommettes larges — les styles structurés te subliment."
 };
 
-// LOGIQUE
+/**
+ * Logique d'analyse avec synchronisation des crédits
+ */
 export async function analyzeFace(photoBlob) {
   try {
+    // 1. Analyse locale MediaPipe
     const result = await analyzeFaceWithAI(photoBlob);
+    const faceShape = result?.faceShape || detectFaceShape(result?.landmarks);
+    const confidence = result?.confidence || calculateConfidence(result?.landmarks);
 
-    const faceShape =
-      result?.faceShape ||
-      detectFaceShape(result?.landmarks);
+    // 2. Préparation des identifiants uniques (pour ton API)
+    const requestId = crypto.randomUUID(); // Anti-double consommation
+    const sessionId = localStorage.getItem('afrotresse_session_id') || crypto.randomUUID();
+    localStorage.setItem('afrotresse_session_id', sessionId);
 
-    const confidence =
-      result?.confidence ||
-      calculateConfidence(result?.landmarks);
+    // 3. Appel à ton API Vercel (Protection & Crédits)
+    try {
+      const response = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          faceShape,
+          requestId,
+          sessionId
+        })
+      });
 
-    return buildRecommendations(faceShape, "", confidence);
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.warn("[API] Problème de crédits ou quota :", errorData.error);
+        // On continue quand même l'affichage pour l'UX, mais on log l'erreur
+      } else {
+        const apiData = await response.json();
+        console.log("[API] Analyse enregistrée, crédits restants :", apiData.creditsRemaining);
+      }
+    } catch (apiErr) {
+      console.error("[API] Erreur de connexion au serveur :", apiErr);
+    }
+
+    // 4. Retour des résultats pour l'affichage
+    return buildRecommendations(faceShape, "Analyse réussie", confidence);
 
   } catch (err) {
     console.error("Face analysis error:", err);
