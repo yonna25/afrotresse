@@ -1,7 +1,7 @@
 import { analyzeFaceWithAI } from '../hooks/useFaceAnalysis.js'
 import { detectFaceShape, calculateConfidence } from '../utils/faceShapeDetector.js'
 
-// --- CONSTANTES EXPORTÉES ---
+// CONSTANTES (inchangées)
 export const FACE_SHAPE_NAMES = {
   oval: "Ovale",
   round: "Ronde",
@@ -20,14 +20,9 @@ export const FACE_SHAPE_DESCRIPTIONS = {
   diamond: "Pommettes larges — les styles structurés te subliment."
 };
 
-export const BRAIDS_DB = [
-  // ❗ inchangé (tu peux garder ton dataset tel quel)
-];
-
-// --- LOGIQUE D'ANALYSE ---
+// LOGIQUE
 export async function analyzeFace(photoBlob) {
   try {
-    // ✅ utilise correctement le hook exposé
     const result = await analyzeFaceWithAI(photoBlob);
 
     const faceShape =
@@ -42,32 +37,16 @@ export async function analyzeFace(photoBlob) {
 
   } catch (err) {
     console.error("Face analysis error:", err);
-
-    await new Promise(r => setTimeout(r, 1500));
-
-    return buildRecommendations(
-      "oval",
-      "Analyse par défaut (fallback)",
-      0.75
-    );
+    return buildRecommendations("oval", "fallback", 0.75);
   }
 }
 
 function buildRecommendations(faceShape, reason = "", confidence = 0.85) {
-  const matching = BRAIDS_DB
-    .filter(b => b.faceShapes.includes(faceShape))
-    .sort((a, b) => b.matchScore - a.matchScore)
-    .map((b, i) => ({
-      ...b,
-      matchScore: Math.max(75, b.matchScore - i * 2)
-    }));
-
   return {
     faceShape,
     faceShapeName: FACE_SHAPE_NAMES[faceShape] || faceShape,
     faceShapeDescription: FACE_SHAPE_DESCRIPTIONS[faceShape] || "",
     aiReason: reason,
-    confidence: Math.round((confidence || 0.85) * 100),
-    recommendations: matching
+    confidence: Math.round((confidence || 0.85) * 100)
   };
 }
