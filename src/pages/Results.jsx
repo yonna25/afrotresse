@@ -1,31 +1,19 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { getCredits, consumeTransform, consumeCredits, hasCredits, canTransform, addSeenStyleId, PRICING } from "../services/credits.js";
+import { getCredits, consumeCredits, hasCredits } from "../services/credits.js";
 import OptimizedImage from "../components/OptimizedImage.jsx";
 
-// ─── Constantes ──────────────────────────────────────────────────────────────
+// ─── Constantes ───────────────────────────────────────────────────────────────
 
 const FACE_SHAPE_TEXTS = {
-  oval:    "Ton visage est de forme Ovale. C\u2019est une structure tr\u00e8s \u00e9quilibr\u00e9e qui s\u2019adapte \u00e0 presque tous les styles.",
-  round:   "Ton visage est de forme Ronde. Pour allonger et affiner visuellement tes traits, les tresses hautes sont parfaites.",
-  square:  "Ton visage est de forme Carr\u00e9e. Les tresses avec du volume adoucissent ta m\u00e2choire.",
-  heart:   "Ton visage est en forme de C\u0153ur. Les tresses avec du volume en bas \u00e9quilibrent ton menton.",
-  long:    "Ton visage est de forme Longue. Les tresses lat\u00e9rales cr\u00e9ent l\u2019harmonie parfaite.",
+  oval:    "Ton visage est de forme Ovale. Une structure équilibrée qui s'adapte à presque tous les styles.",
+  round:   "Ton visage est de forme Ronde. Les tresses hautes allongent et affinent visuellement tes traits.",
+  square:  "Ton visage est de forme Carrée. Les tresses avec du volume adoucissent ta mâchoire.",
+  heart:   "Ton visage est en forme de Cœur. Les tresses avec du volume en bas équilibrent ton menton.",
+  long:    "Ton visage est de forme Longue. Les tresses latérales créent l'harmonie parfaite.",
   diamond: "Ton visage est de forme Diamant. Les tresses qui encadrent le visage te subliment.",
 };
-
-const WAITING_MSGS = [
-  "Pr\u00e9paration de ton nouveau look... \u2728",
-  "On ajuste la tresse \u00e0 ton visage... \uD83D\uDC51",
-  "Presque l\u00e0... Pr\u00e9pare-toi \u00e0 briller ! \uD83D\uDE0D",
-];
-
-const RESULT_MSGS = [
-  "Waouh \uD83D\uDE0D, tu es splendide !",
-  "Regarde cette Reine ! \u2728",
-  "Le style parfait pour toi. \uD83D\uDC51",
-];
 
 const TEASER_STYLES = [
   { key: "boxbraids",      label: "Box Braids" },
@@ -41,82 +29,14 @@ const STYLES_PER_PAGE = 3;
 // ─── ProtectedImg ─────────────────────────────────────────────────────────────
 const ProtectedImg = ({ src, alt, className, onClick }) => (
   <div className="relative w-full h-full" onClick={onClick}>
-    <img
-      src={src} alt={alt} className={className}
+    <img src={src} alt={alt} className={className}
       draggable={false} onContextMenu={(e) => e.preventDefault()}
-      style={{ userSelect: "none", WebkitUserSelect: "none" }}
-    />
+      style={{ userSelect: "none", WebkitUserSelect: "none" }} />
     <div className="absolute inset-0"
       onContextMenu={(e) => e.preventDefault()}
       onDragStart={(e) => e.preventDefault()} />
   </div>
 );
-
-// ─── CreditSuccessPopup ───────────────────────────────────────────────────────
-function CreditSuccessPopup({ data, onClose }) {
-  useEffect(() => {
-    const t = setTimeout(onClose, 4000);
-    return () => clearTimeout(t);
-  }, [onClose]);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[200] flex items-center justify-center px-6"
-      style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(10px)" }}
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ scale: 0.8, y: 40, opacity: 0 }}
-        animate={{ scale: 1, y: 0, opacity: 1 }}
-        exit={{ scale: 0.8, y: 40, opacity: 0 }}
-        transition={{ type: "spring", stiffness: 260, damping: 22 }}
-        className="w-full max-w-sm rounded-[2.5rem] p-8 text-center relative overflow-hidden"
-        style={{
-          background: "linear-gradient(160deg, #2C1A0E 0%, #3D2616 100%)",
-          border: "2px solid #C9963A",
-          boxShadow: "0 0 60px rgba(201,150,58,0.4)",
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {["\u2728","\uD83D\uDC8E","\uD83D\uDC51","\u2B50","\u2728","\uD83D\uDC9B","\uD83D\uDC51","\uD83D\uDC8E"].map((emoji, i) => (
-            <motion.div key={i} className="absolute text-lg" style={{ left: `${10 + i * 11}%` }}
-              initial={{ opacity: 0, y: 60 }} animate={{ opacity: [0, 1, 0], y: -80 }}
-              transition={{ delay: i * 0.15, duration: 1.8, repeat: Infinity, repeatDelay: 1.5 }}>
-              {emoji}
-            </motion.div>
-          ))}
-        </div>
-        <motion.div initial={{ scale: 0 }} animate={{ scale: [0, 1.2, 1] }}
-          transition={{ delay: 0.1, duration: 0.5 }} className="text-6xl mb-4">\uD83D\uDC8E</motion.div>
-        <h2 className="text-2xl font-black text-[#C9963A] mb-1">
-          F\u00e9licitations {data.userName} ! \uD83C\uDF89
-        </h2>
-        <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }} className="text-4xl font-black text-white my-4">
-          +{data.credits} cr\u00e9dits
-        </motion.p>
-        <p className="text-sm text-white/60 mb-2">
-          Pack <span className="text-[#C9963A] font-bold">{data.label}</span> activ\u00e9 !
-        </p>
-        <p className="text-xs text-white/40 mb-6">
-          Solde : <span className="text-white font-bold">{getCredits()} cr\u00e9dits</span>
-        </p>
-        <motion.div className="h-1 rounded-full bg-[#C9963A]/30 overflow-hidden mb-5">
-          <motion.div className="h-full bg-[#C9963A] rounded-full"
-            initial={{ width: "100%" }} animate={{ width: "0%" }}
-            transition={{ duration: 4, ease: "linear" }} />
-        </motion.div>
-        <button onClick={onClose}
-          className="w-full py-4 rounded-2xl font-black text-[#1A0A00] text-base"
-          style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}>
-          Continuer \u2728
-        </button>
-      </motion.div>
-    </motion.div>
-  );
-}
 
 // ─── Fireworks ────────────────────────────────────────────────────────────────
 function Fireworks({ onDone }) {
@@ -189,62 +109,48 @@ function Fireworks({ onDone }) {
   );
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-
+// ─── Composant principal ──────────────────────────────────────────────────────
 export default function Results() {
   const navigate = useNavigate();
 
-  const [faceShape, setFaceShape]   = useState("oval");
-  const [selfieUrl, setSelfieUrl]   = useState(null);
-  const [styles, setStyles]         = useState([]);
-  const [loadingIdx, setLoadingIdx] = useState(null);
-  const [resultImage, setResultImage] = useState(null);
-  const [resultMsg, setResultMsg]   = useState("");
-  const [errorMsg, setErrorMsg]     = useState("");
-  const [credits, setCredits]       = useState(0);
-  const [waitingMsgIdx, setWaitingMsgIdx] = useState(0);
-  const [zoomImage, setZoomImage]   = useState(null);
-  const [savesCount, setSavesCount] = useState(0);
-  const [creditPopup, setCreditPopup] = useState(null);
-  const [showVirtualTryOnModal, setShowVirtualTryOnModal] = useState(false);
+  const [faceShape, setFaceShape]     = useState("oval");
+  const [selfieUrl, setSelfieUrl]     = useState(null);
+  const [styles, setStyles]           = useState([]);
+  const [credits, setCredits]         = useState(0);
+  const [zoomImage, setZoomImage]     = useState(null);
+  const [errorMsg, setErrorMsg]       = useState("");
   const [showFireworks, setShowFireworks] = useState(false);
+  const [showVirtualTryOnModal, setShowVirtualTryOnModal] = useState(false);
 
-  // ── Sauvegarde ───────────────────────────────────────────────────────────
-  const [savePrenom, setSavePrenom] = useState(() => localStorage.getItem("afrotresse_user_name") || "");
-  const [saveEmail, setSaveEmail]   = useState(() => localStorage.getItem("afrotresse_email") || "");
-  const [saveDone, setSaveDone]     = useState(() => !!localStorage.getItem("afrotresse_email"));
+  // Sauvegarde profil
+  const [savePrenom, setSavePrenom]   = useState(() => localStorage.getItem("afrotresse_user_name") || "");
+  const [saveEmail, setSaveEmail]     = useState(() => localStorage.getItem("afrotresse_email") || "");
+  const [saveDone, setSaveDone]       = useState(() => !!localStorage.getItem("afrotresse_email"));
   const [displayName, setDisplayName] = useState(() => localStorage.getItem("afrotresse_user_name") || "");
-  const [saveOpen, setSaveOpen]     = useState(() => !localStorage.getItem("afrotresse_email"));
+  const [saveOpen, setSaveOpen]       = useState(() => !localStorage.getItem("afrotresse_email"));
 
-  // ── Favoris ──────────────────────────────────────────────────────────────
+  // Favoris
   const FREE_FAV_LIMIT = 3;
   const [favorites, setFavorites] = useState(() => {
     try { return JSON.parse(sessionStorage.getItem("afrotresse_session_favs") || "[]"); }
     catch { return []; }
   });
 
-  // ── Pagination ───────────────────────────────────────────────────────────
-  const [currentPage, setCurrentPage] = useState(() =>
-    parseInt(localStorage.getItem("afrotresse_current_page") || "1", 10)
-  );
-  const [unlockedPages, setUnlockedPages] = useState(() =>
-    parseInt(localStorage.getItem("afrotresse_unlocked_pages") || "1", 10)
-  );
+  // Pagination
+  const [currentPage, setCurrentPage]     = useState(() => parseInt(localStorage.getItem("afrotresse_current_page") || "1", 10));
+  const [unlockedPages, setUnlockedPages] = useState(() => parseInt(localStorage.getItem("afrotresse_unlocked_pages") || "1", 10));
 
-  // ── Stats vues/likes ─────────────────────────────────────────────────────
+  // Stats
   const [styleStats, setStyleStats] = useState(() => {
     try { return JSON.parse(localStorage.getItem("afrotresse_style_stats") || "{}"); }
     catch { return {}; }
   });
 
-  const resultRef          = useRef(null);
-  const errorRef           = useRef(null);
-  const waitingIntervalRef = useRef(null);
-  const topRef             = useRef(null);
-
+  const topRef   = useRef(null);
+  const errorRef = useRef(null);
   const userName = localStorage.getItem("afrotresse_user_name") || "Reine";
 
-  // ── Init depuis sessionStorage ───────────────────────────────────────────
+  // ── Init depuis sessionStorage ──────────────────────────────
   useEffect(() => {
     const raw = sessionStorage.getItem("afrotresse_results");
     if (raw) {
@@ -276,7 +182,7 @@ export default function Results() {
     setCredits(getCredits());
   }, []);
 
-  // ── Vues/likes en temps réel ─────────────────────────────────────────────
+  // Vues/likes en temps réel
   useEffect(() => {
     const viewInterval = setInterval(() => {
       setStyleStats(prev => {
@@ -303,23 +209,7 @@ export default function Results() {
     return () => { clearInterval(viewInterval); clearInterval(likeInterval); };
   }, []);
 
-  // ── Polling popup crédit ─────────────────────────────────────────────────
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const raw = sessionStorage.getItem("afrotresse_credit_success");
-      if (raw) {
-        try {
-          const data = JSON.parse(raw);
-          sessionStorage.removeItem("afrotresse_credit_success");
-          setCredits(getCredits());
-          setCreditPopup(data);
-        } catch (e) {}
-      }
-    }, 500);
-    return () => clearInterval(interval);
-  }, []);
-
-  // ── Pagination sans doublon ──────────────────────────────────────────────
+  // Pagination
   const getShuffledStyles = (shuffleSeed) => {
     const seeded = (seed) => {
       let s = seed;
@@ -367,52 +257,6 @@ export default function Results() {
     topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  const handleTransform = async (style, index) => {
-    if (!hasCredits() || !canTransform()) { navigate("/credits"); return; }
-    setErrorMsg(""); setResultImage(null); setLoadingIdx(index); setWaitingMsgIdx(0); setResultMsg("");
-    let idx = 0;
-    waitingIntervalRef.current = setInterval(() => {
-      idx = (idx + 1) % WAITING_MSGS.length;
-      setWaitingMsgIdx(idx);
-    }, 3000);
-    try {
-      const selfieBase64 = selfieUrl?.split(",")[1] || null;
-      const selfieType   = selfieUrl?.match(/:(.*?);/)?.[1] || "image/jpeg";
-      const styleKey     = style.id?.replace(/-/g, "") || style.id;
-      const refImage     = `${window.location.origin}/styles/${styleKey}-top.jpg`;
-      const res = await fetch("/api/falGenerate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ selfieBase64, selfieType, styleImageUrl: refImage, faceShape, styleId: style.id }),
-      });
-      const data = await res.json();
-      clearInterval(waitingIntervalRef.current);
-      if (!res.ok || !data.imageUrl) {
-        setErrorMsg(data?.error || "G\u00e9n\u00e9ration \u00e9chou\u00e9e. R\u00e9essaie.");
-        setTimeout(() => errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
-        return;
-      }
-      consumeTransform(); addSeenStyleId(style.id); setCredits(getCredits());
-      const prev = parseInt(localStorage.getItem("afrotresse_styles_generated") || "0", 10);
-      localStorage.setItem("afrotresse_styles_generated", String(prev + 1));
-      setResultImage(data.imageUrl);
-      setResultMsg(RESULT_MSGS[Math.floor(Math.random() * RESULT_MSGS.length)]);
-      setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 400);
-    } catch {
-      clearInterval(waitingIntervalRef.current);
-      setErrorMsg("Connexion impossible. R\u00e9essaie.");
-      setTimeout(() => errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
-    } finally { setLoadingIdx(null); }
-  };
-
-  const handleShare = async (text, url) => {
-    try {
-      if (navigator.share) { await navigator.share({ title: "AfroTresse", text, url: url || window.location.href }); }
-      else { await navigator.clipboard.writeText(text); alert("Lien copi\u00e9 !"); }
-    } catch (e) {}
-  };
-
-  // "Reine" par défaut si prénom vide
   const handleSaveProfile = () => {
     const nom = savePrenom.trim() || "Reine";
     localStorage.setItem("afrotresse_user_name", nom);
@@ -434,7 +278,7 @@ export default function Results() {
     }
     const creditsFree = !localStorage.getItem("afrotresse_email");
     if (creditsFree && favorites.length >= FREE_FAV_LIMIT) {
-      setErrorMsg("\uD83D\uDC8E Limite de 3 favoris gratuits atteinte \u2014 sauvegarde ton compte pour en ajouter plus !");
+      setErrorMsg("💎 Limite de 3 favoris gratuits atteinte — sauvegarde ton compte pour en ajouter plus !");
       setTimeout(() => errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
       return;
     }
@@ -448,30 +292,10 @@ export default function Results() {
     }
   };
 
-  const handleSave = () => {
-    if (!hasCredits() || getCredits() <= 0) { navigate("/credits"); return false; }
-    const newCount = savesCount + 1;
-    setSavesCount(newCount);
-    if (newCount % 3 === 0) {
-      const debited = consumeCredits(1);
-      if (!debited) {
-        setErrorMsg("\u274C Pas assez de cr\u00e9dits pour sauvegarder.");
-        setTimeout(() => errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
-        return false;
-      }
-      setCredits(getCredits());
-      setErrorMsg("\u2705 3 sauvegardes = 1 cr\u00e9dit d\u00e9bit\u00e9 !");
-    } else {
-      setErrorMsg(`\uD83D\uDCBE ${newCount % 3}/3 sauvegardes \u2014 1 cr\u00e9dit bient\u00f4t utilis\u00e9`);
-    }
-    setTimeout(() => errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
-    return true;
-  };
-
   const faceText = FACE_SHAPE_TEXTS[faceShape] || "";
 
   // ══════════════════════════════════════════════════════════════════════════
-  // ÉCRAN VIDE — Option A (nouvelle utilisatrice, aucun résultat)
+  // OPTION A — Nouvelle utilisatrice, aucun résultat
   // ══════════════════════════════════════════════════════════════════════════
   if (!styles.length) {
     return (
@@ -479,22 +303,18 @@ export default function Results() {
 
         {/* Hero couronne */}
         <div className="relative h-52 overflow-hidden bg-[#2C1A0E] flex items-center justify-center">
-          <div
-            className="absolute inset-0 flex flex-col items-center justify-center"
-            style={{ background: "linear-gradient(160deg, rgba(201,150,58,0.15) 0%, rgba(44,26,14,0.7) 100%)" }}
-          >
+          <div className="absolute inset-0 flex flex-col items-center justify-center"
+            style={{ background: "linear-gradient(160deg, rgba(201,150,58,0.15) 0%, rgba(44,26,14,0.7) 100%)" }}>
             <motion.div
               initial={{ scale: 0 }} animate={{ scale: 1 }}
               transition={{ type: "spring", stiffness: 200, damping: 18 }}
-              className="text-5xl mb-3"
-            >
-              \uD83D\uDC51
+              className="text-5xl mb-3">
+              👑
             </motion.div>
             <motion.p
               initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="text-white font-black text-2xl text-center px-4 leading-tight"
-            >
+              className="text-white font-black text-2xl text-center px-4 leading-tight">
               Tes styles parfaits<br />
               <span className="text-[#C9963A]">t&apos;attendent</span>
             </motion.p>
@@ -508,10 +328,9 @@ export default function Results() {
           {/* Titre + accroche */}
           <motion.div
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }} className="mb-5"
-          >
+            transition={{ delay: 0.15 }} className="mb-5">
             <h2 className="text-xl font-black text-white mb-2">
-              D\u00e9couvre les tresses faites pour toi \uD83D\uDC9B
+              Découvre les tresses faites pour toi 💛
             </h2>
             <p className="text-[12px] text-white/50 leading-relaxed">
               Un selfie suffit. Notre IA analyse la forme de ton visage et te recommande les styles qui te mettront le plus en valeur.
@@ -521,18 +340,16 @@ export default function Results() {
           {/* 3 étapes numérotées */}
           <motion.div
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.25 }} className="flex flex-col gap-3 mb-8"
-          >
+            transition={{ delay: 0.25 }} className="flex flex-col gap-3 mb-8">
             {[
-              { icon: "\uD83D\uDCF8", label: "Prends un selfie",           sub: "Ou uploade une photo existante" },
-              { icon: "\uD83D\uDD0D", label: "Analyse IA instantan\u00e9e", sub: "Forme de visage d\u00e9tect\u00e9e en secondes" },
-              { icon: "\u2728",       label: "Styles personnalis\u00e9s",    sub: "3 recommandations taill\u00e9es pour toi" },
+              { icon: "📸", label: "Prends un selfie",            sub: "Ou uploade une photo existante" },
+              { icon: "🔍", label: "Analyse IA instantanée",      sub: "Forme de visage détectée en secondes" },
+              { icon: "✨", label: "Styles personnalisés",         sub: "3 recommandations taillées pour toi" },
             ].map((step, i) => (
               <motion.div key={i}
                 initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.3 + i * 0.08 }}
-                className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl px-4 py-3"
-              >
+                className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl px-4 py-3">
                 <span className="text-2xl">{step.icon}</span>
                 <div>
                   <p className="text-sm font-bold text-white leading-none">{step.label}</p>
@@ -548,8 +365,7 @@ export default function Results() {
           {/* Aperçu styles floutés */}
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }} className="mb-8"
-          >
+            transition={{ delay: 0.5 }} className="mb-8">
             <p className="text-[10px] text-white/30 uppercase tracking-widest mb-3 text-center">
               Styles qui t&apos;attendent
             </p>
@@ -558,16 +374,13 @@ export default function Results() {
                 <motion.div key={s.key}
                   initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.5 + i * 0.06 }}
-                  className="relative h-24 rounded-2xl overflow-hidden"
-                >
-                  <img
-                    src={`/styles/${s.key}-face.jpg`} alt={s.label}
+                  className="relative h-24 rounded-2xl overflow-hidden">
+                  <img src={`/styles/${s.key}-face.jpg`} alt={s.label}
                     className="w-full h-full object-cover"
                     style={{ filter: "brightness(0.45) blur(1px)" }}
-                    draggable={false} onContextMenu={(e) => e.preventDefault()}
-                  />
+                    draggable={false} onContextMenu={(e) => e.preventDefault()} />
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
-                    <span className="text-white/50 text-lg">\uD83D\uDD12</span>
+                    <span className="text-white/50 text-lg">🔒</span>
                     <span className="text-[9px] text-white/30 font-semibold text-center px-1 leading-tight">
                       {s.label}
                     </span>
@@ -577,7 +390,7 @@ export default function Results() {
             </div>
           </motion.div>
 
-          {/* CTA principal */}
+          {/* CTA */}
           <motion.button
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.65 }}
@@ -587,18 +400,15 @@ export default function Results() {
             style={{
               background: "linear-gradient(135deg, #C9963A, #E8B96A)",
               boxShadow: "0 0 30px rgba(201,150,58,0.4)",
-            }}
-          >
-            \uD83D\uDCF8 Prendre mon selfie
+            }}>
+            📸 Prendre mon selfie
           </motion.button>
 
-          {/* Note */}
           <motion.p
             initial={{ opacity: 0 }} animate={{ opacity: 1 }}
             transition={{ delay: 0.8 }}
-            className="text-center text-[10px] text-white/30 mt-3"
-          >
-            2 cr\u00e9dits offerts \u2022 Aucune inscription requise
+            className="text-center text-[10px] text-white/30 mt-3">
+            2 crédits offerts • Aucune inscription requise
           </motion.p>
         </div>
       </div>
@@ -613,18 +423,13 @@ export default function Results() {
 
       {showFireworks && <Fireworks onDone={() => setShowFireworks(false)} />}
 
-      <AnimatePresence>
-        {creditPopup && <CreditSuccessPopup data={creditPopup} onClose={() => setCreditPopup(null)} />}
-      </AnimatePresence>
-
       <div ref={topRef} />
 
       {/* HEADER */}
       <motion.div
         initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
         className="mb-10 flex flex-row gap-5 items-center bg-white/5 p-5 rounded-[2.5rem] border border-white/10"
-        style={{ boxShadow: "0 0 40px rgba(201,150,58,0.2)" }}
-      >
+        style={{ boxShadow: "0 0 40px rgba(201,150,58,0.2)" }}>
         <div className="relative shrink-0">
           {selfieUrl ? (
             <img src={selfieUrl} className="w-20 h-20 rounded-2xl border-2 border-[#C9963A] object-cover" alt="Moi"
@@ -637,8 +442,8 @@ export default function Results() {
         <div className="flex flex-col flex-1">
           <h1 className="font-bold text-3xl text-[#C9963A]">
             {displayName
-              ? <><span className="text-[#FAF4EC]">{displayName}</span>, voici tes r\u00e9sultats \u2728</>
-              : <>Voici tes r\u00e9sultats \u2728</>
+              ? <><span className="text-[#FAF4EC]">{displayName}</span>, voici tes résultats ✨</>
+              : <>Voici tes résultats ✨</>
             }
           </h1>
           <p className="text-[11px] opacity-80 leading-tight mt-1 max-w-xs">{faceText}</p>
@@ -649,25 +454,23 @@ export default function Results() {
       <motion.div
         initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
         className="mb-4 px-4 py-3 rounded-2xl flex items-start gap-3"
-        style={{ background: "rgba(201,150,58,0.08)", border: "1px solid rgba(201,150,58,0.25)" }}
-      >
-        <span className="text-lg mt-0.5">\u26a0\ufe0f</span>
+        style={{ background: "rgba(201,150,58,0.08)", border: "1px solid rgba(201,150,58,0.25)" }}>
+        <span className="text-lg mt-0.5">⚠️</span>
         <p className="text-[11px] text-white/60 leading-relaxed">
-          <span className="text-[#C9963A] font-bold">Tes r\u00e9sultats ne sont pas sauvegard\u00e9s.</span>
-          {" "}Ajoute tes styles en favoris pour les conserver, ou sauvegarde ton compte ci-dessous.
+          <span className="text-[#C9963A] font-bold">Tes résultats ne sont pas sauvegardés.</span>
+          {" "}Ajoute tes styles en favoris ou sauvegarde ton compte ci-dessous.
         </p>
       </motion.div>
 
-      {/* BLOC SAUVEGARDE — pliable */}
+      {/* BLOC SAUVEGARDE */}
       {saveDone ? (
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
           className="mb-6 px-4 py-3 rounded-2xl flex items-center gap-3"
-          style={{ background: "rgba(39,174,96,0.1)", border: "1px solid rgba(39,174,96,0.3)" }}
-        >
-          <span className="text-lg">\u2705</span>
+          style={{ background: "rgba(39,174,96,0.1)", border: "1px solid rgba(39,174,96,0.3)" }}>
+          <span className="text-lg">✅</span>
           <p className="text-[12px] text-green-300 font-semibold">
-            R\u00e9sultats sauvegard\u00e9s pour <span className="font-black">{displayName || saveEmail}</span> !
+            Résultats sauvegardés pour <span className="font-black">{displayName || saveEmail}</span> !
           </p>
         </motion.div>
       ) : (
@@ -675,7 +478,7 @@ export default function Results() {
           style={{ background: "linear-gradient(135deg, #3D2616, #2C1A0E)", border: "1.5px solid rgba(201,150,58,0.35)" }}>
           <button onClick={() => setSaveOpen(o => !o)}
             className="w-full flex items-center justify-between px-5 py-4 active:opacity-80 transition-opacity">
-            <span className="font-black text-sm text-white">Sauvegarder mes r\u00e9sultats \u2728</span>
+            <span className="font-black text-sm text-white">Sauvegarder mes résultats ✨</span>
             <motion.span animate={{ rotate: saveOpen ? 180 : 0 }} transition={{ duration: 0.25 }}
               className="text-[#C9963A] text-base leading-none">&#9662;</motion.span>
           </button>
@@ -690,7 +493,7 @@ export default function Results() {
                     Retrouve tes favoris sur n&apos;importe quel appareil.
                   </p>
                   <div className="flex flex-col gap-2 mb-3">
-                    <input type="text" placeholder="Ton pr\u00e9nom..."
+                    <input type="text" placeholder="Ton prénom..."
                       value={savePrenom} onChange={e => setSavePrenom(e.target.value)}
                       className="w-full px-4 py-2.5 rounded-xl text-sm font-semibold outline-none"
                       style={{ background: "rgba(92,51,23,0.5)", border: "1px solid rgba(201,150,58,0.3)", color: "#FAF4EC" }} />
@@ -703,7 +506,7 @@ export default function Results() {
                   <button onClick={handleSaveProfile}
                     className="w-full py-3 rounded-xl font-black text-sm text-[#2C1A0E]"
                     style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}>
-                    Sauvegarder mes r\u00e9sultats \u2728
+                    Sauvegarder mes résultats ✨
                   </button>
                 </div>
               </motion.div>
@@ -712,46 +515,14 @@ export default function Results() {
         </div>
       )}
 
-      {/* MESSAGE ERREUR / STATUT */}
+      {/* MESSAGE ERREUR */}
       <AnimatePresence>
         {errorMsg && (
           <motion.div ref={errorRef} initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-            className={`mb-4 border rounded-xl p-3 ${errorMsg.includes("\u2705") || errorMsg.includes("\u2728") ? "bg-green-900/30 border-green-500/50" : "bg-red-900/30 border-red-500/50"}`}>
-            <p className={errorMsg.includes("\u2705") || errorMsg.includes("\u2728") ? "text-green-200 text-sm" : "text-red-200 text-sm"}>
+            className={`mb-4 border rounded-xl p-3 ${errorMsg.includes("✅") || errorMsg.includes("✨") ? "bg-green-900/30 border-green-500/50" : "bg-red-900/30 border-red-500/50"}`}>
+            <p className={errorMsg.includes("✅") || errorMsg.includes("✨") ? "text-green-200 text-sm" : "text-red-200 text-sm"}>
               {errorMsg}
             </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* RÉSULTAT VIRTUAL TRY-ON */}
-      <AnimatePresence>
-        {resultImage && (
-          <motion.div ref={resultRef}
-            initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
-            className="mb-6 bg-[#3D2616] rounded-[2.5rem] overflow-hidden border-2 border-[#C9963A]"
-            style={{ boxShadow: "0 0 40px rgba(201,150,58,0.2)" }}>
-            <div className="px-5 pt-5 pb-3">
-              <h3 className="text-[#C9963A] font-bold text-xl">{resultMsg || "Magnifique !"}</h3>
-              <p className="text-[11px] mt-1 opacity-70">Ce style te met vraiment en valeur. Montre-le \u00e0 ta coiffeuse !</p>
-            </div>
-            <div className="relative select-none" onContextMenu={(e) => e.preventDefault()}>
-              <img src={resultImage} alt="R\u00e9sultat" className="w-full object-cover"
-                draggable={false} onContextMenu={(e) => e.preventDefault()}
-                style={{ userSelect: "none", WebkitUserSelect: "none" }} />
-              <div className="absolute inset-0" onContextMenu={(e) => e.preventDefault()} onDragStart={(e) => e.preventDefault()} />
-            </div>
-            <div className="p-5 space-y-2">
-              <button onClick={() => handleShare("Regarde le style que j\u2019ai choisi avec AfroTresse !", resultImage)}
-                className="w-full py-4 rounded-2xl font-bold text-base shadow-xl text-[#2C1A0E]"
-                style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}>
-                Envoyer \u00e0 ma coiffeuse
-              </button>
-              <button onClick={() => setResultImage(null)}
-                className="w-full py-3 rounded-2xl text-sm font-semibold bg-white/10 text-white/70 border border-white/10">
-                Fermer
-              </button>
-            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -768,8 +539,8 @@ export default function Results() {
             <motion.div key={style.id || index}
               initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.08 }}
-              className="bg-[#3D2616] rounded-[2.5rem] overflow-hidden border border-[#C9963A]/20 shadow-2xl"
-            >
+              className="bg-[#3D2616] rounded-[2.5rem] overflow-hidden border border-[#C9963A]/20 shadow-2xl">
+
               {/* Galerie 3 vues */}
               <div className="grid grid-cols-3 gap-0.5 h-72 bg-black/40">
                 <div className="col-span-2 h-full overflow-hidden">
@@ -787,8 +558,8 @@ export default function Results() {
 
               {/* Stats */}
               <div className="px-6 py-3 flex gap-5 text-[10px] font-black uppercase tracking-widest text-[#C9963A]/80 border-b border-white/5">
-                <span>\uD83D\uDC41\uFE0F {(styleStats[style.id]?.views || 0).toLocaleString("fr-FR")} vues</span>
-                <span>\u2764\uFE0F {(styleStats[style.id]?.likes || 0).toLocaleString("fr-FR")} likes</span>
+                <span>👁️ {(styleStats[style.id]?.views || 0).toLocaleString("fr-FR")} vues</span>
+                <span>❤️ {(styleStats[style.id]?.likes || 0).toLocaleString("fr-FR")} likes</span>
               </div>
 
               {/* Infos + actions */}
@@ -805,17 +576,17 @@ export default function Results() {
                         background: isFav(style.id) ? "rgba(201,150,58,0.25)" : "rgba(255,255,255,0.05)",
                         border: isFav(style.id) ? "1.5px solid #C9963A" : "1.5px solid rgba(255,255,255,0.1)",
                       }}>
-                      <span className="text-base">{isFav(style.id) ? "\u2764\uFE0F" : "\uD83E\uDD0D"}</span>
+                      <span className="text-base">{isFav(style.id) ? "❤️" : "🤍"}</span>
                     </button>
                   </div>
                 </div>
 
                 <p className="text-[11px] opacity-70 mb-6 leading-relaxed">
-                  {style.description || "Un style unique adapt\u00e9 \u00e0 ta morphologie"}
+                  {style.description || "Un style unique adapté à ta morphologie"}
                 </p>
 
                 <div className="flex gap-2 flex-wrap mb-4">
-                  {(style.tags || ["Tendance", "\u00c9l\u00e9gant"]).slice(0, 3).map((tag, i) => (
+                  {(style.tags || ["Tendance", "Élégant"]).slice(0, 3).map((tag, i) => (
                     <span key={i} className="text-[10px] bg-white/10 text-white/80 px-3 py-1 rounded-full">{tag}</span>
                   ))}
                 </div>
@@ -832,11 +603,11 @@ export default function Results() {
                     animate={{ x: ["-100%", "200%"] }}
                     transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 3, ease: "easeInOut" }} />
                   <span className="flex items-center justify-center gap-2.5 relative">
-                    <span className="text-lg">\uD83E\uDDD4</span>
+                    <span className="text-lg">🧖‍♀️</span>
                     <span className="text-white/50 font-bold text-sm">Essayer virtuellement</span>
                     <span className="flex items-center gap-1 text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full"
                       style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)", color: "#2C1A0E", boxShadow: "0 0 10px rgba(201,150,58,0.4)" }}>
-                      \u23f3 Bient\u00f4t
+                      ⏳ Bientôt
                     </span>
                   </span>
                 </button>
@@ -863,13 +634,13 @@ export default function Results() {
               boxShadow: "0 0 30px rgba(201,150,58,0.1)",
             }}>
             <span className="flex items-center justify-center gap-2 text-[#C9963A]">
-              \u2728 Voir 3 autres styles
+              ✨ Voir 3 autres styles
               <span className="text-[10px] bg-[#C9963A]/20 border border-[#C9963A]/40 text-[#C9963A] px-2 py-0.5 rounded-full font-black">
-                1 cr\u00e9dit
+                1 crédit
               </span>
             </span>
             <p className="text-[10px] text-white/30 mt-1 font-normal">
-              Solde actuel : {credits} cr\u00e9dit{credits > 1 ? "s" : ""}
+              Solde actuel : {credits} crédit{credits > 1 ? "s" : ""}
             </p>
           </motion.button>
         </motion.div>
@@ -904,22 +675,22 @@ export default function Results() {
             </button>
           </div>
           <p className="text-[10px] text-[#C9963A]/60">
-            Solde : {credits} cr\u00e9dit{credits > 1 ? "s" : ""}
+            Solde : {credits} crédit{credits > 1 ? "s" : ""}
           </p>
           <motion.button whileTap={{ scale: 0.97 }} onClick={handleGenerateMore}
             className="mt-2 px-6 py-3 rounded-2xl font-bold text-sm relative overflow-hidden"
             style={{ background: "linear-gradient(135deg, #3D2616, #4A2E1A)", border: "1.5px solid rgba(201,150,58,0.4)" }}>
             <span className="flex items-center gap-2 text-[#C9963A]">
-              \u2728 Voir 3 autres styles
+              ✨ Voir 3 autres styles
               <span className="text-[9px] bg-[#C9963A]/20 border border-[#C9963A]/40 text-[#C9963A] px-1.5 py-0.5 rounded-full font-black">
-                -1 cr\u00e9dit
+                -1 crédit
               </span>
             </span>
           </motion.button>
         </motion.div>
       )}
 
-      {/* MODALE VIRTUAL TRY-ON — Coming Soon */}
+      {/* MODALE VIRTUAL TRY-ON */}
       <AnimatePresence>
         {showVirtualTryOnModal && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -935,32 +706,23 @@ export default function Results() {
                 boxShadow: "0 0 60px rgba(201,150,58,0.3)",
               }}
               onClick={(e) => e.stopPropagation()}>
-              <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                {["\u2728","\uD83E\uDDD4","\uD83D\uDC51","\uD83D\uDC9B","\u2728","\uD83C\uDF1F","\uD83D\uDC51","\u2728"].map((emoji, i) => (
-                  <motion.div key={i} className="absolute text-base" style={{ left: `${8 + i * 12}%` }}
-                    initial={{ opacity: 0, y: 50 }} animate={{ opacity: [0, 1, 0], y: -70 }}
-                    transition={{ delay: i * 0.2, duration: 2, repeat: Infinity, repeatDelay: 2 }}>
-                    {emoji}
-                  </motion.div>
-                ))}
-              </div>
               <motion.div initial={{ scale: 0 }} animate={{ scale: [0, 1.2, 1] }}
-                transition={{ delay: 0.1, duration: 0.5 }} className="text-5xl mb-4">\uD83E\uDDD4</motion.div>
+                transition={{ delay: 0.1, duration: 0.5 }} className="text-5xl mb-4">🧖‍♀️</motion.div>
               <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full mb-4 inline-block"
                 style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)", color: "#2C1A0E" }}>
-                Bient\u00f4t disponible
+                Bientôt disponible
               </span>
               <h2 className="text-2xl font-black text-white mt-3 mb-2 leading-tight">
-                Virtual Try-On \u2728
+                Virtual Try-On ✨
               </h2>
               <p className="text-sm text-white/60 mb-6 leading-relaxed">
-                Vois-toi <span className="text-[#C9963A] font-bold">r\u00e9ellement</span> avec la coiffure gr\u00e2ce \u00e0 notre IA \u2014 disponible tr\u00e8s bient\u00f4t !
+                Vois-toi <span className="text-[#C9963A] font-bold">réellement</span> avec la coiffure grâce à notre IA — disponible très bientôt !
               </p>
               <div className="flex flex-col gap-3 mb-6">
                 {[
-                  { icon: "\uD83D\uDCF8", text: "Superposition IA sur ton selfie" },
-                  { icon: "\uD83C\uDFA8", text: "Rendu r\u00e9aliste en quelques secondes" },
-                  { icon: "\uD83D\uDCBE", text: "Sauvegarde & partage facilement" },
+                  { icon: "📸", text: "Superposition IA sur ton selfie" },
+                  { icon: "🎨", text: "Rendu réaliste en quelques secondes" },
+                  { icon: "💾", text: "Sauvegarde & partage facilement" },
                 ].map((item, i) => (
                   <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.2 + i * 0.1 }}
@@ -973,7 +735,7 @@ export default function Results() {
               <button onClick={() => setShowVirtualTryOnModal(false)}
                 className="w-full py-4 rounded-2xl font-black text-[#2C1A0E] text-base"
                 style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}>
-                J&apos;ai h\u00e2te ! \uD83D\uDD25
+                J&apos;ai hâte ! 🔥
               </button>
             </motion.div>
           </motion.div>
@@ -997,25 +759,11 @@ export default function Results() {
                 onContextMenu={(e) => e.preventDefault()} onDragStart={(e) => e.preventDefault()} />
             </div>
             <div className="mt-10 flex gap-4 w-full max-w-xs">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  const saved = handleSave();
-                  if (!saved) return;
-                  const l = document.createElement("a");
-                  l.href = zoomImage;
-                  l.download = `afrotresse-${Date.now()}.jpg`;
-                  l.click();
-                }}
-                className="flex-1 py-4 bg-[#C9963A] text-[#2C1A0E] rounded-2xl font-black shadow-xl">
-                \uD83D\uDCE5 Sauvegarder
-              </button>
               <button onClick={() => setZoomImage(null)}
-                className="px-8 py-4 bg-white/10 text-white rounded-2xl font-bold backdrop-blur-md border border-white/10">
-                \u2715
+                className="flex-1 py-4 bg-white/10 text-white rounded-2xl font-bold backdrop-blur-md border border-white/10">
+                ✕ Fermer
               </button>
             </div>
-            <p className="text-[10px] text-white/40 mt-4 uppercase font-bold tracking-widest">3 saves = 1 cr\u00e9dit</p>
           </motion.div>
         )}
       </AnimatePresence>
@@ -1033,7 +781,7 @@ export default function Results() {
           className="w-12 h-12 rounded-lg flex flex-col items-center justify-center shadow-lg relative border border-white/10 active:scale-95 transition-all"
           style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}>
           <span className="text-[6px] font-black text-[#2C1A0E] uppercase leading-none">Gen</span>
-          <span className="text-base">\u2728</span>
+          <span className="text-base">✨</span>
           <div className="absolute -top-1 -right-1 bg-[#2C1A0E] text-[#C9963A] text-[7px] px-1 py-0 rounded-full font-bold border border-[#C9963A]">
             -1
           </div>
