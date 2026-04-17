@@ -173,4 +173,4 @@ export function useFaceAnalysis() {
     resetFaceAnalysisLock,
     clearImageCache,
   };
-                                      }
+}
