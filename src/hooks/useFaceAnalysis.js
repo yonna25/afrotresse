@@ -1,16 +1,7 @@
 /**
- * useFaceAnalysis.js \u2014 AfroTresse
- * Exporte analyzeFaceWithAI (appel\u00e9 par faceAnalysis.js)
- * Protections :
- *   \u2705 Anti double analyse (isAnalyzing)
- *   \u2705 Anti refresh / back navigation (sessionStorage)
- *   \u2705 Timeout API 10s (AbortController)
- *   \u2705 RequestId unique par envoi
- *   \u2705 Fingerprint navigateur (anti changement IP/VPN)
- *   \u2705 Cache image SHA-256 (sessionStorage)
+ * useFaceAnalysis.js — AfroTresse
+ * FIX : @mediapipe/face_mesh chargé via <script> CDN (évite le bundling Vite/Rollup)
  */
-
-// \u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 async function hashBlob(blob) {
   const buffer = await blob.arrayBuffer();
@@ -30,28 +21,43 @@ function generateUUID() {
   });
 }
 
-// \u2500\u2500 \u00c9tat global (module-level) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 let isAnalyzing = false;
 const STORAGE_KEY  = "afrotresse_last_analysis_done";
 const CACHE_PREFIX = "afrotresse_cache_";
 
-// \u2500\u2500 Export principal \u2014 appel\u00e9 par faceAnalysis.js \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// Charge MediaPipe via <script> CDN — jamais bundlé par Vite/Rollup
+function loadFaceMeshCDN() {
+  return new Promise((resolve, reject) => {
+    if (window.FaceMesh) {
+      resolve(window.FaceMesh);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js";
+    script.crossOrigin = "anonymous";
+    script.onload = () => {
+      if (window.FaceMesh) {
+        resolve(window.FaceMesh);
+      } else {
+        reject(new Error("FaceMesh introuvable après chargement CDN"));
+      }
+    };
+    script.onerror = () => reject(new Error("Échec chargement MediaPipe CDN"));
+    document.head.appendChild(script);
+  });
+}
+
 export async function analyzeFaceWithAI(photoData, timeoutMs = 10000) {
-
-  // Garde 1 : double analyse
   if (isAnalyzing) {
-    throw new Error("Analyse d\u00e9j\u00e0 en cours");
+    throw new Error("Analyse déjà en cours");
   }
-
-  // Garde 2 : anti refresh / back navigation
   if (sessionStorage.getItem(STORAGE_KEY)) {
-    throw new Error("Analyse d\u00e9j\u00e0 effectu\u00e9e dans cette session");
+    throw new Error("Analyse déjà effectuée dans cette session");
   }
 
   isAnalyzing = true;
 
   try {
-    // R\u00e9soudre le Blob
     let file;
     if (photoData instanceof Blob) {
       file = photoData;
@@ -59,10 +65,9 @@ export async function analyzeFaceWithAI(photoData, timeoutMs = 10000) {
       const res = await fetch(photoData);
       file = await res.blob();
     } else {
-      throw new Error("Format image non support\u00e9");
+      throw new Error("Format image non supporté");
     }
 
-    // Cache image SHA-256
     let imageHash = null;
     try {
       imageHash = await hashBlob(file);
@@ -72,16 +77,14 @@ export async function analyzeFaceWithAI(photoData, timeoutMs = 10000) {
         return JSON.parse(cached);
       }
     } catch {
-      // Hash \u00e9chou\u00e9 \u2192 continuer sans cache
+      // Hash échoué → continuer sans cache
     }
 
-    // Analyse locale MediaPipe
     const faceShape = await detectFaceShapeLocal(file);
     if (!faceShape) {
-      throw new Error("Impossible de d\u00e9tecter le visage");
+      throw new Error("Impossible de détecter le visage");
     }
 
-    // Fingerprint navigateur
     let fingerprintId = null;
     try {
       const FingerprintJS = await import("@fingerprintjs/fingerprintjs");
@@ -89,10 +92,9 @@ export async function analyzeFaceWithAI(photoData, timeoutMs = 10000) {
       const fpResult = await fp.get();
       fingerprintId = fpResult.visitorId;
     } catch {
-      // FingerprintJS indisponible \u2192 IP seule s'applique
+      // FingerprintJS indisponible
     }
 
-    // Appel API
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     const requestId = generateUUID();
@@ -118,8 +120,6 @@ export async function analyzeFaceWithAI(photoData, timeoutMs = 10000) {
     }
 
     const data = await response.json();
-
-    // Verrou session \u2014 succ\u00e8s uniquement
     sessionStorage.setItem(STORAGE_KEY, "true");
 
     const result = {
@@ -129,12 +129,11 @@ export async function analyzeFaceWithAI(photoData, timeoutMs = 10000) {
       creditsRemaining: data.creditsRemaining,
     };
 
-    // Mise en cache
     if (imageHash) {
       try {
         sessionStorage.setItem(`${CACHE_PREFIX}${imageHash}`, JSON.stringify(result));
       } catch {
-        // sessionStorage plein \u2192 ignorer
+        // sessionStorage plein → ignorer
       }
     }
 
@@ -145,18 +144,15 @@ export async function analyzeFaceWithAI(photoData, timeoutMs = 10000) {
   }
 }
 
-// \u2500\u2500 Reset manuel \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 export function resetFaceAnalysisLock() {
   sessionStorage.removeItem(STORAGE_KEY);
   isAnalyzing = false;
 }
 
-// \u2500\u2500 D\u00e9tection faciale locale (MediaPipe) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 async function detectFaceShapeLocal(photoBlob) {
   try {
-    const module = await import("@mediapipe/face_mesh");
-    const FaceMesh = module.default || module.FaceMesh;
-    if (!FaceMesh) throw new Error("MediaPipe Face Mesh non disponible");
+    // Chargement CDN — contourne le bundler Vite/Rollup complètement
+    const FaceMesh = await loadFaceMeshCDN();
 
     const faceMesh = new FaceMesh({
       locateFile: (file) =>
@@ -170,13 +166,9 @@ async function detectFaceShapeLocal(photoBlob) {
       minTrackingConfidence: 0.5,
     });
 
-    // \u2705 FIX 1 : initialize() n'existe pas dans @mediapipe/face_mesh \u2014 supprim\u00e9
-    // \u2705 FIX 2 : send() ne retourne pas les r\u00e9sultats \u2014 on utilise onResults()
-
     const objectUrl = URL.createObjectURL(photoBlob);
 
     return new Promise((resolve, reject) => {
-      // Enregistrer le callback AVANT send()
       faceMesh.onResults((results) => {
         URL.revokeObjectURL(objectUrl);
         if (!results?.multiFaceLandmarks?.length) {
@@ -187,22 +179,18 @@ async function detectFaceShapeLocal(photoBlob) {
       });
 
       const img = new Image();
-
       img.onload = async () => {
         try {
-          // send() est async, il appellera onResults quand termin\u00e9
           await faceMesh.send({ image: img });
         } catch (err) {
           URL.revokeObjectURL(objectUrl);
           reject(err);
         }
       };
-
       img.onerror = () => {
         URL.revokeObjectURL(objectUrl);
         reject(new Error("Erreur chargement image"));
       };
-
       img.src = objectUrl;
     });
 
@@ -212,7 +200,6 @@ async function detectFaceShapeLocal(photoBlob) {
   }
 }
 
-// \u2500\u2500 Calcul forme visage \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function calculateFaceShape(landmarks) {
   if (!landmarks || landmarks.length < 10) return null;
 
@@ -237,4 +224,4 @@ function calculateFaceShape(landmarks) {
   if (ratio > 1.1) return "diamond";
 
   return "oval";
-}
+                              }
