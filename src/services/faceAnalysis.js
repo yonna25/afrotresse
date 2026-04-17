@@ -1,4 +1,4 @@
-import { analyzeFaceWithAI } from './useFaceAnalysis.js'
+import { analyzeFaceWithAI } from './ai.js'
 
 // --- CONSTANTES EXPORTÉES ---
 export const FACE_SHAPE_NAMES = {
@@ -31,7 +31,7 @@ export const BRAIDS_DB = [
     views: {
       face: "/styles/Pompom-face.jpg",
       back: "/styles/Pompom-back.jpg",
-      top:  "/styles/Pompom-top.jpg"
+      top: "/styles/Pompom-top.jpg"
     },
     matchScore: 98
   },
@@ -46,7 +46,7 @@ export const BRAIDS_DB = [
     views: {
       face: "/styles/tresseplaquees-face.jpg",
       back: "/styles/tresseplaquees-back.jpg",
-      top:  "/styles/tresseplaquees-top.jpg"
+      top: "/styles/tresseplaquees-top.jpg"
     },
     matchScore: 95
   },
@@ -61,7 +61,7 @@ export const BRAIDS_DB = [
     views: {
       face: "/styles/ghanabraids-face.jpg",
       back: "/styles/ghanabraids-back.jpg",
-      top:  "/styles/ghanabraids-top.jpg"
+      top: "/styles/ghanabraids-top.jpg"
     },
     matchScore: 96
   },
@@ -76,7 +76,7 @@ export const BRAIDS_DB = [
     views: {
       face: "/styles/tressecollees-face.jpg",
       back: "/styles/tressecollees-back.jpg",
-      top:  "/styles/tressecollees-top.jpg"
+      top: "/styles/tressecollees-top.jpg"
     },
     matchScore: 92
   },
@@ -91,7 +91,7 @@ export const BRAIDS_DB = [
     views: {
       face: "/styles/cornowspuffs-face.jpg",
       back: "/styles/cornowspuffs-back.jpg",
-      top:  "/styles/cornowspuffs-top.jpg"
+      top: "/styles/cornowspuffs-top.jpg"
     },
     matchScore: 94
   },
@@ -106,7 +106,7 @@ export const BRAIDS_DB = [
     views: {
       face: "/styles/boxbraids-face.jpg",
       back: "/styles/boxbraids-back.jpg",
-      top:  "/styles/boxbraids-top.jpg"
+      top: "/styles/boxbraids-top.jpg"
     },
     matchScore: 97
   },
@@ -121,14 +121,14 @@ export const BRAIDS_DB = [
     views: {
       face: "/styles/cocotwists-face.jpg",
       back: "/styles/cocotwists-back.jpg",
-      top:  "/styles/cocotwists-top.jpg"
+      top: "/styles/cocotwists-top.jpg"
     },
     matchScore: 91
   },
   {
     id: "fulani-braids",
     name: "Fulani Style",
-    description: "Tresses artistiques inspirées de la culture peule, souvent ornées de perles.",
+    description: "Tresses artistiques inspirées de la culture peule.",
     tags: ["Culturel", "Perles", "Artistique"],
     faceShapes: ["oval", "heart", "diamond", "long"],
     duration: "3-5h",
@@ -136,36 +136,18 @@ export const BRAIDS_DB = [
     views: {
       face: "/styles/fulani-face.jpg",
       back: "/styles/fulani-back.jpg",
-      top:  "/styles/fulani-top.jpg"
+      top: "/styles/fulani-top.jpg"
     },
     matchScore: 89
-  },
-  {
-    id: "stitch-braids",
-    name: "Stitch Braids",
-    description: "Une technique de tresses plaquées ultra-précise avec des lignes graphiques.",
-    tags: ["Graphique", "Précision", "Moderne"],
-    faceShapes: ["oval", "long", "square", "diamond", "round"],
-    duration: "3-5h",
-    difficulty: "Avancée",
-    views: {
-      face: "/styles/stitchbraids-face.jpg",
-      back: "/styles/stitchbraids-back.jpg",
-      top:  "/styles/stitchbraids-top.jpg"
-    },
-    matchScore: 88
   }
 ];
 
 // --- LOGIQUE D'ANALYSE ---
-// ⚠️ Pas de try/catch global — les erreurs remontent à l'appelant
-// (No credits → 403, rate limit → 429, double analyse, etc.)
-// Le composant Analyze.jsx gère l'affichage des erreurs utilisateur.
 export async function analyzeFace(photoBlob) {
   const result = await analyzeFaceWithAI(photoBlob, 8000);
 
   const faceShape = result?.faceShape || "oval";
-  const confidence = result?.confidence || 85;
+  const confidence = result?.confidence || 0.85;
 
   return buildRecommendations(faceShape, "", confidence);
 }
@@ -184,7 +166,7 @@ function buildRecommendations(faceShape, reason = "", confidence = 0.85) {
     faceShapeName: FACE_SHAPE_NAMES[faceShape] || faceShape,
     faceShapeDescription: FACE_SHAPE_DESCRIPTIONS[faceShape] || "",
     aiReason: reason,
-    confidence: Math.round((confidence || 0.85) * 100),
+    confidence: Math.round(confidence * 100),
     recommendations: matching
   };
-}
+    }
