@@ -41,6 +41,33 @@ function getOrCreateSessionId() {
 const LOCK_KEY = "afrotresse_analyzing";
 const CACHE_PREFIX = "afrotresse_cache_";
 
+// ── Standalone export (for faceAnalysis.js) ──────────────────
+export async function analyzeFaceWithAI(file, faceShape) {
+  const requestId  = generateUUID();
+  const sessionId  = getOrCreateSessionId();
+  const controller = new AbortController();
+  const timeoutId  = setTimeout(() => controller.abort(), 10000);
+
+  try {
+    const response = await fetch("/api/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      signal: controller.signal,
+      body: JSON.stringify({ faceShape, requestId, sessionId }),
+    });
+    clearTimeout(timeoutId);
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      throw new Error(body.error || `Erreur serveur (${response.status})`);
+    }
+    return await response.json();
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err.name === "AbortError") throw new Error("Requête expirée.");
+    throw err;
+  }
+}
+
 // ── Hook ─────────────────────────────────────────────────────
 export function useFaceAnalysis() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
