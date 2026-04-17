@@ -1,16 +1,16 @@
 /**
- * useFaceAnalysis.js — AfroTresse
- * Exporte analyzeFaceWithAI (appelé par faceAnalysis.js)
+ * useFaceAnalysis.js \u2014 AfroTresse
+ * Exporte analyzeFaceWithAI (appel\u00e9 par faceAnalysis.js)
  * Protections :
- *   ✅ Anti double analyse (isAnalyzing)
- *   ✅ Anti refresh / back navigation (sessionStorage)
- *   ✅ Timeout API 10s (AbortController)
- *   ✅ RequestId unique par envoi
- *   ✅ Fingerprint navigateur (anti changement IP/VPN)
- *   ✅ Cache image SHA-256 (sessionStorage)
+ *   \u2705 Anti double analyse (isAnalyzing)
+ *   \u2705 Anti refresh / back navigation (sessionStorage)
+ *   \u2705 Timeout API 10s (AbortController)
+ *   \u2705 RequestId unique par envoi
+ *   \u2705 Fingerprint navigateur (anti changement IP/VPN)
+ *   \u2705 Cache image SHA-256 (sessionStorage)
  */
 
-// ── Helpers ──────────────────────────────────────────────────
+// \u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 async function hashBlob(blob) {
   const buffer = await blob.arrayBuffer();
@@ -30,28 +30,28 @@ function generateUUID() {
   });
 }
 
-// ── État global (module-level) ───────────────────────────────
+// \u2500\u2500 \u00c9tat global (module-level) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 let isAnalyzing = false;
 const STORAGE_KEY  = "afrotresse_last_analysis_done";
 const CACHE_PREFIX = "afrotresse_cache_";
 
-// ── Export principal — appelé par faceAnalysis.js ────────────
+// \u2500\u2500 Export principal \u2014 appel\u00e9 par faceAnalysis.js \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 export async function analyzeFaceWithAI(photoData, timeoutMs = 10000) {
 
   // Garde 1 : double analyse
   if (isAnalyzing) {
-    throw new Error("Analyse déjà en cours");
+    throw new Error("Analyse d\u00e9j\u00e0 en cours");
   }
 
   // Garde 2 : anti refresh / back navigation
   if (sessionStorage.getItem(STORAGE_KEY)) {
-    throw new Error("Analyse déjà effectuée dans cette session");
+    throw new Error("Analyse d\u00e9j\u00e0 effectu\u00e9e dans cette session");
   }
 
   isAnalyzing = true;
 
   try {
-    // Résoudre le Blob
+    // R\u00e9soudre le Blob
     let file;
     if (photoData instanceof Blob) {
       file = photoData;
@@ -59,7 +59,7 @@ export async function analyzeFaceWithAI(photoData, timeoutMs = 10000) {
       const res = await fetch(photoData);
       file = await res.blob();
     } else {
-      throw new Error("Format image non supporté");
+      throw new Error("Format image non support\u00e9");
     }
 
     // Cache image SHA-256
@@ -72,13 +72,13 @@ export async function analyzeFaceWithAI(photoData, timeoutMs = 10000) {
         return JSON.parse(cached);
       }
     } catch {
-      // Hash échoué → continuer sans cache
+      // Hash \u00e9chou\u00e9 \u2192 continuer sans cache
     }
 
     // Analyse locale MediaPipe
     const faceShape = await detectFaceShapeLocal(file);
     if (!faceShape) {
-      throw new Error("Impossible de détecter le visage");
+      throw new Error("Impossible de d\u00e9tecter le visage");
     }
 
     // Fingerprint navigateur
@@ -89,7 +89,7 @@ export async function analyzeFaceWithAI(photoData, timeoutMs = 10000) {
       const fpResult = await fp.get();
       fingerprintId = fpResult.visitorId;
     } catch {
-      // FingerprintJS indisponible → IP seule s'applique
+      // FingerprintJS indisponible \u2192 IP seule s'applique
     }
 
     // Appel API
@@ -119,7 +119,7 @@ export async function analyzeFaceWithAI(photoData, timeoutMs = 10000) {
 
     const data = await response.json();
 
-    // Verrou session — succès uniquement
+    // Verrou session \u2014 succ\u00e8s uniquement
     sessionStorage.setItem(STORAGE_KEY, "true");
 
     const result = {
@@ -134,7 +134,7 @@ export async function analyzeFaceWithAI(photoData, timeoutMs = 10000) {
       try {
         sessionStorage.setItem(`${CACHE_PREFIX}${imageHash}`, JSON.stringify(result));
       } catch {
-        // sessionStorage plein → ignorer
+        // sessionStorage plein \u2192 ignorer
       }
     }
 
@@ -145,13 +145,13 @@ export async function analyzeFaceWithAI(photoData, timeoutMs = 10000) {
   }
 }
 
-// ── Reset manuel ─────────────────────────────────────────────
+// \u2500\u2500 Reset manuel \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 export function resetFaceAnalysisLock() {
   sessionStorage.removeItem(STORAGE_KEY);
   isAnalyzing = false;
 }
 
-// ── Détection faciale locale (MediaPipe) ─────────────────────
+// \u2500\u2500 D\u00e9tection faciale locale (MediaPipe) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 async function detectFaceShapeLocal(photoBlob) {
   try {
     const module = await import("@mediapipe/face_mesh");
@@ -170,19 +170,27 @@ async function detectFaceShapeLocal(photoBlob) {
       minTrackingConfidence: 0.5,
     });
 
-    await faceMesh.initialize();
-
+    // FIX : enregistrer onResults AVANT d'appeler send()
+    // send() ne retourne PAS les r\u00e9sultats \u2014 il appelle ce callback
     const objectUrl = URL.createObjectURL(photoBlob);
 
     return new Promise((resolve, reject) => {
+      // \u2705 Callback onResults enregistr\u00e9 en premier
+      faceMesh.onResults((results) => {
+        URL.revokeObjectURL(objectUrl);
+        if (!results?.multiFaceLandmarks?.length) {
+          resolve(null);
+          return;
+        }
+        resolve(calculateFaceShape(results.multiFaceLandmarks[0]));
+      });
+
       const img = new Image();
 
       img.onload = async () => {
         try {
-          const results = await faceMesh.send({ image: img });
-          URL.revokeObjectURL(objectUrl);
-          if (!results?.multiFaceLandmarks?.length) return resolve(null);
-          resolve(calculateFaceShape(results.multiFaceLandmarks[0]));
+          // send() d\u00e9clenche le traitement et appellera onResults
+          await faceMesh.send({ image: img });
         } catch (err) {
           URL.revokeObjectURL(objectUrl);
           reject(err);
@@ -203,7 +211,7 @@ async function detectFaceShapeLocal(photoBlob) {
   }
 }
 
-// ── Calcul forme visage ───────────────────────────────────────
+// \u2500\u2500 Calcul forme visage \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function calculateFaceShape(landmarks) {
   if (!landmarks || landmarks.length < 10) return null;
 
