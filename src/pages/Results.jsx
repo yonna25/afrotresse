@@ -15,14 +15,6 @@ const FACE_SHAPE_TEXTS = {
   diamond: "Ton visage est de forme Diamant. Les tresses qui encadrent le visage te subliment.",
 };
 
-const TEASER_STYLES = [
-  { key: "boxbraids",      label: "Box Braids" },
-  { key: "cornrows",       label: "Cornrows" },
-  { key: "knotlessbraids", label: "Knotless Braids" },
-  { key: "twists",         label: "Twists" },
-  { key: "fulanibraids",   label: "Fulani Braids" },
-  { key: "goddessbraids",  label: "Goddess Braids" },
-];
 
 const STYLES_PER_PAGE = 3;
 
@@ -362,33 +354,6 @@ export default function Results() {
             ))}
           </motion.div>
 
-          {/* Aperçu styles floutés */}
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }} className="mb-8">
-            <p className="text-[10px] text-white/30 uppercase tracking-widest mb-3 text-center">
-              Styles qui t&apos;attendent
-            </p>
-            <div className="grid grid-cols-3 gap-1.5">
-              {TEASER_STYLES.map((s, i) => (
-                <motion.div key={s.key}
-                  initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.5 + i * 0.06 }}
-                  className="relative h-24 rounded-2xl overflow-hidden">
-                  <img src={`/styles/${s.key}-face.jpg`} alt={s.label}
-                    className="w-full h-full object-cover"
-                    style={{ filter: "brightness(0.45) blur(1px)" }}
-                    draggable={false} onContextMenu={(e) => e.preventDefault()} />
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
-                    <span className="text-white/50 text-lg">🔒</span>
-                    <span className="text-[9px] text-white/30 font-semibold text-center px-1 leading-tight">
-                      {s.label}
-                    </span>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
 
           {/* CTA */}
           <motion.button
