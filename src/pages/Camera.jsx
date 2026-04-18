@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import Seo from "../components/Seo.jsx";
 import CameraCapture from '../components/CameraCapture.jsx'
 
 // Convertit une blob URL en base64 data URL
@@ -86,7 +87,9 @@ export default function Camera() {
   }
 
   return (
-    <div className="min-h-screen bg-brown flex flex-col">
+    
+      <Seo title="AfroTresse" noindex />
+      <div className="min-h-screen bg-brown flex flex-col">
       {/* Header */}
       <div className="flex items-center gap-4 px-6 pt-14 pb-4">
         <button onClick={() => navigate(-1)} className="w-10 h-10 glass rounded-full flex items-center justify-center text-cream">
