@@ -18,7 +18,7 @@ const MESSAGES = {
   oval: [
     {
       minConfidence: 0,
-      text: "Ta morphologie est celle que toutes les coiffeuses rêvent de travailler. Chaque style te va — sans exception.",
+      text: "Ta morphologie est celle que toutes les coiffeuses rêvent de travailler. Chaque style te va, sans exception.",
     },
     {
       minConfidence: 0,
@@ -34,7 +34,7 @@ const MESSAGES = {
     },
     {
       minConfidence: 0.7,
-      text: "La symétrie est ton alliée silencieuse. Tu peux oser n'importe quel style — et le transcender.",
+      text: "La symétrie est ton alliée silencieuse. Tu peux oser n'importe quel style et le transcender.",
     },
     {
       minConfidence: 0.7,
@@ -56,7 +56,7 @@ const MESSAGES = {
     },
     {
       minConfidence: 0.5,
-      text: "Un visage rond, c'est une jeunesse éternelle. Quelques centimètres de hauteur — et tout change.",
+      text: "Un visage rond, c'est une jeunesse éternelle. Quelques centimètres de hauteur, et tout change.",
     },
     {
       minConfidence: 0.7,
@@ -78,7 +78,7 @@ const MESSAGES = {
     },
     {
       minConfidence: 0.5,
-      text: "Un visage carré, c'est une personnalité. Les styles qui t'attendent ne le cachent pas — ils le révèlent.",
+      text: "Un visage carré, c'est une personnalité. Les styles qui t'attendent ne le cachent pas, ils le révèlent.",
     },
     {
       minConfidence: 0.5,
@@ -104,7 +104,7 @@ const MESSAGES = {
     },
     {
       minConfidence: 0.5,
-      text: "Un visage en cœur est rare et précieux. Le volume placé en bas équilibre tout — et le résultat est saisissant.",
+      text: "Un visage en cœur est rare et précieux. Le volume placé en bas équilibre tout, et le résultat est saisissant.",
     },
     {
       minConfidence: 0.5,
@@ -116,7 +116,7 @@ const MESSAGES = {
     },
     {
       minConfidence: 0.7,
-      text: "Délicatesse et structure — ton visage réunit les deux. Les styles choisis honorent chacun de tes traits.",
+      text: "Délicatesse et structure : ton visage réunit les deux. Les styles choisis honorent chacun de tes traits.",
     },
   ],
   long: [
@@ -130,7 +130,7 @@ const MESSAGES = {
     },
     {
       minConfidence: 0.5,
-      text: "Un visage long s'habille différemment — et quand c'est maîtrisé, le résultat coupe le souffle.",
+      text: "Un visage long s'habille différemment, et quand c'est maîtrisé, le résultat coupe le souffle.",
     },
     {
       minConfidence: 0.5,
@@ -152,7 +152,7 @@ const MESSAGES = {
     },
     {
       minConfidence: 0,
-      text: "Tes pommettes sont ta force. Peu de femmes possèdent cette structure — les bons styles la révèlent sans compromis.",
+      text: "Tes pommettes sont ta force. Peu de femmes possèdent cette structure, les bons styles la révèlent sans compromis.",
     },
     {
       minConfidence: 0.5,
@@ -164,7 +164,7 @@ const MESSAGES = {
     },
     {
       minConfidence: 0.7,
-      text: "Rare, structuré, marquant. Ton visage appelle des styles à sa hauteur — et nous les avons trouvés pour toi.",
+      text: "Rare, structuré, marquant. Ton visage appelle des styles à sa hauteur, et nous les avons trouvés pour toi.",
     },
     {
       minConfidence: 0.7,
@@ -293,7 +293,7 @@ export function generateStableMessage({
 
   // ── Format de sortie ────────────────────────────────────────────────────
   const headline = name
-    ? `Voici tes résultats, ${name} ✨`
+    ? `Voici tes résultats ${name} ✨`
     : "Voici tes résultats ✨";
 
   const subtext = `Ton visage est de forme ${shapeLabel}. ${chosen.text}`;
