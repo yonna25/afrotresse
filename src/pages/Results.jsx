@@ -273,6 +273,11 @@ export default function Results() {
     setDisplayName(nom);
     if (saveEmail.trim()) localStorage.setItem("afrotresse_email", saveEmail.trim());
     setSaveDone(true);
+    // Régénère le headline avec le prénom maintenant connu
+    setStableMsg(prev => ({
+      ...prev,
+      headline: `Voici tes résultats ${nom} ✨`,
+    }));
   };
 
   const isFav = (styleId) => favorites.some(f => f === styleId);
@@ -422,10 +427,7 @@ export default function Results() {
         </div>
         <div className="flex flex-col flex-1">
           <h1 className="font-bold text-2xl text-[#C9963A] leading-tight">
-            {displayName
-              ? <><span className="text-[#FAF4EC]">{displayName}</span>, voici tes résultats ✨</>
-              : stableMsg.headline
-            }
+            {stableMsg.headline}
           </h1>
           <p className="text-[11px] opacity-80 leading-snug mt-1.5 max-w-xs">{stableMsg.subtext}</p>
         </div>
