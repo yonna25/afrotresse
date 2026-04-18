@@ -427,7 +427,10 @@ export default function Results() {
         </div>
         <div className="flex flex-col flex-1">
           <h1 className="font-bold text-2xl text-[#C9963A] leading-tight">
-            {stableMsg.headline}
+            {displayName
+              ? <>Voici tes résultats <span className="text-white">{displayName}</span> ✨</>
+              : stableMsg.headline
+            }
           </h1>
           <p className="text-[11px] opacity-80 leading-snug mt-1.5 max-w-xs">{stableMsg.subtext}</p>
         </div>
