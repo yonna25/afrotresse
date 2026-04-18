@@ -119,7 +119,7 @@ export default function Results() {
   const [saveEmail, setSaveEmail]     = useState(() => localStorage.getItem("afrotresse_email") || "");
   const [saveDone, setSaveDone]       = useState(() => !!localStorage.getItem("afrotresse_email"));
   const [displayName, setDisplayName] = useState(() => localStorage.getItem("afrotresse_user_name") || "");
-  const [saveOpen, setSaveOpen]       = useState(() => !localStorage.getItem("afrotresse_email"));
+  const [saveOpen, setSaveOpen]       = useState(false);
 
   // Favoris
   const FREE_FAV_LIMIT = 3;
@@ -415,30 +415,32 @@ export default function Results() {
         </div>
       </motion.div>
 
-      {/* ALERTE VOLATILITÉ */}
-      <motion.div
-        initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-        className="mb-4 px-4 py-3 rounded-2xl flex items-start gap-3"
-        style={{ background: "rgba(201,150,58,0.08)", border: "1px solid rgba(201,150,58,0.25)" }}>
-        <span className="text-lg mt-0.5">⚠️</span>
-        <p className="text-[11px] text-white/60 leading-relaxed">
-          <span className="text-[#C9963A] font-bold">Tes résultats ne sont pas sauvegardés.</span>
-          {" "}Ajoute tes styles en favoris ou sauvegarde ton compte ci-dessous.
-        </p>
-      </motion.div>
-
-      {/* BLOC SAUVEGARDE */}
+      {/* NOTIFICATION STATUT COMPTE */}
       {saveDone ? (
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-          className="mb-6 px-4 py-3 rounded-2xl flex items-center gap-3"
-          style={{ background: "rgba(39,174,96,0.1)", border: "1px solid rgba(39,174,96,0.3)" }}>
+          initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+          className="mb-4 px-4 py-3 rounded-2xl flex items-center gap-3"
+          style={{ background: "rgba(39,174,96,0.08)", border: "1px solid rgba(39,174,96,0.25)" }}>
           <span className="text-lg">✅</span>
           <p className="text-[12px] text-green-300 font-semibold">
-            Résultats sauvegardés pour <span className="font-black">{displayName || saveEmail}</span> !
+            Compte enregistré{displayName ? <> — <span className="font-black">{displayName}</span></> : ""}
           </p>
         </motion.div>
       ) : (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+          className="mb-4 px-4 py-3 rounded-2xl flex items-start gap-3"
+          style={{ background: "rgba(201,150,58,0.08)", border: "1px solid rgba(201,150,58,0.25)" }}>
+          <span className="text-lg mt-0.5">⚠️</span>
+          <p className="text-[11px] text-white/60 leading-relaxed">
+            <span className="text-[#C9963A] font-bold">Tes résultats ne sont pas sauvegardés.</span>
+            {" "}Ajoute tes styles en favoris ou sauvegarde ton compte ci-dessous.
+          </p>
+        </motion.div>
+      )}
+
+      {/* BLOC SAUVEGARDE (accordéon — uniquement anonymes) */}
+      {!saveDone && (
         <div className="mb-6 rounded-[2rem] overflow-hidden"
           style={{ background: "linear-gradient(135deg, #3D2616, #2C1A0E)", border: "1.5px solid rgba(201,150,58,0.35)" }}>
           <button onClick={() => setSaveOpen(o => !o)}
