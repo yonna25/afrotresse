@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { getCredits, addCredits, PRICING } from '../services/credits.js'
 import { getCurrentUser, addSupabaseCredits } from '../services/useSupabaseCredits.js'
+import Seo from "../components/Seo.jsx";
 import SecureCredits from '../components/SecureCredits.jsx'
 
 function loadFedaPay() {
@@ -121,7 +122,12 @@ export default function Credits() {
   }
 
   return (
-    <div className="min-h-screen bg-[#1A0A00] text-[#FAF4EC] pb-32">
+    
+      <Seo
+        title="Crédits — AfroTresse"
+        description="Découverte, Alliée ou Accès VIP — choisis ton offre et accède à toutes tes recommandations."
+      />
+      <div className="min-h-screen bg-[#1A0A00] text-[#FAF4EC] pb-32">
 
       {/* Header */}
       <div className="pt-14 pb-6 px-6">
