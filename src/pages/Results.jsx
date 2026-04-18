@@ -8,6 +8,7 @@ import {
   getOrCreateSessionId,
   resetMessageAssignment,
 } from "../services/stableMessage.js";
+import { useFavorites } from "../hooks/useFavorites.js";
 
 
 const STYLES_PER_PAGE = 3;
@@ -116,12 +117,15 @@ export default function Results() {
   const [displayName, setDisplayName] = useState(() => localStorage.getItem("afrotresse_user_name") || "");
   const [saveOpen, setSaveOpen]       = useState(false);
 
-  // Favoris
-  const FREE_FAV_LIMIT = 3;
-  const [favorites, setFavorites] = useState(() => {
-    try { return JSON.parse(sessionStorage.getItem("afrotresse_session_favs") || "[]"); }
-    catch { return []; }
-  });
+  // Favoris — source unique via hook
+  const {
+    favorites,
+    count: favCount,
+    isFav,
+    toggleFav,
+    canAddMore,
+    FREE_LIMIT,
+  } = useFavorites();
 
   // Pagination
   const [currentPage, setCurrentPage]     = useState(() => parseInt(localStorage.getItem("afrotresse_current_page") || "1", 10));
@@ -280,30 +284,12 @@ export default function Results() {
     }));
   };
 
-  const isFav = (styleId) => favorites.some(f => f === styleId);
-
+  // ── Gestion favori — délègue au hook, affiche erreur si limite atteinte ──
   const handleToggleFav = (style) => {
-    if (isFav(style.id)) {
-      const updated = favorites.filter(f => f !== style.id);
-      setFavorites(updated);
-      sessionStorage.setItem("afrotresse_session_favs", JSON.stringify(updated));
-      const saved = JSON.parse(localStorage.getItem("afrotresse_saved_styles") || "[]");
-      localStorage.setItem("afrotresse_saved_styles", JSON.stringify(saved.filter(s => s.id !== style.id)));
-      return;
-    }
-    const creditsFree = !localStorage.getItem("afrotresse_email");
-    if (creditsFree && favorites.length >= FREE_FAV_LIMIT) {
-      setErrorMsg("💎 Limite de 3 favoris gratuits atteinte — sauvegarde ton compte pour en ajouter plus !");
+    const result = toggleFav(style);
+    if (result && !result.success && result.reason === "limit_reached") {
+      setErrorMsg(`💎 Limite de ${FREE_LIMIT} favoris gratuits atteinte — sauvegarde ton compte pour en ajouter plus !`);
       setTimeout(() => errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
-      return;
-    }
-    const updated = [...favorites, style.id];
-    setFavorites(updated);
-    sessionStorage.setItem("afrotresse_session_favs", JSON.stringify(updated));
-    const saved = JSON.parse(localStorage.getItem("afrotresse_saved_styles") || "[]");
-    if (!saved.find(s => s.id === style.id)) {
-      saved.push({ ...style, savedAt: new Date().toISOString() });
-      localStorage.setItem("afrotresse_saved_styles", JSON.stringify(saved));
     }
   };
 
