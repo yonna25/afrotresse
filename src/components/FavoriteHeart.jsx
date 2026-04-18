@@ -1,50 +1,26 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // FavoriteHeart.jsx — AfroTresse
-// Icône cœur avec badge numérique animé — à poser dans la navbar
+// Icône cœur + badge — utilise directement useFavorites (source unique)
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useFavorites } from "../hooks/useFavorites.js";
 
-const EVENT_NAME = "afrotresse:favorites-updated";
-
-function readCount() {
-  try {
-    const email = localStorage.getItem("afrotresse_email");
-    let key = "afrotresse_favorites_guest";
-    if (email) {
-      let h = 0;
-      for (let i = 0; i < email.length; i++) {
-        h = Math.imul(31, h) + email.charCodeAt(i) | 0;
-      }
-      key = `afrotresse_favorites_user_${Math.abs(h).toString(36)}`;
-    }
-    return JSON.parse(localStorage.getItem(key) || "[]").length;
-  } catch { return 0; }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 export default function FavoriteHeart({ onClick, className = "" }) {
-  const [count, setCount]   = useState(() => readCount());
-  const [bump, setBump]     = useState(false);
-  const prevCountRef        = useRef(count);
+  const { count } = useFavorites();
+  const [bump, setBump] = useState(false);
+  const prevRef = useRef(count);
 
-  // ── Écoute les mises à jour cross-composants ─────────────────────────────
+  // Animation bounce uniquement à l'ajout
   useEffect(() => {
-    const handler = (e) => {
-      const newCount = e.detail.count ?? e.detail.favorites?.length ?? 0;
-      if (newCount > prevCountRef.current) {
-        setBump(true);
-        setTimeout(() => setBump(false), 400);
-      }
-      prevCountRef.current = newCount;
-      setCount(newCount);
-    };
-    window.addEventListener(EVENT_NAME, handler);
-    // Sync au montage (ex : retour sur la page)
-    setCount(readCount());
-    return () => window.removeEventListener(EVENT_NAME, handler);
-  }, []);
+    if (count > prevRef.current) {
+      setBump(true);
+      const t = setTimeout(() => setBump(false), 400);
+      return () => clearTimeout(t);
+    }
+    prevRef.current = count;
+  }, [count]);
 
   return (
     <button
@@ -83,9 +59,9 @@ export default function FavoriteHeart({ onClick, className = "" }) {
             style={{ boxShadow: "0 0 0 1.5px #2C1A0E" }}>
             <motion.span
               key={count}
-              initial={{ y: -6, opacity: 0 }}
+              initial={{ y: -4, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.15 }}>
+              transition={{ duration: 0.12 }}>
               {count > 9 ? "9+" : count}
             </motion.span>
           </motion.span>
