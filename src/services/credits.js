@@ -2,36 +2,51 @@
 export const PRICING = {
   currency:     'FCFA',
   packs: [
-    { id: 'starter', label: '3 essais',         credits: 3,  price: 500,  popular: false },
-    { id: 'plus',    label: '10 essais',        credits: 10, price: 1500, popular: true  },
-    { id: 'pro',     label: 'Abonnement mensuel',credits: 99, price: 2500, popular: false, monthly: true },
+    { id: 'starter', label: '3 essais',          credits: 3,  price: 500,  popular: false },
+    { id: 'plus',    label: '10 essais',         credits: 10, price: 1500, popular: true  },
+    { id: 'pro',     label: 'Abonnement mensuel', credits: 99, price: 2500, popular: false, monthly: true },
   ],
   referral: {
-    giver:    2,   // crédits offerts au parrain
-    receiver: 2,   // crédits offerts à la filleule
-    cashback: 0.1, // 10% en crédits si filleule achète
+    giver:    2,
+    receiver: 2,
+    cashback: 0.1,
   },
-  freeCredits:    2,    // crédits gratuits à l'inscription
-  reviewBonus:    2,    // crédits offerts après avis
-  analysisCost:   1,    // 1 crédit = Analyse visage + 3 styles
-  transformCost:  2,    // 2 crédits = Transformation Fal.ai
+  freeCredits:   2,
+  reviewBonus:   2,
+  analysisCost:  1,
+  transformCost: 2,
 }
 
 // ─── Clés localStorage ───────────────────────────────────────────
-const KEY_CREDITS       = 'afrotresse_credits'
-const KEY_USED          = 'afrotresse_used_tests'
-const KEY_REVIEW        = 'afrotresse_review_done'
-const KEY_REF_CODE      = 'afrotresse_ref_code'
-const KEY_REF_BY        = 'afrotresse_ref_by'
-const KEY_REFERRALS     = 'afrotresse_referrals'
-const KEY_SEEN_STYLES   = 'afrotresse_seen_styles'
-const KEY_SAVED_STYLES  = 'afrotresse_saved_styles' // localStorage permanent
+const KEY_CREDITS      = 'afrotresse_credits'
+const KEY_USED         = 'afrotresse_used_tests'
+const KEY_REVIEW       = 'afrotresse_review_done'
+const KEY_REF_CODE     = 'afrotresse_ref_code'
+const KEY_REF_BY       = 'afrotresse_ref_by'
+const KEY_REFERRALS    = 'afrotresse_referrals'
+const KEY_SEEN_STYLES  = 'afrotresse_seen_styles'
+const KEY_SAVED_STYLES = 'afrotresse_saved_styles'
 
-// ─── Lecture / écriture crédits ──────────────────────────────────
+// ─── Session ID (identifiant unique par navigateur) ──────────────
+export function getSessionId() {
+  try {
+    let id = localStorage.getItem('afrotresse_session')
+    if (!id) {
+      id = typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : Math.random().toString(36).substring(2)
+      localStorage.setItem('afrotresse_session', id)
+    }
+    return id
+  } catch {
+    return null
+  }
+}
+
+// ─── Lecture / écriture crédits (localStorage = cache) ──────────
 export function getCredits() {
   const raw = localStorage.getItem(KEY_CREDITS)
   if (raw !== null) return parseInt(raw, 10)
-  // Première visite : créditer les tests gratuits
   setCredits(PRICING.freeCredits)
   return PRICING.freeCredits
 }
@@ -51,38 +66,101 @@ export function consumeCredits(amount) {
   return true
 }
 
-// ─── Vérifications capacités ────────────────────────────────────
-export function canAnalyze() {
-  return getCredits() >= PRICING.analysisCost
+// ─── Vérifications ───────────────────────────────────────────────
+export function canAnalyze()  { return getCredits() >= PRICING.analysisCost  }
+export function canTransform(){ return getCredits() >= PRICING.transformCost }
+export function hasCredits()  { return getCredits() > 0 }
+export function isPaidCredit(){ return getCredits() > PRICING.freeCredits }
+
+// ─── Sync depuis le serveur (source de vérité) ───────────────────
+// Appeler au chargement de l'app et après un paiement
+export async function syncCreditsFromServer() {
+  try {
+    const sessionId = getSessionId()
+    if (!sessionId) return getCredits()
+
+    const res = await fetch(`/api/credits?sessionId=${encodeURIComponent(sessionId)}`)
+    if (!res.ok) return getCredits()
+
+    const { credits } = await res.json()
+    localStorage.setItem(KEY_CREDITS, String(Math.max(0, credits)))
+    return credits
+  } catch {
+    return getCredits() // fallback silencieux si réseau down
+  }
 }
 
-export function canTransform() {
-  return getCredits() >= PRICING.transformCost
+// ─── Consommation SÉCURISÉE (serveur d'abord) ────────────────────
+// consumeAnalysis et consumeTransform valident côté serveur.
+// Si le serveur est down → fallback localStorage (pas de blocage UX).
+
+export async function consumeAnalysis() {
+  try {
+    const sessionId = getSessionId()
+    if (!sessionId) return consumeCredits(PRICING.analysisCost)
+
+    const res = await fetch('/api/consume', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId, amount: PRICING.analysisCost }),
+    })
+
+    if (res.status === 402) {
+      // Serveur dit : crédits insuffisants → on bloque même si localStorage dit autre chose
+      setCredits(0)
+      return false
+    }
+
+    if (!res.ok) {
+      // Serveur down → fallback localStorage (ne bloque pas l'UX)
+      return consumeCredits(PRICING.analysisCost)
+    }
+
+    const { credits } = await res.json()
+    // Mettre à jour le cache localStorage avec la vraie valeur serveur
+    setCredits(credits)
+    return true
+
+  } catch {
+    // Réseau indisponible → fallback localStorage
+    return consumeCredits(PRICING.analysisCost)
+  }
 }
 
-export function hasCredits() {
-  return getCredits() > 0
+export async function consumeTransform() {
+  try {
+    const sessionId = getSessionId()
+    if (!sessionId) return consumeCredits(PRICING.transformCost)
+
+    const res = await fetch('/api/consume', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId, amount: PRICING.transformCost }),
+    })
+
+    if (res.status === 402) { setCredits(0); return false }
+    if (!res.ok) return consumeCredits(PRICING.transformCost)
+
+    const { credits } = await res.json()
+    setCredits(credits)
+    return true
+
+  } catch {
+    return consumeCredits(PRICING.transformCost)
+  }
 }
 
-// ─── Consommation spécifique ────────────────────────────────────
-export function consumeAnalysis() {
-  return consumeCredits(PRICING.analysisCost)
-}
-
-export function consumeTransform() {
-  return consumeCredits(PRICING.transformCost)
-}
-
-// ─── Vérifier si c'est un crédit payant ────────────────────────
-export function isPaidCredit() {
-  return getCredits() > PRICING.freeCredits
-}
-
+// ─── Compteur analyses ───────────────────────────────────────────
 export function getTotalUsed() {
   return parseInt(localStorage.getItem(KEY_USED) || '0', 10)
 }
 
-// ─── Gestion des styles vus (anti-répétition) ────────────────────
+export function incrementAnalyses() {
+  const current = getTotalUsed()
+  localStorage.setItem(KEY_USED, (current + 1).toString())
+}
+
+// ─── Styles vus (anti-répétition) ───────────────────────────────
 export function getSeenStyleIds() {
   const raw = localStorage.getItem(KEY_SEEN_STYLES)
   return raw ? JSON.parse(raw) : []
@@ -100,24 +178,17 @@ export function resetSeenStyles() {
   localStorage.removeItem(KEY_SEEN_STYLES)
 }
 
-// ─── Gestion styles sauvegardés (localStorage permanent) ─────────
+// ─── Styles sauvegardés ──────────────────────────────────────────
 export function getSavedStyles() {
   const raw = localStorage.getItem(KEY_SAVED_STYLES)
   return raw ? JSON.parse(raw) : []
 }
 
 export function saveStyle(style) {
-  // Sauvegarder seulement si crédit payant
   if (!isPaidCredit()) return false
-
   const saved = getSavedStyles()
-  const exists = saved.find(s => s.id === style.id)
-  
-  if (!exists) {
-    saved.push({
-      ...style,
-      savedAt: new Date().toISOString(),
-    })
+  if (!saved.find(s => s.id === style.id)) {
+    saved.push({ ...style, savedAt: new Date().toISOString() })
     localStorage.setItem(KEY_SAVED_STYLES, JSON.stringify(saved))
   }
   return true
@@ -125,15 +196,14 @@ export function saveStyle(style) {
 
 export function unsaveStyle(styleId) {
   const saved = getSavedStyles()
-  const filtered = saved.filter(s => s.id !== styleId)
-  localStorage.setItem(KEY_SAVED_STYLES, JSON.stringify(filtered))
+  localStorage.setItem(KEY_SAVED_STYLES, JSON.stringify(saved.filter(s => s.id !== styleId)))
 }
 
 export function isStyleSaved(styleId) {
   return getSavedStyles().some(s => s.id === styleId)
 }
 
-// ─── Avis / témoignage ───────────────────────────────────────────
+// ─── Avis ────────────────────────────────────────────────────────
 export function hasGivenReview() {
   return localStorage.getItem(KEY_REVIEW) === 'true'
 }
@@ -167,49 +237,3 @@ export function applyReferralCode(code) {
 export function getReferralCount() {
   return parseInt(localStorage.getItem(KEY_REFERRALS) || '0', 10)
 }
-// ... (garde ton code actuel et ajoute ceci à la fin)
-
-/**
- * Enregistre une nouvelle analyse et incrémente le compteur
- */
-export function incrementAnalyses() {
-  const current = getTotalUsed();
-  localStorage.setItem('afrotresse_used_tests', (current + 1).toString());
-}
-
-// ─── Sync depuis le serveur (source de vérité) ───────────────
-// À appeler au chargement de l'app et après un paiement
-export async function syncCreditsFromServer() {
-  try {
-    const sessionId = localStorage.getItem('afrotresse_session');
-    if (!sessionId) return getCredits(); // pas encore de session
-
-    const res = await fetch(`/api/credits?sessionId=${encodeURIComponent(sessionId)}`);
-    if (!res.ok) return getCredits(); // fallback localStorage si API down
-
-    const { credits } = await res.json();
-
-    // Écraser localStorage avec la valeur serveur
-    localStorage.setItem(KEY_CREDITS, String(Math.max(0, credits)));
-    return credits;
-  } catch {
-    return getCredits(); // fallback silencieux
-  }
-}
-
-// ─── Passer sessionId au endpoint /api/fedapay ───────────────
-export function getSessionId() {
-  try {
-    let id = localStorage.getItem('afrotresse_session');
-    if (!id) {
-      id = typeof crypto !== 'undefined' && crypto.randomUUID
-        ? crypto.randomUUID()
-        : Math.random().toString(36).substring(2);
-      localStorage.setItem('afrotresse_session', id);
-    }
-    return id;
-  } catch {
-    return null;
-  }
-  }
-        
