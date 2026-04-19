@@ -28,7 +28,10 @@ export default defineConfig({
         'icons/*.png',
         'icons/*.svg',
         'og-image.jpg',
-        'styles/*.jpg',   // ✅ inclure les images de styles
+        'robots.txt',
+        'sitemap.xml',
+        'styles/*.jpg',
+        'styles/*.webp',
       ],
 
       manifest: {
@@ -49,7 +52,7 @@ export default defineConfig({
       },
 
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,webp,jpg,jpeg}'], // ✅ jpg ajouté
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,webp,jpg,jpeg,txt,xml}'],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
 
         runtimeCaching: [
