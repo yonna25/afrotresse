@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { getCredits, consumeCredits, hasCredits } from "../services/credits.js";
-import OptimizedImage from "../components/OptimizedImage.jsx";
 import Seo from "../components/Seo.jsx";
 import {
   generateStableMessage,
@@ -524,14 +523,14 @@ export default function Results() {
               {/* Galerie 3 vues */}
               <div className="grid grid-cols-3 gap-0.5 h-72 bg-black/40">
                 <div className="col-span-2 h-full overflow-hidden">
-                  <OptimizedImage src={faceImg} alt={style.name} className="w-full h-full" onClick={() => setZoomImage(faceImg)} />
+                  <img src={faceImg} alt={style.name} className="w-full h-full object-cover cursor-pointer" onClick={() => setZoomImage(faceImg)} draggable={false} onContextMenu={(e) => e.preventDefault()} style={{userSelect:"none"}} />
                 </div>
                 <div className="col-span-1 grid grid-rows-2 gap-0.5">
                   <div className="overflow-hidden">
-                    <OptimizedImage src={backImg} alt="dos" className="w-full h-full" onClick={() => setZoomImage(backImg)} />
+                    <img src={backImg} alt="dos" className="w-full h-full object-cover cursor-pointer" onClick={() => setZoomImage(backImg)} draggable={false} onContextMenu={(e) => e.preventDefault()} style={{userSelect:"none"}} />
                   </div>
                   <div className="overflow-hidden">
-                    <OptimizedImage src={topImg} alt="dessus" className="w-full h-full" onClick={() => setZoomImage(topImg)} />
+                    <img src={topImg} alt="dessus" className="w-full h-full object-cover cursor-pointer" onClick={() => setZoomImage(topImg)} draggable={false} onContextMenu={(e) => e.preventDefault()} style={{userSelect:"none"}} />
                   </div>
                 </div>
               </div>
@@ -730,21 +729,20 @@ export default function Results() {
       <AnimatePresence>
         {zoomImage && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-black/98 flex flex-col items-center justify-center p-6 backdrop-blur-xl"
+            className="fixed inset-0 z-[100] bg-black/98 flex flex-col items-center justify-center backdrop-blur-xl"
+            style={{ padding: "16px", paddingBottom: "96px" }}
             onClick={() => setZoomImage(null)} onContextMenu={(e) => e.preventDefault()}>
-            <div className="relative" onClick={(e) => e.stopPropagation()}>
-              <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }}>
-                <OptimizedImage src={zoomImage} alt="Zoom"
-                  className="max-w-full max-h-[70vh] rounded-3xl shadow-2xl border border-white/10"
+            <div className="flex flex-col items-center w-full max-w-sm gap-4" onClick={(e) => e.stopPropagation()}>
+              <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="w-full relative">
+                <img src={zoomImage} alt="Zoom"
+                  className="w-full rounded-3xl shadow-2xl border border-white/10"
                   draggable={false} onContextMenu={(e) => e.preventDefault()}
-                  style={{ objectFit: "contain", userSelect: "none", WebkitUserSelect: "none" }} />
+                  style={{ objectFit: "cover", maxHeight: "52vh", userSelect: "none", WebkitUserSelect: "none" }} />
+                <div className="absolute inset-0 rounded-3xl pointer-events-none"
+                  onContextMenu={(e) => e.preventDefault()} onDragStart={(e) => e.preventDefault()} />
               </motion.div>
-              <div className="absolute inset-0 rounded-3xl"
-                onContextMenu={(e) => e.preventDefault()} onDragStart={(e) => e.preventDefault()} />
-            </div>
-            <div className="mt-10 flex gap-4 w-full max-w-xs">
               <button onClick={() => setZoomImage(null)}
-                className="flex-1 py-4 bg-white/10 text-white rounded-2xl font-bold backdrop-blur-md border border-white/10">
+                className="w-full py-4 bg-white/10 text-white rounded-2xl font-bold backdrop-blur-md border border-white/10">
                 ✕ Fermer
               </button>
             </div>
