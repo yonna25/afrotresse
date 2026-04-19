@@ -257,6 +257,6 @@ export default function Credits() {
       </div>
 
     </div>
+    </>
   )
-        }
-          
+}
