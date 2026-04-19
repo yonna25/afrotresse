@@ -183,6 +183,7 @@ export default function Camera() {
           </motion.div>
         )}
       </div>
+    </div>
     </>
   )
 }
