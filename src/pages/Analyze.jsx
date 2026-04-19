@@ -102,7 +102,10 @@ export default function Analyze() {
   // Navigation quand la barre atteint 100%
   useEffect(() => {
     if (progress === 100) {
-      const t = setTimeout(() => navigate("/results"), 800);
+      const t = setTimeout(() => {
+        sessionStorage.setItem("afrotresse_trigger_fireworks", "1");
+        navigate("/results");
+      }, 800);
       return () => clearTimeout(t);
     }
   }, [progress, navigate]);
