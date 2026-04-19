@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import Seo from "../components/Seo.jsx"
 
 const FAQ_DATA = [
   {
@@ -188,7 +189,10 @@ export default function FAQ() {
 
   return (
     <div className="min-h-screen pb-28" style={{ background: '#1A0A00' }}>
-
+      <Seo
+        title="FAQ — AfroTresse"
+        description="Toutes les réponses à tes questions sur AfroTresse : analyse de visage, styles, crédits et confidentialité."
+      />
       {/* Header */}
       <div className="pt-14 pb-4 px-5">
         <button
