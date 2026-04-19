@@ -2,7 +2,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { setCredits, PRICING } from '../services/credits.js';
-import Seo from "../components/Seo.jsx";
+import Seo from "../components/Seo.jsx"
+
 
 const SLIDES = [
   { id: 1, image: '/Afrotresse1.jpg', style: 'Knotless Braids' },
@@ -33,9 +34,7 @@ function TickerBar() {
   }, []);
 
   return (
-    <>
-            <Seo />
-      <div className="w-full overflow-hidden z-50 relative" style={{ background: '#C9963A', height: '28px' }}>
+    <div className="w-full overflow-hidden z-50 relative" style={{ background: '#C9963A', height: '28px' }}>
       <div className="flex items-center h-full">
         <motion.div
           ref={innerRef}
@@ -51,7 +50,6 @@ function TickerBar() {
         </motion.div>
       </div>
     </div>
-    </>
   );
 }
 
@@ -73,7 +71,9 @@ export default function Home() {
   }, [next]);
 
   return (
-    <div className="flex flex-col w-full overflow-hidden" style={{ height: '100dvh', background: '#2C1A0E' }}>
+    <>
+      <Seo />
+      <div className="flex flex-col w-full overflow-hidden" style={{ height: '100dvh', background: '#2C1A0E' }}>
       <TickerBar />
 
       <div className="relative flex-1 overflow-hidden">
@@ -184,5 +184,6 @@ export default function Home() {
 
       </div>
     </div>
+    </>
   );
 }
