@@ -122,8 +122,8 @@ export default function Credits() {
   }
 
   return (
-    
-      <Seo
+    <>
+            <Seo
         title="Crédits — AfroTresse"
         description="Découverte, Alliée ou Accès VIP — choisis ton offre et accède à toutes tes recommandations."
       />
