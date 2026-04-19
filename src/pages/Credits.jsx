@@ -256,7 +256,6 @@ export default function Credits() {
         <p className="text-xs opacity-70 text-center">📱 Mobile Money · 💳 Carte bancaire · 🏦 Virement</p>
       </div>
 
-    </div>
     </>
   )
 }
