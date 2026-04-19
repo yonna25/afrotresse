@@ -103,9 +103,9 @@ Trouve le tien aussi : https://afrotresse.com`;
         <div className="px-4 flex flex-col gap-5">
           {savedStyles.map((style, index) => {
             const styleKey = style.id?.replace(/-/g, '') || style.id;
-            const faceImg  = style.views?.face || `/styles/${styleKey}-face.jpg`;
-            const backImg  = style.views?.back || `/styles/${styleKey}-back.jpg`;
-            const topImg   = style.views?.top  || `/styles/${styleKey}-top.jpg`;
+            const faceImg  = style.views?.face || `/styles/${styleKey}-face.webp`;
+            const backImg  = style.views?.back || `/styles/${styleKey}-back.webp`;
+            const topImg   = style.views?.top  || `/styles/${styleKey}-top.webp`;
 
             return (
               <motion.div
@@ -135,7 +135,7 @@ Trouve le tien aussi : https://afrotresse.com`;
                       className="w-full h-full object-cover object-top"
                       draggable={false}
                       onContextMenu={e => e.preventDefault()}
-                      onError={e => { e.target.src = '/styles/boxbraids-face.jpg'; }}
+                      onError={e => { e.target.src = '/styles/boxbraids-face.webp'; }}
                     />
                   </div>
 
