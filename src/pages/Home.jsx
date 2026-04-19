@@ -33,8 +33,8 @@ function TickerBar() {
   }, []);
 
   return (
-    
-      <Seo />
+    <>
+            <Seo />
       <div className="w-full overflow-hidden z-50 relative" style={{ background: '#C9963A', height: '28px' }}>
       <div className="flex items-center h-full">
         <motion.div
@@ -51,6 +51,7 @@ function TickerBar() {
         </motion.div>
       </div>
     </div>
+    </>
   );
 }
 
