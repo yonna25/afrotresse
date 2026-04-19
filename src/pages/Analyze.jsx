@@ -153,7 +153,7 @@ export default function Analyze() {
   // ── Écran erreur ────────────────────────────────────────────
   if (errorState) {
     return (
-      
+      <>
       <Seo title="AfroTresse" noindex />
       <div className="min-h-screen bg-[#2C1A0E] flex flex-col items-center justify-center p-8 text-[#FAF4EC]">
         <motion.div
@@ -184,11 +184,14 @@ export default function Analyze() {
           </button>
         </motion.div>
       </div>
+      </>
     );
   }
 
   // ── Écran analyse ───────────────────────────────────────────
   return (
+    <>
+    <Seo title="AfroTresse" noindex />
     <div className="min-h-screen bg-[#2C1A0E] flex flex-col items-center justify-center p-10 text-[#FAF4EC]">
 
       {/* SCANNING */}
@@ -299,5 +302,6 @@ export default function Analyze() {
         )}
       </AnimatePresence>
     </div>
+    </>
   );
 }
