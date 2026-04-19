@@ -92,10 +92,11 @@ function Fireworks({ onDone }) {
   }, [onDone]);
 
   return (
-    
-      <Seo title="Tes résultats — AfroTresse" noindex />
+    <>
+            <Seo title="Tes résultats — AfroTresse" noindex />
       <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none"
       style={{ zIndex: 9999, width: "100%", height: "100%" }} />
+    </>
   );
 }
 
