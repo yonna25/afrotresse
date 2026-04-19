@@ -508,9 +508,9 @@ export default function Results() {
       <div className="flex flex-col gap-8">
         {displayedStyles.map((style, index) => {
           const styleKey = style.id?.replace(/-/g, "") || style.id;
-          const faceImg  = style.views?.face || `/styles/${styleKey}-face.jpg`;
-          const backImg  = style.views?.back || `/styles/${styleKey}-back.jpg`;
-          const topImg   = style.views?.top  || `/styles/${styleKey}-top.jpg`;
+          const faceImg  = style.views?.face || `/styles/${styleKey}-face.webp`;
+          const backImg  = style.views?.back || `/styles/${styleKey}-back.webp`;
+          const topImg   = style.views?.top  || `/styles/${styleKey}-top.webp`;
 
           return (
             <motion.div key={style.id || index}
