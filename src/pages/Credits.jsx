@@ -146,12 +146,14 @@ export default function Results() {
   const userName = localStorage.getItem("afrotresse_user_name") || "Reine";
 
   // ── Détection navigation fraîche (pas refresh ni retour arrière) ───────────
-  const isFreshNavigation = () => {
-    try {
-      const navType = window.performance?.getEntriesByType?.("navigation")?.[0]?.type;
-      // "navigate" = arrivée depuis un lien/redirect ; "reload" et "back_forward" exclus
-      return navType === "navigate";
-    } catch { return false; }
+  // ── Flag posé par Analyze.jsx juste avant navigate("/results") ──────────
+  const consumeFireworksFlag = () => {
+    const flag = sessionStorage.getItem("afrotresse_trigger_fireworks");
+    if (flag) {
+      sessionStorage.removeItem("afrotresse_trigger_fireworks");
+      return true;
+    }
+    return false;
   };
 
   // Déclencher fireworks depuis n'importe quel endroit (ex : VTO résultat)
@@ -167,9 +169,8 @@ export default function Results() {
         const recs = parsed.recommendations || [];
         setStyles(recs);
         // Fireworks uniquement si navigation fraîche depuis l'analyse
-        if (recs.length > 0 && isFreshNavigation()) {
+        if (recs.length > 0 && consumeFireworksFlag()) {
           setShowFireworks(true);
-          // Nouvelle analyse → réinitialise l'assignation pour un message frais
           resetMessageAssignment();
         }
         // Génère le message stable dès que faceShape + prénom sont connus
@@ -264,7 +265,7 @@ export default function Results() {
   };
 
   const handleGenerateMore = () => {
-    if (!hasCredits()) { navigate("/credits"); return; }
+    if (credits <= 0) { navigate("/credits"); return; }
     consumeCredits(1);
     setCredits(getCredits());
     const nextPage = unlockedPages + 1;
@@ -272,6 +273,7 @@ export default function Results() {
     setCurrentPage(nextPage);
     localStorage.setItem("afrotresse_unlocked_pages", String(nextPage));
     localStorage.setItem("afrotresse_current_page", String(nextPage));
+    setShowFireworks(true);
     topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
@@ -570,7 +572,7 @@ export default function Results() {
                 </div>
 
                 {/* Virtual Try-On — Coming Soon */}
-                <button onClick={() => setShowVirtualTryOnModal(true)}
+                <button onClick={() => credits === 0 ? navigate("/credits") : setShowVirtualTryOnModal(true)}
                   className="w-full py-4 rounded-2xl font-bold text-base active:scale-[0.98] transition-all relative overflow-hidden"
                   style={{
                     background: "linear-gradient(135deg, rgba(201,150,58,0.08), rgba(201,150,58,0.03))",
@@ -656,14 +658,17 @@ export default function Results() {
             Solde : {credits} crédit{credits > 1 ? "s" : ""}
           </p>
           <motion.button whileTap={{ scale: 0.97 }} onClick={handleGenerateMore}
-            className="mt-2 px-6 py-3 rounded-2xl font-bold text-sm relative overflow-hidden"
-            style={{ background: "linear-gradient(135deg, #3D2616, #4A2E1A)", border: "1.5px solid rgba(201,150,58,0.4)" }}>
-            <span className="flex items-center gap-2 text-[#C9963A]">
+            className="mt-2 w-full max-w-xs py-5 rounded-2xl font-black text-base relative overflow-hidden"
+            style={{ background: "linear-gradient(135deg, #3D2616, #4A2E1A)", border: "1.5px solid rgba(201,150,58,0.4)", boxShadow: "0 0 30px rgba(201,150,58,0.1)" }}>
+            <span className="flex items-center justify-center gap-2 text-[#C9963A]">
               ✨ Voir 3 autres styles
-              <span className="text-[9px] bg-[#C9963A]/20 border border-[#C9963A]/40 text-[#C9963A] px-1.5 py-0.5 rounded-full font-black">
-                -1 crédit
+              <span className="text-[10px] bg-[#C9963A]/20 border border-[#C9963A]/40 text-[#C9963A] px-2 py-0.5 rounded-full font-black">
+                1 crédit
               </span>
             </span>
+            <p className="text-[10px] text-white/30 mt-1 font-normal">
+              Solde actuel : {credits} crédit{credits > 1 ? "s" : ""}
+            </p>
           </motion.button>
         </motion.div>
       )}
