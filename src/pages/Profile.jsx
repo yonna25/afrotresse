@@ -132,7 +132,7 @@ export default function Profile() {
 
   return (
     <>
-            <Seo title="Mon profil — AfroTresse" noindex />
+      <Seo title="Mon profil — AfroTresse" noindex />
       <div className="min-h-screen bg-[#2b1810] text-white flex flex-col items-center pb-32 relative">
 
       {/* ── TOAST ── */}
