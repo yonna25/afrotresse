@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Allow: /credits
+
+# Pages privées — pas d'indexation
+Disallow: /results
+Disallow: /analyze
+Disallow: /camera
+Disallow: /profile
+
+Sitemap: https://afrotresse.com/sitemap.xml
