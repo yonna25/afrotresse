@@ -87,7 +87,7 @@ export default function Camera() {
   }
 
   return (
-    
+    <>
       <Seo title="AfroTresse" noindex />
       <div className="min-h-screen bg-brown flex flex-col">
       {/* Header */}
@@ -183,7 +183,7 @@ export default function Camera() {
           </motion.div>
         )}
       </div>
-    </div>
+    </>
   )
 }
 
