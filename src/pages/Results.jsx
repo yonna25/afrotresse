@@ -572,7 +572,7 @@ export default function Results() {
                 </div>
 
                 {/* Virtual Try-On — Coming Soon */}
-                <button onClick={() => setShowVirtualTryOnModal(true)}
+                <button onClick={() => credits === 0 ? navigate("/credits") : setShowVirtualTryOnModal(true)}
                   className="w-full py-4 rounded-2xl font-bold text-base active:scale-[0.98] transition-all relative overflow-hidden"
                   style={{
                     background: "linear-gradient(135deg, rgba(201,150,58,0.08), rgba(201,150,58,0.03))",
