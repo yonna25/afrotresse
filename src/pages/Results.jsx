@@ -146,12 +146,14 @@ export default function Results() {
   const userName = localStorage.getItem("afrotresse_user_name") || "Reine";
 
   // ── Détection navigation fraîche (pas refresh ni retour arrière) ───────────
-  const isFreshNavigation = () => {
-    try {
-      const navType = window.performance?.getEntriesByType?.("navigation")?.[0]?.type;
-      // "navigate" = arrivée depuis un lien/redirect ; "reload" et "back_forward" exclus
-      return navType === "navigate";
-    } catch { return false; }
+  // ── Flag posé par Analyze.jsx juste avant navigate("/results") ──────────
+  const consumeFireworksFlag = () => {
+    const flag = sessionStorage.getItem("afrotresse_trigger_fireworks");
+    if (flag) {
+      sessionStorage.removeItem("afrotresse_trigger_fireworks");
+      return true;
+    }
+    return false;
   };
 
   // Déclencher fireworks depuis n'importe quel endroit (ex : VTO résultat)
@@ -167,9 +169,8 @@ export default function Results() {
         const recs = parsed.recommendations || [];
         setStyles(recs);
         // Fireworks uniquement si navigation fraîche depuis l'analyse
-        if (recs.length > 0 && isFreshNavigation()) {
+        if (recs.length > 0 && consumeFireworksFlag()) {
           setShowFireworks(true);
-          // Nouvelle analyse → réinitialise l'assignation pour un message frais
           resetMessageAssignment();
         }
         // Génère le message stable dès que faceShape + prénom sont connus
@@ -272,6 +273,7 @@ export default function Results() {
     setCurrentPage(nextPage);
     localStorage.setItem("afrotresse_unlocked_pages", String(nextPage));
     localStorage.setItem("afrotresse_current_page", String(nextPage));
+    setShowFireworks(true);
     topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
