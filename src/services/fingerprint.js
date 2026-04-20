@@ -13,7 +13,6 @@ const KEY = "afrotresse_fp";
  */
 export async function getFingerprint() {
   try {
-    // Cache valide 30 jours
     const cached = localStorage.getItem(KEY);
     if (cached) return cached;
 
@@ -34,4 +33,21 @@ export async function getFingerprint() {
  */
 export function clearFingerprintCache() {
   try { localStorage.removeItem(KEY); } catch {}
+}
+
+/**
+ * Retourne un sessionId enrichi avec l'empreinte appareil, préfixé "fp_".
+ * Format : fp_<visitorId>
+ *
+ * Utilisé comme identifiant stable côté API pour la détection anti-abus.
+ * Fallback sur un id aléatoire si FingerprintJS échoue.
+ *
+ * @returns {Promise<string>}
+ */
+export async function getSessionIdWithFp() {
+  const visitorId = await getFingerprint();
+  if (visitorId) return `fp_${visitorId}`;
+
+  // Fallback : id aléatoire non préfixé (ne sera pas bloqué, mais non lié à l'appareil)
+  return `anon_${Math.random().toString(36).slice(2)}`;
 }
