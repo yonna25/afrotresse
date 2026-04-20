@@ -122,7 +122,7 @@ export default function Home() {
         {/* TEXTE PREMIUM HIÉRARCHISÉ */}
         <div className="absolute inset-x-0 bottom-0 z-30 px-5 pb-48">
 
-          <h1 className="font-display text-2xl font-medium leading-tight">
+          <h1 className="font-display text-2xl font-medium" style={{ lineHeight: 1.2, textShadow: '0 2px 12px rgba(0,0,0,0.65)' }}>
 
             <span style={{ color: '#C9963A', fontWeight: 600 }}>
               Un selfie, et
