@@ -50,9 +50,18 @@ export function getSessionId() {
  */
 export async function getSessionIdWithFp() {
   try {
+    // Si déjà persisté, le réutiliser directement
+    const cached = localStorage.getItem('afrotresse_session')
+    if (cached && cached.startsWith('fp_')) return cached
+
     const { getFingerprint } = await import('./fingerprint.js')
     const fp = await getFingerprint()
-    if (fp) return `fp_${fp}`
+    if (fp) {
+      const fpSessionId = `fp_${fp}`
+      // Persister pour que les prochains appels retrouvent le même ID
+      localStorage.setItem('afrotresse_session', fpSessionId)
+      return fpSessionId
+    }
   } catch {}
   return getSessionId()
 }
