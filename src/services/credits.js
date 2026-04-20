@@ -43,6 +43,20 @@ export function getSessionId() {
   }
 }
 
+/**
+ * Retourne un sessionId enrichi par l'empreinte appareil.
+ * Format : "fp_{visitorId}" si disponible, sinon sessionId classique.
+ * Utilisé par syncCreditsFromServer et consumeAnalysis.
+ */
+export async function getSessionIdWithFp() {
+  try {
+    const { getFingerprint } = await import('./fingerprint.js')
+    const fp = await getFingerprint()
+    if (fp) return `fp_${fp}`
+  } catch {}
+  return getSessionId()
+}
+
 // ─── Lecture / écriture crédits (localStorage = cache) ──────────
 export function getCredits() {
   const raw = localStorage.getItem(KEY_CREDITS)
@@ -76,7 +90,7 @@ export function isPaidCredit(){ return getCredits() > PRICING.freeCredits }
 // Appeler au chargement de l'app et après un paiement
 export async function syncCreditsFromServer() {
   try {
-    const sessionId = getSessionId()
+    const sessionId = await getSessionIdWithFp()
     if (!sessionId) return getCredits()
 
     const res = await fetch(`/api/credits?sessionId=${encodeURIComponent(sessionId)}`)
@@ -96,7 +110,7 @@ export async function syncCreditsFromServer() {
 
 export async function consumeAnalysis() {
   try {
-    const sessionId = getSessionId()
+    const sessionId = await getSessionIdWithFp()
     if (!sessionId) return consumeCredits(PRICING.analysisCost)
 
     const res = await fetch('/api/consume', {
@@ -129,7 +143,7 @@ export async function consumeAnalysis() {
 
 export async function consumeTransform() {
   try {
-    const sessionId = getSessionId()
+    const sessionId = await getSessionIdWithFp()
     if (!sessionId) return consumeCredits(PRICING.transformCost)
 
     const res = await fetch('/api/consume', {
