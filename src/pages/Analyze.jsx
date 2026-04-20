@@ -132,7 +132,13 @@ export default function Analyze() {
         // Stocker les résultats dès qu'ils arrivent
         sessionStorage.setItem("afrotresse_results", JSON.stringify(result));
         localStorage.setItem("afrotresse_face_shape", result.faceShape);
-        consumeAnalysis();
+        const creditOk = await consumeAnalysis();
+        if (!creditOk) {
+          clearInterval(interval);
+          clearInterval(stepInterval);
+          navigate("/credits");
+          return;
+        }
         const prevTrials = parseInt(localStorage.getItem('afrotresse_ai_trials') || '0', 10);
         localStorage.setItem('afrotresse_ai_trials', String(prevTrials + 1));
         // Signaler que l'analyse est prête — la barre finira jusqu'à 100% puis naviguera
