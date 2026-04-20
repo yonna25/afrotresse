@@ -277,20 +277,28 @@ export default function Analyze() {
                 L'analyse continue — aucun blocage.
               </p>
 
-              <input
-                type="text"
-                placeholder="Ton prénom"
-                value={prenom}
-                onChange={handlePrenomChange}
-                onKeyDown={e => e.key === "Enter" && handleFormSubmit()}
-                autoFocus
-                className="w-full px-4 py-3 rounded-xl text-sm font-semibold outline-none mb-3"
-                style={{
-                  background: "rgba(92,51,23,0.55)",
-                  border: "1px solid rgba(201,150,58,0.3)",
-                  color: "#FAF4EC",
-                }}
-              />
+              <motion.div
+                className="mb-3"
+                animate={{ boxShadow: ["0 0 0px rgba(201,150,58,0)", "0 0 12px rgba(201,150,58,0.25)", "0 0 0px rgba(201,150,58,0)"] }}
+                transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+                style={{ borderRadius: "14px" }}
+              >
+                <input
+                  type="text"
+                  placeholder="Ton prénom"
+                  value={prenom}
+                  onChange={handlePrenomChange}
+                  onKeyDown={e => e.key === "Enter" && handleFormSubmit()}
+                  className="w-full rounded-xl text-sm font-semibold outline-none"
+                  style={{
+                    padding: "16px 20px",        // zone tactile généreuse
+                    background: "rgba(92,51,23,0.55)",
+                    border: "1px solid rgba(201,150,58,0.4)",
+                    color: "#FAF4EC",
+                    caretColor: "#C9963A",        // curseur doré visible
+                  }}
+                />
+              </motion.div>
 
               <button
                 onClick={handleFormSubmit}
