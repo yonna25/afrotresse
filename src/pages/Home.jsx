@@ -91,7 +91,6 @@ export default function Home() {
               className="w-full h-full"
               style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }}
               loading={i === 0 ? 'eager' : 'lazy'}
-              fetchpriority={i === 0 ? 'high' : 'auto'}
               draggable={false}
             />
           </motion.div>
@@ -130,9 +129,9 @@ export default function Home() {
             </span>{' '}
 
             <span style={{ color: '#FFFFFF', fontWeight: 500 }}>
-              d\u00e9couvre<br />
+              découvre<br />
               ta meilleure coiffure<br />
-              avant d&apos;aller chez ta coiffeuse.
+              <span style={{ fontSize: '0.82em' }}>avant d'aller chez ta coiffeuse.</span>
             </span>
 
           </h1>
