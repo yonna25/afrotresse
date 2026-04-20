@@ -131,7 +131,7 @@ export default function Home() {
             <span style={{ color: '#FFFFFF', fontWeight: 500 }}>
               découvre<br />
               ta meilleure coiffure<br />
-              <span style={{ fontSize: '0.82em' }}>avant d'aller chez ta coiffeuse.</span>
+              <span style={{ fontSize: '0.62em' }}>avant d'aller chez ta coiffeuse.</span>
             </span>
 
           </h1>
