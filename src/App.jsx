@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { setCredits, getCredits, syncCreditsFromServer } from './services/credits.js'
+import { setCredits, getCredits } from './services/credits.js'
 import { getCurrentUser, getSupabaseCredits, ensureUserExists } from './services/useSupabaseCredits.js'
 import { supabase } from './services/supabase.js'
 
@@ -159,8 +159,8 @@ export default function App() {
           if (balance > 0) setCredits(balance)
         } catch {}
       } else {
-        // Utilisatrice anonyme → sync depuis la table sessions
-        syncCreditsFromServer().catch(() => {})
+        // Utilisatrice anonyme → crédits en sessionStorage uniquement
+        // Pas de sync serveur : les crédits sont perdus à la fermeture (anti-fraude)
       }
     })
 
