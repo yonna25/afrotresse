@@ -442,12 +442,35 @@ export default function Results() {
         <motion.div
           initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
           className="mb-4 px-4 py-3 rounded-2xl flex items-start gap-3"
-          style={{ background: "rgba(201,150,58,0.08)", border: "1px solid rgba(201,150,58,0.25)" }}>
-          <span className="text-lg mt-0.5">⚠️</span>
-          <p className="text-[11px] text-white/60 leading-relaxed">
-            <span className="text-[#C9963A] font-bold">Tes résultats ne sont pas sauvegardés.</span>
-            {" "}Ajoute tes styles en favoris ou sauvegarde ton compte ci-dessous.
-          </p>
+          style={{
+            background: credits === 0
+              ? "rgba(255,80,80,0.08)"
+              : credits === 1
+              ? "rgba(201,150,58,0.12)"
+              : "rgba(201,150,58,0.08)",
+            border: credits === 0
+              ? "1px solid rgba(255,80,80,0.3)"
+              : "1px solid rgba(201,150,58,0.25)"
+          }}>
+          <span className="text-lg mt-0.5">
+            {credits === 0 ? "🚫" : credits === 1 ? "⏳" : "⚠️"}
+          </span>
+          <div className="flex flex-col gap-0.5">
+            <p className="text-[11px] text-white/60 leading-relaxed">
+              <span className="text-[#C9963A] font-bold">Tes résultats ne sont pas sauvegardés.</span>
+              {" "}Ajoute tes styles en favoris ou sauvegarde ton compte ci-dessous.
+            </p>
+            {credits === 1 && (
+              <p className="text-[11px] text-[#E8B96A] font-bold mt-1">
+                ⚡ Il te reste 1 analyse gratuite — inscris-toi pour ne pas la perdre.
+              </p>
+            )}
+            {credits === 0 && (
+              <p className="text-[11px] text-red-300 font-bold mt-1">
+                Tes analyses gratuites sont terminées — crée un compte pour continuer.
+              </p>
+            )}
+          </div>
         </motion.div>
       )}
 
