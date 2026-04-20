@@ -72,27 +72,64 @@ export default function Analyze() {
   };
 
 
-  // À 100% : sauvegarder prénom si saisi, afficher message, rediriger
+  // Ref pour détecter si l'utilisatrice est en train de taper
+  const typingRef    = useRef(false);
+  const typingTimer  = useRef(null);
+  const redirectTimer = useRef(null);
+
+  // Marquer "en train de taper" à chaque frappe
+  const handlePrenomChange = (e) => {
+    setPrenom(e.target.value);
+    typingRef.current = true;
+    clearTimeout(typingTimer.current);
+    // Après 600ms sans frappe → considérée comme "terminée"
+    typingTimer.current = setTimeout(() => {
+      typingRef.current = false;
+    }, 600);
+  };
+
+  const doRedirect = (delay) => {
+    clearTimeout(redirectTimer.current);
+    redirectTimer.current = setTimeout(() => {
+      sessionStorage.setItem("afrotresse_trigger_fireworks", "1");
+      navigate("/results");
+    }, delay);
+  };
+
+  // À 100% : gestion intelligente du timing
   useEffect(() => {
-    if (progress === 100) {
-      // Sauvegarder le prénom s'il a été tapé
-      const name = prenom.trim();
-      if (name) {
-        localStorage.setItem("afrotresse_user_name", name);
-        setDisplayName(name);
-      }
-      // Fermer le formulaire proprement
-      setShowForm(false);
-      setFormDone(true);
-      // Afficher "Résultats prêts ✨" puis rediriger
-      setReadyMsg(true);
-      const t = setTimeout(() => {
-        sessionStorage.setItem("afrotresse_trigger_fireworks", "1");
-        navigate("/results");
-      }, 900);
-      return () => clearTimeout(t);
+    if (progress !== 100) return;
+
+    // Sauvegarder le prénom s'il a été tapé
+    const name = prenom.trim();
+    if (name) {
+      localStorage.setItem("afrotresse_user_name", name);
+      setDisplayName(name);
     }
-  }, [progress, navigate, prenom]);
+
+    setShowForm(false);
+    setFormDone(true);
+    setReadyMsg(true);
+
+    if (!showForm) {
+      // Formulaire jamais apparu ou déjà fermé → 2s
+      doRedirect(2000);
+    } else if (typingRef.current) {
+      // En train de taper → attendre 3.5s max
+      doRedirect(3500);
+    } else if (name) {
+      // Vient de taper quelque chose → 500ms
+      doRedirect(500);
+    } else {
+      // Formulaire ouvert mais rien tapé → 2s
+      doRedirect(2000);
+    }
+
+    return () => {
+      clearTimeout(redirectTimer.current);
+      clearTimeout(typingTimer.current);
+    };
+  }, [progress]); // eslint-disable-line
 
   useEffect(() => {
     if (!selfieUrl) { navigate("/"); return; }
@@ -244,7 +281,7 @@ export default function Analyze() {
                 type="text"
                 placeholder="Ton prénom"
                 value={prenom}
-                onChange={e => setPrenom(e.target.value)}
+                onChange={handlePrenomChange}
                 onKeyDown={e => e.key === "Enter" && handleFormSubmit()}
                 autoFocus
                 className="w-full px-4 py-3 rounded-xl text-sm font-semibold outline-none mb-3"
