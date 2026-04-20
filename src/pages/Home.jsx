@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { setCredits, PRICING } from '../services/credits.js';
+import { getCredits, syncCreditsFromServer, PRICING } from '../services/credits.js';
 import Seo from "../components/Seo.jsx";
 
 const SLIDES = [
@@ -60,8 +60,19 @@ export default function Home() {
   const storedName = localStorage.getItem('afrotresse_user_name');
   const userName = storedName || 'Reine';
   const [showArrow] = useState(true);
+  const [credits, setCreditsState] = useState(() => getCredits());
 
-  const handleStart = () => navigate('/camera');
+  useEffect(() => {
+    syncCreditsFromServer().then(c => setCreditsState(c));
+  }, []);
+
+  const handleStart = () => {
+    if (credits === 0) {
+      navigate('/credits');
+    } else {
+      navigate('/camera');
+    }
+  };
 
   const next = useCallback(() => setCurrent(prev => (prev + 1) % SLIDES.length), []);
   useEffect(() => {
