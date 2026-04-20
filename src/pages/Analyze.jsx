@@ -43,72 +43,56 @@ export default function Analyze() {
   const [formDone, setFormDone]   = useState(
     () => !!localStorage.getItem("afrotresse_email")
   );
-  const [prenom, setPrenom]       = useState(
+  const [prenom, setPrenom] = useState(
     () => localStorage.getItem("afrotresse_user_name") || ""
   );
-  const [email, setEmail]         = useState(
-    () => localStorage.getItem("afrotresse_email") || ""
-  );
+  const [readyMsg, setReadyMsg]   = useState(false);
   // Flag : l'analyse est terminée, on peut naviguer dès que la barre est à 100%
   const readyRef = useRef(false);
   const formShownRef = useRef(false);
-  const countdownRef = useRef(null);
-  const [countdown, setCountdown] = useState(10);
 
   const selfieUrl = sessionStorage.getItem("afrotresse_photo");
 
-  // Déclencher le formulaire à 60%
+  // Déclencher le formulaire à 50%
   useEffect(() => {
-    if (progress >= 60 && !formShownRef.current && !formDone) {
+    if (progress >= 50 && !formShownRef.current && !formDone) {
       formShownRef.current = true;
-      setCountdown(10);
       setShowForm(true);
     }
   }, [progress, formDone]);
 
-  // Countdown 10s → auto-dismiss
-  useEffect(() => {
-    if (!showForm) {
-      clearInterval(countdownRef.current);
-      return;
-    }
-    countdownRef.current = setInterval(() => {
-      setCountdown(prev => {
-        if (prev <= 1) {
-          clearInterval(countdownRef.current);
-          setShowForm(false);
-          setFormDone(true);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(countdownRef.current);
-  }, [showForm]);
-
   const handleFormSubmit = () => {
-    clearInterval(countdownRef.current);
-    const name = prenom.trim() || "Reine";
-    localStorage.setItem("afrotresse_user_name", name);
-    setDisplayName(name);
-    if (email.trim()) {
-      localStorage.setItem("afrotresse_email", email.trim());
+    const name = prenom.trim();
+    if (name) {
+      localStorage.setItem("afrotresse_user_name", name);
+      setDisplayName(name);
     }
     setFormDone(true);
     setShowForm(false);
   };
 
 
-  // Navigation quand la barre atteint 100%
+  // À 100% : sauvegarder prénom si saisi, afficher message, rediriger
   useEffect(() => {
     if (progress === 100) {
+      // Sauvegarder le prénom s'il a été tapé
+      const name = prenom.trim();
+      if (name) {
+        localStorage.setItem("afrotresse_user_name", name);
+        setDisplayName(name);
+      }
+      // Fermer le formulaire proprement
+      setShowForm(false);
+      setFormDone(true);
+      // Afficher "Résultats prêts ✨" puis rediriger
+      setReadyMsg(true);
       const t = setTimeout(() => {
         sessionStorage.setItem("afrotresse_trigger_fireworks", "1");
         navigate("/results");
-      }, 800);
+      }, 900);
       return () => clearTimeout(t);
     }
-  }, [progress, navigate]);
+  }, [progress, navigate, prenom]);
 
   useEffect(() => {
     if (!selfieUrl) { navigate("/"); return; }
@@ -117,7 +101,7 @@ export default function Analyze() {
       setProgress(prev => {
         if (prev >= 100) return 100;
         if (prev >= 95 && readyRef.current) return prev + 1;
-        if (prev >= 95) return 95; // Attendre que l'analyse finisse
+        if (prev >= 95) return 95; // Attendre fin d'analyse
         return prev + 1;
       });
     }, 80);
@@ -217,19 +201,26 @@ export default function Analyze() {
 
       <div className="w-full max-w-xs text-center">
         <h2 className="text-[#C9963A] font-bold text-3xl mb-2">{progress}%</h2>
-        <p className="text-xs opacity-70 mb-8 uppercase tracking-widest">{STEPS[stepIdx]}</p>
+        <motion.p
+          key={readyMsg ? "ready" : stepIdx}
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-xs opacity-70 mb-8 uppercase tracking-widest"
+        >
+          {readyMsg ? "Résultats prêts ✨" : STEPS[stepIdx]}
+        </motion.p>
         <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
           <motion.div className="h-full bg-[#C9963A]" animate={{ width: `${progress}%` }} />
         </div>
       </div>
 
-      {/* MINI FORMULAIRE à 60% */}
+      {/* MINI FORMULAIRE à 50% */}
       <AnimatePresence>
         {showForm && (
           <motion.div
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "100%" }}
+            initial={{ y: "100%", opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: "100%", opacity: 0 }}
             transition={{ type: "spring", stiffness: 280, damping: 28 }}
             className="fixed bottom-0 left-0 right-0 z-[100] px-4 pb-8 pt-1"
             style={{ background: "linear-gradient(to top, #1A0800 80%, transparent)" }}
@@ -242,69 +233,42 @@ export default function Analyze() {
                 boxShadow: "0 -8px 48px rgba(0,0,0,0.7)",
               }}
             >
-              <div className="w-full h-0.5 bg-white/10 rounded-full overflow-hidden mb-4">
-                <motion.div
-                  className="h-full bg-[#C9963A] rounded-full"
-                  initial={{ width: "100%" }}
-                  animate={{ width: "0%" }}
-                  transition={{ duration: 10, ease: "linear" }}
-                />
-              </div>
-
-              <div className="flex items-start justify-between mb-1">
-                <p className="font-black text-base text-white leading-tight">
-                  Sauvegarder tes résultats 💾
-                </p>
-                <span className="text-[10px] text-white/30 font-bold ml-2 mt-0.5 shrink-0">
-                  {countdown}s
-                </span>
-              </div>
-              <p className="text-[11px] text-white/50 mb-4">
-                Retrouve tes favoris sur n'importe quel appareil.
+              <p className="font-black text-base text-white leading-tight mb-1">
+                Entre ton prénom pour découvrir des résultats personnalisés 💫
+              </p>
+              <p className="text-[11px] text-white/40 mb-4">
+                L'analyse continue — aucun blocage.
               </p>
 
-              <div className="flex flex-col gap-2 mb-3">
-                <input
-                  type="text"
-                  placeholder="Ton prénom..."
-                  value={prenom}
-                  onChange={e => setPrenom(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl text-sm font-semibold outline-none"
-                  style={{
-                    background: "rgba(92,51,23,0.55)",
-                    border: "1px solid rgba(201,150,58,0.3)",
-                    color: "#FAF4EC",
-                  }}
-                />
-                <input
-                  type="email"
-                  placeholder="Ton email..."
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && handleFormSubmit()}
-                  className="w-full px-4 py-2.5 rounded-xl text-sm font-semibold outline-none"
-                  style={{
-                    background: "rgba(92,51,23,0.55)",
-                    border: "1px solid rgba(201,150,58,0.3)",
-                    color: "#FAF4EC",
-                  }}
-                />
-              </div>
+              <input
+                type="text"
+                placeholder="Ton prénom"
+                value={prenom}
+                onChange={e => setPrenom(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && handleFormSubmit()}
+                autoFocus
+                className="w-full px-4 py-3 rounded-xl text-sm font-semibold outline-none mb-3"
+                style={{
+                  background: "rgba(92,51,23,0.55)",
+                  border: "1px solid rgba(201,150,58,0.3)",
+                  color: "#FAF4EC",
+                }}
+              />
 
               <button
                 onClick={handleFormSubmit}
                 className="w-full py-3 rounded-xl font-black text-sm text-[#2C1A0E]"
                 style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}
               >
-                Sauvegarder mes résultats ✨
+                Personnaliser mes résultats ✨
               </button>
 
               <button
-                onClick={() => { clearInterval(countdownRef.current); setShowForm(false); setFormDone(true); }}
+                onClick={() => { setShowForm(false); setFormDone(true); }}
                 className="w-full py-2 mt-1 text-xs text-center"
                 style={{ color: "rgba(250,244,236,0.3)" }}
               >
-                Pas maintenant
+                Passer
               </button>
             </div>
           </motion.div>
