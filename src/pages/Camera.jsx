@@ -1,4 +1,5 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { getCredits } from '../services/credits.js'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import Seo from "../components/Seo.jsx";
@@ -48,7 +49,13 @@ export default function Camera() {
   const [photo,   setPhoto]   = useState(null)
   const [showCam, setShowCam] = useState(false)
   const [photoError, setPhotoError] = useState("")
+  const [credits, setCreditsState] = useState(0)
+  const [showBanner, setShowBanner] = useState(true)
   const fileInputRef = useRef(null)
+
+  useEffect(() => {
+    setCreditsState(getCredits())
+  }, [])
 
   const handleCapture = (data) => {
     setPhoto(data)
@@ -100,6 +107,20 @@ export default function Camera() {
 
       {showCam && (
         <CameraCapture onCapture={handleCapture} onClose={() => setShowCam(false)} />
+      )}
+
+      {/* BANNIÈRE 1 CRÉDIT RESTANT */}
+      {credits === 1 && showBanner && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+          onClick={() => setShowBanner(false)}
+          className="mx-6 mt-2 mb-0 px-4 py-2.5 rounded-2xl flex items-center justify-between gap-3 cursor-pointer"
+          style={{ background: "rgba(201,150,58,0.12)", border: "1px solid rgba(201,150,58,0.35)" }}>
+          <p className="text-[11px] text-[#E8B96A] font-bold leading-snug">
+            ⚡ Dernière analyse gratuite — inscris-toi pour ne pas la perdre
+          </p>
+          <span className="text-white/30 text-xs shrink-0">✕</span>
+        </motion.div>
       )}
 
       <div className="flex-1 px-6 flex flex-col items-center justify-center gap-8 pb-10">
