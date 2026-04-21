@@ -171,12 +171,23 @@ export default function Analyze() {
         readyRef.current = true;
 
         // 5. Déduire le crédit en arrière-plan (non-bloquant)
-        consumeAnalysis().then(ok => {
-          if (!ok) {
-            // Crédit refusé côté serveur — on corrige le localStorage
-            syncCreditsFromServer().catch(() => {});
-          }
-        }).catch(() => {});
+        // Garde d'idempotence : une seule consommation par photo, même si le
+        // composant se remonte (navigation retour/avant, React StrictMode).
+        const consumeKey = `afrotresse_consumed_${selfieUrl?.slice(-20)}`;
+        if (!sessionStorage.getItem(consumeKey)) {
+          sessionStorage.setItem(consumeKey, '1');
+          consumeAnalysis().then(ok => {
+            if (!ok) {
+              // Crédit refusé côté serveur — on corrige le localStorage
+              // et on retire le flag pour permettre un retry légitime
+              sessionStorage.removeItem(consumeKey);
+              syncCreditsFromServer().catch(() => {});
+            }
+          }).catch(() => {
+            // Erreur réseau → retirer le flag pour ne pas bloquer un retry
+            sessionStorage.removeItem(consumeKey);
+          });
+        }
 
       } catch (err) {
         clearInterval(interval);
