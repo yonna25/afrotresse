@@ -88,7 +88,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const sessionId = req.headers['x-session-id'] ?? req.query?.sessionId ?? null;
+  const sessionId = req.headers['x-session-id'] ?? null;
   const fingerprint = extractFingerprint(sessionId);
 
   // ── Pas de fingerprint valide → 0 crédit, accès refusé ──────────────
@@ -98,6 +98,21 @@ export default async function handler(req, res) {
       fingerprint: null,
       blocked: true,
       reason: 'missing_or_invalid_fingerprint',
+    });
+  }
+
+  // ── Crédits achetés dans anonymous_usage (prioritaire) ──────────────
+  const { data: usage } = await supabase
+    .from('anonymous_usage')
+    .select('credits')
+    .eq('session_id', sessionId)
+    .maybeSingle();
+
+  if (usage && usage.credits > 0) {
+    return res.status(200).json({
+      credits: usage.credits,
+      fingerprint,
+      blocked: false,
     });
   }
 
@@ -114,6 +129,9 @@ export default async function handler(req, res) {
   }
 
   // ── Nouveau appareil → crédits offerts ───────────────────────────────
+  // Marquer le fingerprint comme ayant reçu ses crédits gratuits
+  await markFingerprintAsUsed(fingerprint, sessionId);
+
   return res.status(200).json({
     credits: FREE_CREDITS,
     fingerprint,
