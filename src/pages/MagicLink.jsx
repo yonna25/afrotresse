@@ -3,6 +3,17 @@ import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { sendMagicLink, getCurrentUser, ensureUserExists } from '../services/useSupabaseCredits.js'
 
+// Restaurer les données de session sauvegardées avant le redirect Magic Link
+function restoreSessionBackup() {
+  try {
+    const raw = localStorage.getItem('afrotresse_session_backup')
+    if (!raw) return
+    const backup = JSON.parse(raw)
+    Object.entries(backup).forEach(([key, val]) => sessionStorage.setItem(key, val))
+    localStorage.removeItem('afrotresse_session_backup')
+  } catch {}
+}
+
 export default function MagicLink() {
   const navigate  = useNavigate()
   const [email,   setEmail]   = useState('')
@@ -15,6 +26,8 @@ export default function MagicLink() {
     getCurrentUser().then(user => {
       if (user) {
         ensureUserExists(user.id, user.email)
+        // Restaurer les résultats d'analyse avant de quitter cette page
+        restoreSessionBackup()
         navigate('/profile')
       }
     })
@@ -89,11 +102,11 @@ export default function MagicLink() {
         ) : (
           <>
             <h2 className="font-display text-center text-lg mb-2" style={{ color: '#FAF4EC' }}>
-              Vérifie ta boîte mail 📬
+              V\u00e9rifie ta bo\u00eete mail 📬
             </h2>
             <p className="font-body text-center text-sm mb-6" style={{ color: 'rgba(250,244,236,0.6)' }}>
-              Un lien de connexion a été envoyé à <span style={{ color: '#C9963A' }}>{email}</span>.
-              Clique dessus pour accéder à ton compte.
+              Un lien de connexion a \u00e9t\u00e9 envoy\u00e9 \u00e0 <span style={{ color: '#C9963A' }}>{email}</span>.
+              Clique dessus pour acc\u00e9der \u00e0 ton compte.
             </p>
             <button onClick={() => navigate('/profile')}
               className="w-full py-3 rounded-2xl font-display font-semibold text-sm"
