@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { setCredits, getCredits, syncCreditsFromServer } from './services/credits.js'
-import { getCurrentUser, getSupabaseCredits, ensureUserExists } from './services/useSupabaseCredits.js'
+import { getCurrentUser, getSupabaseCredits, ensureUserExists, addSupabaseCredits } from './services/useSupabaseCredits.js'
 import { supabase } from './services/supabase.js'
 
 // Import des pages
@@ -22,6 +22,20 @@ import Library from './pages/Library.jsx'
 
 // Import de la navigation
 import BottomNav from './components/BottomNav.jsx'
+
+// ─── Transfert crédits en attente → Supabase ─────────────────────
+// Appelé dès qu'une utilisatrice se connecte (Magic Link ou autre)
+async function flushPendingCredits(userId) {
+  try {
+    const pending = parseInt(localStorage.getItem('afrotresse_pending_credits') || '0', 10)
+    if (pending > 0) {
+      await addSupabaseCredits(userId, pending)
+      localStorage.removeItem('afrotresse_pending_credits')
+    }
+  } catch (err) {
+    console.error('flushPendingCredits error:', err)
+  }
+}
 
 // CREDIT SUCCESS POPUP
 function CreditSuccessPopup({ data, onClose }) {
@@ -155,12 +169,13 @@ export default function App() {
       if (user) {
         try {
           await ensureUserExists(user.id, user.email)
+          // Transférer les crédits en attente achetés en mode anonyme
+          await flushPendingCredits(user.id)
           const balance = await getSupabaseCredits(user.id)
           if (balance > 0) setCredits(balance)
         } catch {}
       } else {
         // Utilisatrice anonyme → sync depuis Supabase via fingerprint
-        // Supabase est la source de vérité : 2 crédits une seule fois par appareil
         syncCreditsFromServer().catch(() => {})
       }
     })
@@ -170,6 +185,8 @@ export default function App() {
         if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user?.id) {
           try {
             await ensureUserExists(session.user.id, session.user.email)
+            // Transférer les crédits en attente achetés en mode anonyme
+            await flushPendingCredits(session.user.id)
             const balance = await getSupabaseCredits(session.user.id)
             if (balance > 0) setCredits(balance)
           } catch {}
