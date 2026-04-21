@@ -203,6 +203,21 @@ export default function App() {
     return () => window.removeEventListener('afrotresse:credit_success', handler)
   }, [])
 
+  // Fallback : polling sessionStorage (si FedaPay onComplete s'exécute dans son iframe)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const raw = sessionStorage.getItem('afrotresse_credit_success')
+      if (raw) {
+        try {
+          const data = JSON.parse(raw)
+          sessionStorage.removeItem('afrotresse_credit_success')
+          setCreditSuccess(data)
+        } catch {}
+      }
+    }, 400)
+    return () => clearInterval(interval)
+  }, [])
+
   return (
     <BrowserRouter>
       <div className="min-h-screen bg-black flex justify-center">
