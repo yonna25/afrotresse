@@ -104,10 +104,13 @@ export default function Credits() {
 
             setSuccess(true)
 
-            // ✅ Custom event — plus fiable que sessionStorage sur iOS Safari
-            window.dispatchEvent(new CustomEvent('afrotresse:credit_success', {
-              detail: { credits: pack.credits, label: pack.label, userName }
-            }))
+            const successData = { credits: pack.credits, label: pack.label, userName }
+
+            // Double mécanisme : custom event (immédiat) + sessionStorage (fallback FedaPay iframe)
+            try {
+              window.dispatchEvent(new CustomEvent('afrotresse:credit_success', { detail: successData }))
+            } catch {}
+            sessionStorage.setItem('afrotresse_credit_success', JSON.stringify(successData))
 
             // Retour à l'accueil après 2s
             setTimeout(() => navigate('/'), 2000)
