@@ -133,7 +133,7 @@ export default function Profile() {
   return (
     <>
       <Seo title="Mon profil — AfroTresse" noindex />
-      <div className="min-h-screen bg-[#2b1810] text-white flex flex-col items-center pb-32 relative">
+      <div className="min-h-screen bg-[#1A0A00] text-white flex flex-col items-center pb-32 relative">
 
       {/* ── TOAST ── */}
       <AnimatePresence>
@@ -142,7 +142,7 @@ export default function Profile() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="fixed top-5 left-1/2 -translate-x-1/2 z-[300] bg-[#C9963A] text-[#2b1810] px-5 py-3 rounded-2xl font-black text-sm shadow-2xl"
+            className="fixed top-5 left-1/2 -translate-x-1/2 z-[300] bg-[#C9963A] text-[#1A0A00] px-5 py-3 rounded-2xl font-black text-sm shadow-2xl"
           >
             {toastMsg}
           </motion.div>
@@ -151,7 +151,7 @@ export default function Profile() {
 
       {/* ── HERO — Photo + Prénom ── */}
       <div className="w-full relative">
-        <div className="h-48 w-full bg-[#2b1810]" />
+        <div className="h-48 w-full bg-[#1A0A00]" />
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2">
           <div className="relative">
             <div className="w-24 h-24 rounded-full border-4 border-[#C9963A] overflow-hidden bg-[#2a1a14] shadow-2xl">
@@ -162,7 +162,7 @@ export default function Profile() {
                 <div className="w-full h-full flex items-center justify-center text-4xl">👑</div>
               )}
             </div>
-            <div className="absolute -bottom-1 -right-1 bg-[#C9963A] w-8 h-8 rounded-full flex items-center justify-center border-2 border-[#2b1810] shadow-lg">
+            <div className="absolute -bottom-1 -right-1 bg-[#C9963A] w-8 h-8 rounded-full flex items-center justify-center border-2 border-[#1A0A00] shadow-lg">
               <span className="text-sm">👑</span>
             </div>
           </div>
@@ -245,7 +245,7 @@ export default function Profile() {
                     <motion.button
                       whileTap={{ scale: 0.97 }}
                       onClick={() => navigate("/magic-link")}
-                      className="w-full py-3 rounded-xl font-black text-sm text-[#2b1810]"
+                      className="w-full py-3 rounded-xl font-black text-sm text-[#1A0A00]"
                       style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}
                     >
                       Continuer avec un lien magique ✨
@@ -267,9 +267,9 @@ export default function Profile() {
           className="bg-[#C9963A] rounded-3xl p-4 flex flex-col items-center cursor-pointer shadow-lg"
           style={{ boxShadow: "0 0 20px rgba(201,150,58,0.3)" }}
         >
-          <p className="text-2xl font-black text-[#2b1810]">{credits}</p>
-          <p className="text-[8px] uppercase font-black text-[#2b1810]/70 tracking-widest mt-0.5">Solde</p>
-          <p className="text-[7px] text-[#2b1810]/50 mt-1">Appuie</p>
+          <p className="text-2xl font-black text-[#1A0A00]">{credits}</p>
+          <p className="text-[8px] uppercase font-black text-[#1A0A00]/70 tracking-widest mt-0.5">Solde</p>
+          <p className="text-[7px] text-[#1A0A00]/50 mt-1">Appuie</p>
         </motion.div>
 
         {/* Favoris - CLIQUABLE */}
@@ -298,7 +298,7 @@ export default function Profile() {
         <motion.button
           whileTap={{ scale: 0.97 }}
           onClick={() => navigate("/credits")}
-          className="w-full py-4 rounded-2xl font-black text-base text-[#2b1810] flex items-center justify-between px-5 shadow-xl"
+          className="w-full py-4 rounded-2xl font-black text-base text-[#1A0A00] flex items-center justify-between px-5 shadow-xl"
           style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}
         >
           <span>💳 Recharger mes crédits</span>
@@ -336,7 +336,7 @@ export default function Profile() {
       <div className="w-full max-w-sm px-5 mt-6">
         <motion.div
           className="rounded-3xl overflow-hidden border border-[#C9963A]/30"
-          style={{ background: "#2b1810" }}
+          style={{ background: "#1A0A00" }}
         >
           {/* Header parrainage */}
           <button
@@ -400,7 +400,7 @@ export default function Profile() {
                   <motion.button
                     whileTap={{ scale: 0.97 }}
                     onClick={handleShare}
-                    className="w-full py-3.5 rounded-2xl font-black text-sm text-[#2b1810]"
+                    className="w-full py-3.5 rounded-2xl font-black text-sm text-[#1A0A00]"
                     style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}
                   >
                     Inviter une amie 💌
@@ -420,7 +420,7 @@ export default function Profile() {
           className={`w-full rounded-3xl p-5 flex items-center justify-between border transition-all ${
             reviewDone
               ? "bg-white/5 border-white/10 opacity-50"
-              : "border-[#C9963A]/30 bg-[#2b1810]"
+              : "border-[#C9963A]/30 bg-[#1A0A00]"
           }`}
         >
           <div className="flex items-center gap-3">
