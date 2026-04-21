@@ -149,8 +149,8 @@ export default function Analyze() {
 
     const run = async () => {
       try {
-        // Vérifier le vrai solde avant de lancer l'analyse
-        const balance = await syncCreditsFromServer().catch(() => getCredits());
+        // 1. Vérifier les crédits AVANT l'analyse (lecture locale = instantané)
+        const balance = getCredits();
         if (balance === 0) {
           clearInterval(interval);
           clearInterval(stepInterval);
@@ -158,21 +158,26 @@ export default function Analyze() {
           return;
         }
 
+        // 2. Lancer l'analyse
         const result = await analyzeFace(selfieUrl);
-        // Stocker les résultats dès qu'ils arrivent
+
+        // 3. Stocker les résultats
         sessionStorage.setItem("afrotresse_results", JSON.stringify(result));
         localStorage.setItem("afrotresse_face_shape", result.faceShape);
-        const creditOk = await consumeAnalysis();
-        if (!creditOk) {
-          clearInterval(interval);
-          clearInterval(stepInterval);
-          navigate("/credits");
-          return;
-        }
+
+        // 4. Débloquer la barre immédiatement → pas d'attente Supabase
         const prevTrials = parseInt(localStorage.getItem('afrotresse_ai_trials') || '0', 10);
         localStorage.setItem('afrotresse_ai_trials', String(prevTrials + 1));
-        // Signaler que l'analyse est prête — la barre finira jusqu'à 100% puis naviguera
         readyRef.current = true;
+
+        // 5. Déduire le crédit en arrière-plan (non-bloquant)
+        consumeAnalysis().then(ok => {
+          if (!ok) {
+            // Crédit refusé côté serveur — on corrige le localStorage
+            syncCreditsFromServer().catch(() => {});
+          }
+        }).catch(() => {});
+
       } catch (err) {
         clearInterval(interval);
         clearInterval(stepInterval);
