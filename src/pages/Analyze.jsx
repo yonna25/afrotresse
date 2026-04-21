@@ -44,10 +44,14 @@ export default function Analyze() {
     () => localStorage.getItem("afrotresse_user_name") || ""
   );
   const [readyMsg, setReadyMsg]   = useState(false);
-  const readyRef = useRef(false);
+  const readyRef     = useRef(false);
   const formShownRef = useRef(false);
+  const showFormRef  = useRef(false); // ← ref miroir de showForm pour accès dans setInterval
 
   const selfieUrl = sessionStorage.getItem("afrotresse_photo");
+
+  // Sync showFormRef avec showForm
+  useEffect(() => { showFormRef.current = showForm; }, [showForm]);
 
   useEffect(() => {
     if (progress >= 50 && !formShownRef.current && !formDone) {
@@ -66,8 +70,8 @@ export default function Analyze() {
     setShowForm(false);
   };
 
-  const typingRef    = useRef(false);
-  const typingTimer  = useRef(null);
+  const typingRef     = useRef(false);
+  const typingTimer   = useRef(null);
   const redirectTimer = useRef(null);
 
   const handlePrenomChange = (e) => {
@@ -100,7 +104,7 @@ export default function Analyze() {
     setFormDone(true);
     setReadyMsg(true);
 
-    if (!showForm) {
+    if (!showFormRef.current) {
       doRedirect(2000);
     } else if (typingRef.current) {
       doRedirect(3500);
@@ -122,7 +126,9 @@ export default function Analyze() {
     const interval = setInterval(() => {
       setProgress(prev => {
         if (prev >= 100) return 100;
-        if (prev >= 95 && readyRef.current) return prev + 1;
+        // Bloquer à 95% si : analyse pas terminée OU formulaire ouvert avec frappe en cours
+        if (prev >= 95 && readyRef.current && !showFormRef.current) return prev + 1;
+        if (prev >= 95 && readyRef.current && showFormRef.current && !typingRef.current) return prev + 1;
         if (prev >= 95) return 95;
         return prev + 1;
       });
@@ -134,7 +140,6 @@ export default function Analyze() {
 
     const run = async () => {
       try {
-        // 1. Vérifier les crédits localement avant de lancer
         const balance = getCredits();
         if (balance === 0) {
           clearInterval(interval);
@@ -143,18 +148,19 @@ export default function Analyze() {
           return;
         }
 
-        // 2. Lancer l'analyse — api/analyze.js débite 1 crédit côté serveur
         const result = await analyzeFace(selfieUrl);
 
-        // 3. Stocker les résultats
-        sessionStorage.setItem("afrotresse_results", JSON.stringify(result));
+        // ── Stocker résultats dans sessionStorage ET localStorage ──
+        // sessionStorage : accès rapide pendant la session
+        // localStorage   : persistance si le navigateur vide la session en arrière-plan
+        const resultsJson = JSON.stringify(result);
+        sessionStorage.setItem("afrotresse_results", resultsJson);
+        localStorage.setItem("afrotresse_results_backup", resultsJson);
         localStorage.setItem("afrotresse_face_shape", result.faceShape);
 
-        // 4. Sync localStorage avec le vrai solde retourné par le serveur
         if (result.creditsRemaining !== undefined) {
           setCredits(result.creditsRemaining);
         } else {
-          // Fallback : sync depuis Supabase
           syncCreditsFromServer().catch(() => {});
         }
 
