@@ -88,7 +88,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const sessionId = req.headers['x-session-id'] ?? null;
+  const sessionId = req.headers['x-session-id'] ?? req.query?.sessionId ?? null;
   const fingerprint = extractFingerprint(sessionId);
 
   // ── Pas de fingerprint valide → 0 crédit, accès refusé ──────────────
