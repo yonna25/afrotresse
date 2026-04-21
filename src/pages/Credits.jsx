@@ -52,7 +52,7 @@ const PACKS_CONFIG = {
 
 export default function Credits() {
   const navigate = useNavigate()
-  const [credits, setCredits] = useState(getCredits())
+  const [credits, setCreditsState] = useState(getCredits())
   const [selected, setSelected] = useState('decouverte')
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -84,22 +84,27 @@ export default function Credits() {
 
             // 1. Créditer localStorage (affichage immédiat)
             addCredits(pack.credits)
-            setCredits(getCredits())
+            setCreditsState(getCredits())
 
             // 2. Créditer Supabase si l'utilisatrice est connectée
             try {
               const user = await getCurrentUser()
               if (user) {
                 await addSupabaseCredits(user.id, pack.credits)
+              } else {
+                // Utilisatrice anonyme → noter les crédits en attente
+                // Ils seront transférés vers Supabase lors de la prochaine connexion
+                const existing = parseInt(localStorage.getItem('afrotresse_pending_credits') || '0', 10)
+                localStorage.setItem('afrotresse_pending_credits', String(existing + pack.credits))
               }
             } catch (err) {
               console.error('Supabase credit sync error:', err)
-              // On ne bloque pas — le localStorage est déjà crédité
+              // Crédits localStorage déjà ajoutés — on ne bloque pas
             }
 
             setSuccess(true)
 
-            // ✅ Stocker les infos du succès pour le pop-up global dans App.jsx
+            // Stocker les infos du succès pour le pop-up global dans App.jsx
             sessionStorage.setItem('afrotresse_credit_success', JSON.stringify({
               credits: pack.credits,
               label: pack.label,
