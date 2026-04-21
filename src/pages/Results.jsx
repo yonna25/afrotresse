@@ -256,6 +256,8 @@ export default function Results() {
   };
 
   const displayedStyles = getPageStyles(currentPage);
+  const maxPages = styles.length > 0 ? Math.ceil(styles.length / STYLES_PER_PAGE) : 2;
+  const allStylesSeen = currentPage >= maxPages;
 
   const goToPage = (page) => {
     setCurrentPage(page);
@@ -632,23 +634,37 @@ export default function Results() {
             <span className="text-[10px] text-white/30 uppercase tracking-widest">Envie de plus ?</span>
             <div className="flex-1 h-px bg-white/10" />
           </div>
-          <motion.button whileTap={{ scale: 0.97 }} onClick={handleGenerateMore}
-            className="w-full max-w-xs py-5 rounded-2xl font-black text-base relative overflow-hidden"
-            style={{
-              background: "linear-gradient(135deg, #3D2616, #4A2E1A)",
-              border: "1.5px solid rgba(201,150,58,0.4)",
-              boxShadow: "0 0 30px rgba(201,150,58,0.1)",
-            }}>
-            <span className="flex items-center justify-center gap-2 text-[#C9963A]">
-              ✨ Voir 3 autres styles
-              <span className="text-[10px] bg-[#C9963A]/20 border border-[#C9963A]/40 text-[#C9963A] px-2 py-0.5 rounded-full font-black">
-                1 crédit
+          {allStylesSeen ? (
+            <div className="w-full max-w-xs py-5 rounded-2xl text-center"
+              style={{ background: "rgba(201,150,58,0.08)", border: "1.5px solid rgba(201,150,58,0.2)" }}>
+              <p className="text-sm font-black text-[#C9963A]">Tu as découvert tous tes styles ✨</p>
+              <p className="text-[11px] text-white/40 mt-1">Reprends un selfie pour de nouvelles recommandations</p>
+              <motion.button whileTap={{ scale: 0.97 }}
+                onClick={() => navigate("/camera")}
+                className="mt-3 px-5 py-2 rounded-xl font-black text-xs text-[#1A0A00]"
+                style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}>
+                Nouveau selfie
+              </motion.button>
+            </div>
+          ) : (
+            <motion.button whileTap={{ scale: 0.97 }} onClick={handleGenerateMore}
+              className="w-full max-w-xs py-5 rounded-2xl font-black text-base relative overflow-hidden"
+              style={{
+                background: "linear-gradient(135deg, #3D2616, #4A2E1A)",
+                border: "1.5px solid rgba(201,150,58,0.4)",
+                boxShadow: "0 0 30px rgba(201,150,58,0.1)",
+              }}>
+              <span className="flex items-center justify-center gap-2 text-[#C9963A]">
+                ✨ Voir 3 autres styles
+                <span className="text-[10px] bg-[#C9963A]/20 border border-[#C9963A]/40 text-[#C9963A] px-2 py-0.5 rounded-full font-black">
+                  1 crédit
+                </span>
               </span>
-            </span>
-            <p className="text-[10px] text-white/30 mt-1 font-normal">
-              Solde actuel : {credits} crédit{credits > 1 ? "s" : ""}
-            </p>
-          </motion.button>
+              <p className="text-[10px] text-white/30 mt-1 font-normal">
+                Solde actuel : {credits} crédit{credits > 1 ? "s" : ""}
+              </p>
+            </motion.button>
+          )}
         </motion.div>
       )}
 
@@ -785,6 +801,7 @@ export default function Results() {
           <div className="text-[5px] font-black uppercase opacity-60 leading-tight">Solde</div>
           <div className="text-xl font-black leading-none">{credits}</div>
         </motion.div>
+        {!allStylesSeen && (
         <motion.button initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
           whileTap={{ scale: 0.95 }} onClick={handleGenerateMore}
           className="w-12 h-12 rounded-lg flex flex-col items-center justify-center shadow-lg relative border border-white/10 active:scale-95 transition-all"
@@ -795,6 +812,7 @@ export default function Results() {
             -1
           </div>
         </motion.button>
+        )}
       </div>
 
     </div>
