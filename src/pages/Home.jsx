@@ -117,7 +117,7 @@ export default function Home() {
 
         <div className="absolute inset-x-0 top-0 z-30 px-5 pt-4 flex items-center gap-3">
           <div className="w-12 h-12 flex-shrink-0">
-            <img src="/icons/Logo.png" alt="AfroTresse" className="w-full h-full object-contain" />
+          
           </div>
           <div className="flex flex-col leading-tight">
             <span className="font-display text-2xl leading-none">
