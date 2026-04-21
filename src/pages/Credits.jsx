@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { getCredits, addCredits, PRICING } from '../services/credits.js'
@@ -59,6 +59,12 @@ export default function Credits() {
   const [errorMsg, setErrorMsg] = useState('')
 
   const userName = localStorage.getItem('afrotresse_user_name') || 'Reine'
+  const buyRef = useRef(null)
+
+  const handleSelectPack = (key) => {
+    setSelected(key)
+    setTimeout(() => buyRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100)
+  }
 
   const handleBuy = async () => {
     const pack = PACKS_CONFIG[selected]
@@ -78,7 +84,7 @@ export default function Credits() {
         },
         customer: { firstname: userName },
         environment: 'sandbox',
-        onComplete: async (response) => {
+        onComplete: (response) => {
           setLoading(false)
           if (response.reason === FedaPay.CHECKOUT_COMPLETED) {
 
@@ -86,33 +92,25 @@ export default function Credits() {
             addCredits(pack.credits)
             setCreditsState(getCredits())
 
-            // 2. Créditer Supabase si l'utilisatrice est connectée
-            try {
-              const user = await getCurrentUser()
-              if (user) {
-                await addSupabaseCredits(user.id, pack.credits)
-              } else {
-                // Utilisatrice anonyme → noter les crédits en attente
-                // Ils seront transférés vers Supabase lors de la prochaine connexion
-                const existing = parseInt(localStorage.getItem('afrotresse_pending_credits') || '0', 10)
-                localStorage.setItem('afrotresse_pending_credits', String(existing + pack.credits))
-              }
-            } catch (err) {
-              console.error('Supabase credit sync error:', err)
-              // Crédits localStorage déjà ajoutés — on ne bloque pas
-            }
-
+            // 2. Déclencher le popup IMMÉDIATEMENT — avant tout appel réseau
             setSuccess(true)
-
             const successData = { credits: pack.credits, label: pack.label, userName }
-
-            // Double mécanisme : custom event (immédiat) + sessionStorage (fallback FedaPay iframe)
             try {
               window.dispatchEvent(new CustomEvent('afrotresse:credit_success', { detail: successData }))
             } catch {}
             sessionStorage.setItem('afrotresse_credit_success', JSON.stringify(successData))
 
-            // Retour à l'accueil après 2s
+            // 3. Sync Supabase en arrière-plan (non-bloquant)
+            getCurrentUser().then(user => {
+              if (user) {
+                addSupabaseCredits(user.id, pack.credits).catch(() => {})
+              } else {
+                const existing = parseInt(localStorage.getItem('afrotresse_pending_credits') || '0', 10)
+                localStorage.setItem('afrotresse_pending_credits', String(existing + pack.credits))
+              }
+            }).catch(() => {})
+
+            // 4. Retour à l'accueil après 2s
             setTimeout(() => navigate('/'), 2000)
           } else {
             setErrorMsg('Paiement annulé ou échoué. Réessaie.')
@@ -167,7 +165,7 @@ export default function Credits() {
           <motion.div
             key={key}
             whileTap={{ scale: 0.98 }}
-            onClick={() => setSelected(key)}
+            onClick={() => handleSelectPack(key)}
             className={`relative p-5 rounded-3xl border-2 cursor-pointer transition-all ${
               selected === key
                 ? 'border-[#C9963A] bg-[#C9963A]/10'
@@ -230,7 +228,7 @@ export default function Credits() {
       </AnimatePresence>
 
       {/* Bouton acheter */}
-      <div className="px-6 mt-8">
+      <div className="px-6 mt-8" ref={buyRef}>
         <motion.button
           whileTap={{ scale: 0.97 }}
           onClick={handleBuy}
