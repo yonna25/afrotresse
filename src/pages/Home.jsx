@@ -115,10 +115,7 @@ export default function Home() {
         <div className="absolute inset-x-0 bottom-0 h-1/2 z-20"
           style={{ background: 'linear-gradient(to top, rgba(44,26,14,0.98), transparent)' }} />
 
-        <div className="absolute inset-x-0 top-0 z-30 px-5 pt-4 flex items-center gap-3">
-          <div className="w-12 h-12 flex-shrink-0">
-            <img src="/icons/Logo.png" alt="AfroTresse" className="w-full h-full object-contain" />
-          </div>
+        <div className="absolute inset-x-0 top-0 z-30 px-5 pt-4">
           <div className="flex flex-col leading-tight">
             <span className="font-display text-2xl leading-none">
               <span className="text-white font-bold">Afro</span>
