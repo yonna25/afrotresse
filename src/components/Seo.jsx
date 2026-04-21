@@ -5,7 +5,7 @@
 import { Helmet } from "react-helmet-async";
 
 const BASE_URL  = "https://afrotresse.com";
-const OG_IMAGE  = `${BASE_URL}/og-image.jpg`; // 1200x630px — à créer dans /public/
+const OG_IMAGE  = `${BASE_URL}/og-image.png`; // 1200x630px — à créer dans /public/
 
 const DEFAULTS = {
   title:       "AfroTresse — Votre Majesté",
