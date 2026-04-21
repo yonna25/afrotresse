@@ -303,10 +303,10 @@ export default function Results() {
   // ══════════════════════════════════════════════════════════════════════════
   if (!styles.length) {
     return (
-      <div className="min-h-[100dvh] bg-[#2C1A0E] text-[#FAF4EC] flex flex-col relative overflow-hidden">
+      <div className="min-h-[100dvh] bg-[#1A0A00] text-[#FAF4EC] flex flex-col relative overflow-hidden">
 
         {/* Hero couronne */}
-        <div className="relative h-52 overflow-hidden bg-[#2C1A0E] flex items-center justify-center">
+        <div className="relative h-52 overflow-hidden bg-[#1A0A00] flex items-center justify-center">
           <div className="absolute inset-0 flex flex-col items-center justify-center"
             style={{ background: "linear-gradient(160deg, rgba(201,150,58,0.15) 0%, rgba(44,26,14,0.7) 100%)" }}>
             <motion.div
@@ -324,7 +324,7 @@ export default function Results() {
             </motion.p>
           </div>
           <div className="absolute bottom-0 left-0 right-0 h-24"
-            style={{ background: "linear-gradient(to bottom, transparent, #2C1A0E)" }} />
+            style={{ background: "linear-gradient(to bottom, transparent, #1A0A00)" }} />
         </div>
 
         <div className="flex flex-col flex-1 px-5 pt-2 pb-32">
@@ -396,7 +396,7 @@ export default function Results() {
   // ÉCRAN RÉSULTATS
   // ══════════════════════════════════════════════════════════════════════════
   return (
-    <div className="min-h-[100dvh] bg-[#2C1A0E] text-[#FAF4EC] p-4 sm:p-6 pb-40 relative">
+    <div className="min-h-[100dvh] bg-[#1A0A00] text-[#FAF4EC] p-4 sm:p-6 pb-40 relative">
 
       {showFireworks && <Fireworks onDone={() => setShowFireworks(false)} />}
 
@@ -477,7 +477,7 @@ export default function Results() {
       {/* BLOC SAUVEGARDE (accordéon — uniquement anonymes) */}
       {!saveDone && (
         <div className="mb-6 rounded-[2rem] overflow-hidden"
-          style={{ background: "linear-gradient(135deg, #3D2616, #2C1A0E)", border: "1.5px solid rgba(201,150,58,0.35)" }}>
+          style={{ background: "linear-gradient(135deg, #2C1A0E, #1A0A00)", border: "1.5px solid rgba(201,150,58,0.35)" }}>
           <button onClick={() => setSaveOpen(o => !o)}
             className="w-full flex items-center justify-between px-5 py-4 active:opacity-80 transition-opacity">
             <span className="font-black text-sm text-white">Sauvegarder mes résultats ✨</span>
@@ -787,7 +787,7 @@ export default function Results() {
           style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}>
           <span className="text-[6px] font-black text-[#2C1A0E] uppercase leading-none">Gen</span>
           <span className="text-base">✨</span>
-          <div className="absolute -top-1 -right-1 bg-[#2C1A0E] text-[#C9963A] text-[7px] px-1 py-0 rounded-full font-bold border border-[#C9963A]">
+          <div className="absolute -top-1 -right-1 bg-[#1A0A00] text-[#C9963A] text-[7px] px-1 py-0 rounded-full font-bold border border-[#C9963A]">
             -1
           </div>
         </motion.button>
