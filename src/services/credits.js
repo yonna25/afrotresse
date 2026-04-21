@@ -43,14 +43,8 @@ export function getSessionId() {
   }
 }
 
-/**
- * Retourne un sessionId enrichi par l'empreinte appareil.
- * Format : "fp_{visitorId}" si disponible, sinon sessionId classique.
- * Utilisé par syncCreditsFromServer et consumeAnalysis.
- */
 export async function getSessionIdWithFp() {
   try {
-    // Si déjà persisté, le réutiliser directement
     const cached = localStorage.getItem('afrotresse_session')
     if (cached && cached.startsWith('fp_')) return cached
 
@@ -58,7 +52,6 @@ export async function getSessionIdWithFp() {
     const fp = await getFingerprint()
     if (fp) {
       const fpSessionId = `fp_${fp}`
-      // Persister pour que les prochains appels retrouvent le même ID
       localStorage.setItem('afrotresse_session', fpSessionId)
       return fpSessionId
     }
@@ -96,7 +89,6 @@ export function hasCredits()  { return getCredits() > 0 }
 export function isPaidCredit(){ return getCredits() > PRICING.freeCredits }
 
 // ─── Sync depuis le serveur (source de vérité) ───────────────────
-// Appeler au chargement de l'app et après un paiement
 export async function syncCreditsFromServer() {
   try {
     const sessionId = await getSessionIdWithFp()
@@ -109,15 +101,42 @@ export async function syncCreditsFromServer() {
     localStorage.setItem(KEY_CREDITS, String(Math.max(0, credits)))
     return credits
   } catch {
-    return getCredits() // fallback silencieux si réseau down
+    return getCredits()
+  }
+}
+
+// ─── Helper interne : consommer via Supabase (utilisatrice connectée) ────────
+async function _consumeSupabase(amount) {
+  try {
+    const { getCurrentUser, useSupabaseCredit, getSupabaseCredits } = await import('./useSupabaseCredits.js')
+    const user = await getCurrentUser()
+    if (!user) return null // pas connectée → fallback sessionId
+
+    // useSupabaseCredit ne déduit que 1 crédit — on boucle si amount > 1
+    for (let i = 0; i < amount; i++) {
+      const ok = await useSupabaseCredit(user.id)
+      if (!ok) {
+        setCredits(0)
+        return false
+      }
+    }
+
+    // Sync localStorage avec le vrai solde Supabase
+    const balance = await getSupabaseCredits(user.id)
+    setCredits(balance)
+    return true
+  } catch {
+    return null // erreur → fallback sessionId
   }
 }
 
 // ─── Consommation SÉCURISÉE (serveur d'abord) ────────────────────
-// consumeAnalysis et consumeTransform valident côté serveur.
-// Si le serveur est down → fallback localStorage (pas de blocage UX).
-
 export async function consumeAnalysis() {
+  // 1. Utilisatrice connectée → table `credits` (user_id / balance)
+  const supabaseResult = await _consumeSupabase(PRICING.analysisCost)
+  if (supabaseResult !== null) return supabaseResult
+
+  // 2. Anonyme → table `sessions` (session_id / credits) via /api/consume
   try {
     const sessionId = await getSessionIdWithFp()
     if (!sessionId) return consumeCredits(PRICING.analysisCost)
@@ -128,29 +147,23 @@ export async function consumeAnalysis() {
       body: JSON.stringify({ sessionId, amount: PRICING.analysisCost }),
     })
 
-    if (res.status === 402) {
-      // Serveur dit : crédits insuffisants → on bloque même si localStorage dit autre chose
-      setCredits(0)
-      return false
-    }
-
-    if (!res.ok) {
-      // Serveur down → fallback localStorage (ne bloque pas l'UX)
-      return consumeCredits(PRICING.analysisCost)
-    }
+    if (res.status === 402) { setCredits(0); return false }
+    if (!res.ok) return consumeCredits(PRICING.analysisCost)
 
     const { credits } = await res.json()
-    // Mettre à jour le cache localStorage avec la vraie valeur serveur
     setCredits(credits)
     return true
-
   } catch {
-    // Réseau indisponible → fallback localStorage
     return consumeCredits(PRICING.analysisCost)
   }
 }
 
 export async function consumeTransform() {
+  // 1. Utilisatrice connectée → table `credits`
+  const supabaseResult = await _consumeSupabase(PRICING.transformCost)
+  if (supabaseResult !== null) return supabaseResult
+
+  // 2. Anonyme → /api/consume
   try {
     const sessionId = await getSessionIdWithFp()
     if (!sessionId) return consumeCredits(PRICING.transformCost)
@@ -167,7 +180,6 @@ export async function consumeTransform() {
     const { credits } = await res.json()
     setCredits(credits)
     return true
-
   } catch {
     return consumeCredits(PRICING.transformCost)
   }
