@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { analyzeFace } from "../services/faceAnalysis.js";
-import { consumeAnalysis, getCredits, syncCreditsFromServer } from "../services/credits.js";
+import { setCredits, getCredits, syncCreditsFromServer } from "../services/credits.js";
 import Seo from "../components/Seo.jsx";
 
 const STEPS = [
@@ -12,7 +12,6 @@ const STEPS = [
   "Sélection des tresses royales..."
 ];
 
-// DEBUG : affiche le vrai message d'erreur
 function getErrorMessage(err) {
   const msg = err?.message || "";
   if (msg.includes("No credits") || msg.includes("crédits"))
@@ -25,7 +24,6 @@ function getErrorMessage(err) {
     return { title: "Visage non détecté 📸", body: "Reprends un selfie bien éclairé, de face.", cta: "Reprendre une photo", route: "/camera" };
   if (msg.includes("Timeout") || msg.includes("connexion") || msg.includes("réseau"))
     return { title: "Connexion lente 📡", body: "Vérifie ta connexion et réessaie.", cta: "Réessayer", route: "/camera" };
-  // FALLBACK DEBUG : affiche le vrai message d'erreur
   return { title: "Erreur (debug)", body: msg || "Erreur inconnue", cta: "Réessayer", route: "/camera" };
 }
 
@@ -38,7 +36,6 @@ export default function Analyze() {
   );
   const [errorState, setErrorState]   = useState(null);
 
-  // Formulaire 60%
   const [showForm, setShowForm]   = useState(false);
   const [formDone, setFormDone]   = useState(
     () => !!localStorage.getItem("afrotresse_email")
@@ -47,13 +44,11 @@ export default function Analyze() {
     () => localStorage.getItem("afrotresse_user_name") || ""
   );
   const [readyMsg, setReadyMsg]   = useState(false);
-  // Flag : l'analyse est terminée, on peut naviguer dès que la barre est à 100%
   const readyRef = useRef(false);
   const formShownRef = useRef(false);
 
   const selfieUrl = sessionStorage.getItem("afrotresse_photo");
 
-  // Déclencher le formulaire à 50%
   useEffect(() => {
     if (progress >= 50 && !formShownRef.current && !formDone) {
       formShownRef.current = true;
@@ -71,18 +66,14 @@ export default function Analyze() {
     setShowForm(false);
   };
 
-
-  // Ref pour détecter si l'utilisatrice est en train de taper
   const typingRef    = useRef(false);
   const typingTimer  = useRef(null);
   const redirectTimer = useRef(null);
 
-  // Marquer "en train de taper" à chaque frappe
   const handlePrenomChange = (e) => {
     setPrenom(e.target.value);
     typingRef.current = true;
     clearTimeout(typingTimer.current);
-    // Après 600ms sans frappe → considérée comme "terminée"
     typingTimer.current = setTimeout(() => {
       typingRef.current = false;
     }, 600);
@@ -96,11 +87,9 @@ export default function Analyze() {
     }, delay);
   };
 
-  // À 100% : gestion intelligente du timing
   useEffect(() => {
     if (progress !== 100) return;
 
-    // Sauvegarder le prénom s'il a été tapé
     const name = prenom.trim();
     if (name) {
       localStorage.setItem("afrotresse_user_name", name);
@@ -112,16 +101,12 @@ export default function Analyze() {
     setReadyMsg(true);
 
     if (!showForm) {
-      // Formulaire jamais apparu ou déjà fermé → 2s
       doRedirect(2000);
     } else if (typingRef.current) {
-      // En train de taper → attendre 3.5s max
       doRedirect(3500);
     } else if (name) {
-      // Vient de taper quelque chose → 500ms
       doRedirect(500);
     } else {
-      // Formulaire ouvert mais rien tapé → 2s
       doRedirect(2000);
     }
 
@@ -138,7 +123,7 @@ export default function Analyze() {
       setProgress(prev => {
         if (prev >= 100) return 100;
         if (prev >= 95 && readyRef.current) return prev + 1;
-        if (prev >= 95) return 95; // Attendre fin d'analyse
+        if (prev >= 95) return 95;
         return prev + 1;
       });
     }, 80);
@@ -149,7 +134,7 @@ export default function Analyze() {
 
     const run = async () => {
       try {
-        // 1. Vérifier les crédits AVANT l'analyse (lecture locale = instantané)
+        // 1. Vérifier les crédits localement avant de lancer
         const balance = getCredits();
         if (balance === 0) {
           clearInterval(interval);
@@ -158,43 +143,30 @@ export default function Analyze() {
           return;
         }
 
-        // 2. Lancer l'analyse
+        // 2. Lancer l'analyse — api/analyze.js débite 1 crédit côté serveur
         const result = await analyzeFace(selfieUrl);
 
         // 3. Stocker les résultats
         sessionStorage.setItem("afrotresse_results", JSON.stringify(result));
         localStorage.setItem("afrotresse_face_shape", result.faceShape);
 
-        // 4. Débloquer la barre immédiatement → pas d'attente Supabase
+        // 4. Sync localStorage avec le vrai solde retourné par le serveur
+        if (result.creditsRemaining !== undefined) {
+          setCredits(result.creditsRemaining);
+        } else {
+          // Fallback : sync depuis Supabase
+          syncCreditsFromServer().catch(() => {});
+        }
+
         const prevTrials = parseInt(localStorage.getItem('afrotresse_ai_trials') || '0', 10);
         localStorage.setItem('afrotresse_ai_trials', String(prevTrials + 1));
         readyRef.current = true;
-
-        // 5. Déduire le crédit en arrière-plan (non-bloquant)
-        // Garde d'idempotence : une seule consommation par photo, même si le
-        // composant se remonte (navigation retour/avant, React StrictMode).
-        const consumeKey = `afrotresse_consumed_${selfieUrl?.slice(-20)}`;
-        if (!sessionStorage.getItem(consumeKey)) {
-          sessionStorage.setItem(consumeKey, '1');
-          consumeAnalysis().then(ok => {
-            if (!ok) {
-              // Crédit refusé côté serveur — on corrige le localStorage
-              // et on retire le flag pour permettre un retry légitime
-              sessionStorage.removeItem(consumeKey);
-              syncCreditsFromServer().catch(() => {});
-            }
-          }).catch(() => {
-            // Erreur réseau → retirer le flag pour ne pas bloquer un retry
-            sessionStorage.removeItem(consumeKey);
-          });
-        }
 
       } catch (err) {
         clearInterval(interval);
         clearInterval(stepInterval);
         console.error("Analysis error:", err);
         if (err?.message?.includes("déjà effectuée") || err?.message?.includes("déjà traitée") || err?.message?.includes("409")) {
-          // Afficher une notification puis naviguer vers les résultats existants
           setErrorState({
             title: "Photo déjà analysée 👑",
             body: "Tu as déjà analysé cette photo. Tes résultats sont prêts — on t'y emmène !",
@@ -213,7 +185,6 @@ export default function Analyze() {
     return () => { clearInterval(interval); clearInterval(stepInterval); };
   }, [navigate, selfieUrl]);
 
-  // ── Écran erreur ────────────────────────────────────────────
   if (errorState) {
     return (
       <>
@@ -251,13 +222,11 @@ export default function Analyze() {
     );
   }
 
-  // ── Écran analyse ───────────────────────────────────────────
   return (
     <>
     <Seo title="AfroTresse" noindex />
     <div className="min-h-screen bg-[#1A0A00] flex flex-col items-center justify-center p-10 text-[#FAF4EC]">
 
-      {/* SCANNING */}
       <div className="relative w-64 h-64 mb-12">
         <div className="relative w-full h-full rounded-full border-4 border-[#C9963A] overflow-hidden z-10 shadow-2xl">
           <img src={selfieUrl} className="w-full h-full object-cover" alt="Scan" />
@@ -284,7 +253,6 @@ export default function Analyze() {
         </div>
       </div>
 
-      {/* MINI FORMULAIRE à 50% */}
       <AnimatePresence>
         {showForm && (
           <motion.div
@@ -324,11 +292,11 @@ export default function Analyze() {
                   onKeyDown={e => e.key === "Enter" && handleFormSubmit()}
                   className="w-full rounded-xl text-sm font-semibold outline-none"
                   style={{
-                    padding: "16px 20px",        // zone tactile généreuse
+                    padding: "16px 20px",
                     background: "rgba(92,51,23,0.55)",
                     border: "1px solid rgba(201,150,58,0.4)",
                     color: "#FAF4EC",
-                    caretColor: "#C9963A",        // curseur doré visible
+                    caretColor: "#C9963A",
                   }}
                 />
               </motion.div>
