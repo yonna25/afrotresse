@@ -26,6 +26,7 @@ const KEY_REF_BY       = 'afrotresse_ref_by'
 const KEY_REFERRALS    = 'afrotresse_referrals'
 const KEY_SEEN_STYLES  = 'afrotresse_seen_styles'
 const KEY_SAVED_STYLES = 'afrotresse_saved_styles'
+const KEY_INITIALIZED  = 'afrotresse_credits_initialized'
 
 // ─── Session ID (identifiant unique par navigateur) ──────────────
 export function getSessionId() {
@@ -63,6 +64,12 @@ export async function getSessionIdWithFp() {
 export function getCredits() {
   const raw = localStorage.getItem(KEY_CREDITS)
   if (raw !== null) return parseInt(raw, 10)
+  // Crédits gratuits déjà attribués sur cet appareil → ne pas re-donner
+  if (localStorage.getItem(KEY_INITIALIZED)) {
+    setCredits(0)
+    return 0
+  }
+  localStorage.setItem(KEY_INITIALIZED, '1')
   setCredits(PRICING.freeCredits)
   return PRICING.freeCredits
 }
@@ -132,8 +139,12 @@ async function _consumeSupabase(amount) {
     for (let i = 0; i < amount; i++) {
       const ok = await useSupabaseCredit(user.id)
       if (!ok) {
-        setCredits(0)
-        return false
+        // Supabase indique 0 crédit.
+        // NE PAS appeler setCredits(0) ici : si l'achat n'a été enregistré
+        // qu'en localStorage (et pas encore en Supabase), cela effacerait
+        // tous les crédits de l'utilisatrice d'un coup.
+        // On retourne null → fallback vers la consommation localStorage.
+        return null
       }
     }
 
