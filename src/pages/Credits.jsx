@@ -112,7 +112,7 @@ export default function Credits() {
             }))
 
             // Retour à la page précédente après 2s
-            setTimeout(() => navigate(-1), 2000)
+            setTimeout(() => navigate('/'), 2000)
           } else {
             setErrorMsg('Paiement annulé ou échoué. Réessaie.')
           }
