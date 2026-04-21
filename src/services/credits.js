@@ -180,7 +180,7 @@ export async function consumeAnalysis() {
       body: JSON.stringify({ sessionId, amount: PRICING.analysisCost }),
     })
 
-    if (res.status === 402) { setCredits(0); return false }
+    if (res.status === 402) { return consumeCredits(PRICING.analysisCost) }
     if (!res.ok) return consumeCredits(PRICING.analysisCost)
 
     const { credits } = await res.json()
@@ -207,7 +207,7 @@ export async function consumeTransform() {
       body: JSON.stringify({ sessionId, amount: PRICING.transformCost }),
     })
 
-    if (res.status === 402) { setCredits(0); return false }
+    if (res.status === 402) { return consumeCredits(PRICING.transformCost) }
     if (!res.ok) return consumeCredits(PRICING.transformCost)
 
     const { credits } = await res.json()
