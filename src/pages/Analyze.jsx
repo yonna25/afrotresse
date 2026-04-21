@@ -182,8 +182,16 @@ export default function Analyze() {
         clearInterval(interval);
         clearInterval(stepInterval);
         console.error("Analysis error:", err);
-        if (err?.message?.includes("déjà effectuée")) {
-          navigate("/results");
+        if (err?.message?.includes("déjà effectuée") || err?.message?.includes("déjà traitée") || err?.message?.includes("409")) {
+          // Afficher une notification puis naviguer vers les résultats existants
+          setErrorState({
+            title: "Photo déjà analysée 👑",
+            body: "Tu as déjà analysé cette photo. Tes résultats sont prêts — on t'y emmène !",
+            cta: "Voir mes résultats",
+            route: "/results",
+            autoRedirect: true,
+          });
+          setTimeout(() => navigate("/results"), 2500);
           return;
         }
         setErrorState(getErrorMessage(err));
