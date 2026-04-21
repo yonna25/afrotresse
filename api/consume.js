@@ -23,7 +23,7 @@ export default async function handler(req, res) {
   try {
     // Lire le solde actuel
     const { data, error } = await supabase
-      .from("sessions")
+      .from("anonymous_usage")
       .select("credits")
       .eq("session_id", sessionId)
       .single();
@@ -40,8 +40,8 @@ export default async function handler(req, res) {
     // Déduire côté serveur
     const newBalance = data.credits - amount;
     const { error: updateError } = await supabase
-      .from("sessions")
-      .update({ credits: newBalance, last_used: new Date().toISOString() })
+      .from("anonymous_usage")
+      .update({ credits: newBalance, updated_at: new Date().toISOString() })
       .eq("session_id", sessionId);
 
     if (updateError) throw updateError;
