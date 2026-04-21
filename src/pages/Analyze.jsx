@@ -185,13 +185,13 @@ export default function Analyze() {
     return (
       <>
       <Seo title="AfroTresse" noindex />
-      <div className="min-h-screen bg-[#2C1A0E] flex flex-col items-center justify-center p-8 text-[#FAF4EC]">
+      <div className="min-h-screen bg-[#1A0A00] flex flex-col items-center justify-center p-8 text-[#FAF4EC]">
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           className="w-full max-w-sm rounded-[2.5rem] p-8 text-center"
           style={{
-            background: "linear-gradient(160deg, #2C1A0E 0%, #3D2616 100%)",
+            background: "linear-gradient(160deg, #1A0A00 0%, #2C1A0E 100%)",
             border: "2px solid rgba(201,150,58,0.4)",
             boxShadow: "0 0 40px rgba(0,0,0,0.5)",
           }}
@@ -222,7 +222,7 @@ export default function Analyze() {
   return (
     <>
     <Seo title="AfroTresse" noindex />
-    <div className="min-h-screen bg-[#2C1A0E] flex flex-col items-center justify-center p-10 text-[#FAF4EC]">
+    <div className="min-h-screen bg-[#1A0A00] flex flex-col items-center justify-center p-10 text-[#FAF4EC]">
 
       {/* SCANNING */}
       <div className="relative w-64 h-64 mb-12">
@@ -260,12 +260,12 @@ export default function Analyze() {
             exit={{ y: "100%", opacity: 0 }}
             transition={{ type: "spring", stiffness: 280, damping: 28 }}
             className="fixed bottom-0 left-0 right-0 z-[100] px-4 pb-8 pt-1"
-            style={{ background: "linear-gradient(to top, #1A0800 80%, transparent)" }}
+            style={{ background: "linear-gradient(to top, #1A0A00 80%, transparent)" }}
           >
             <div
               className="w-full max-w-sm mx-auto rounded-[2rem] p-5"
               style={{
-                background: "linear-gradient(160deg, #2C1A0E 0%, #3D2616 100%)",
+                background: "linear-gradient(160deg, #1A0A00 0%, #2C1A0E 100%)",
                 border: "1.5px solid rgba(201,150,58,0.5)",
                 boxShadow: "0 -8px 48px rgba(0,0,0,0.7)",
               }}
