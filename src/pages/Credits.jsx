@@ -104,14 +104,12 @@ export default function Credits() {
 
             setSuccess(true)
 
-            // Stocker les infos du succès pour le pop-up global dans App.jsx
-            sessionStorage.setItem('afrotresse_credit_success', JSON.stringify({
-              credits: pack.credits,
-              label: pack.label,
-              userName,
+            // ✅ Custom event — plus fiable que sessionStorage sur iOS Safari
+            window.dispatchEvent(new CustomEvent('afrotresse:credit_success', {
+              detail: { credits: pack.credits, label: pack.label, userName }
             }))
 
-            // Retour à la page précédente après 2s
+            // Retour à l'accueil après 2s
             setTimeout(() => navigate('/'), 2000)
           } else {
             setErrorMsg('Paiement annulé ou échoué. Réessaie.')
