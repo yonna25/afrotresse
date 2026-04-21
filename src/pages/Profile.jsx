@@ -50,6 +50,7 @@ export default function Profile() {
   const [favoritesCount, setFavoritesCount] = useState(0);
   const [userEmail, setUserEmail] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   // Formulaire connexion : fermé par défaut
   const [showLoginForm, setShowLoginForm] = useState(false);
 
@@ -76,6 +77,7 @@ export default function Profile() {
         setIsLoggedIn(false);
         setUserEmail(localStorage.getItem("afrotresse_email") || "");
       }
+      setIsLoadingAuth(false);
     });
   }, []);
 
@@ -201,6 +203,7 @@ export default function Profile() {
             </button>
           </motion.div>
         ) : (
+          !isLoadingAuth && (
           <motion.div
             initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
             className="w-full rounded-2xl overflow-hidden"
@@ -244,7 +247,14 @@ export default function Profile() {
                     </p>
                     <motion.button
                       whileTap={{ scale: 0.97 }}
-                      onClick={() => navigate("/magic-link")}
+                      onClick={() => {
+                        // Sauvegarder les résultats avant le redirect Magic Link
+                        const keys = ['afrotresse_photo', 'afrotresse_results', 'afrotresse_trigger_fireworks'];
+                        const backup = {};
+                        keys.forEach(k => { const v = sessionStorage.getItem(k); if (v) backup[k] = v; });
+                        localStorage.setItem('afrotresse_session_backup', JSON.stringify(backup));
+                        navigate("/magic-link");
+                      }}
                       className="w-full py-3 rounded-xl font-black text-sm text-[#1A0A00]"
                       style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}
                     >
@@ -255,6 +265,7 @@ export default function Profile() {
               )}
             </AnimatePresence>
           </motion.div>
+          )
         )}
       </div>
 
