@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { getCredits, consumeCredits, hasCredits } from "../services/credits.js";
+import { getCredits, consumeCredits, hasCredits, consumeAnalysis, syncCreditsFromServer } from "../services/credits.js";
 import Seo from "../components/Seo.jsx";
 import {
   generateStableMessage,
@@ -197,7 +197,8 @@ export default function Results() {
     }
     const photo = sessionStorage.getItem("afrotresse_photo");
     if (photo) setSelfieUrl(photo);
-    setCredits(getCredits());
+    // Sync depuis Supabase pour avoir le vrai solde (connectée ou anonyme)
+    syncCreditsFromServer().then(c => setCredits(c)).catch(() => setCredits(getCredits()));
   }, []);
 
   // Vues/likes en temps réel
@@ -263,9 +264,10 @@ export default function Results() {
     topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  const handleGenerateMore = () => {
-    if (credits <= 0) { navigate("/credits"); return; }
-    consumeCredits(1);
+  const handleGenerateMore = async () => {
+    if (credits === 0) { navigate("/credits"); return; }
+    const ok = await consumeAnalysis();
+    if (!ok) { navigate("/credits"); return; }
     setCredits(getCredits());
     const nextPage = unlockedPages + 1;
     setUnlockedPages(nextPage);
