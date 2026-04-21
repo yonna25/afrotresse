@@ -91,10 +91,26 @@ export function isPaidCredit(){ return getCredits() > PRICING.freeCredits }
 // ─── Sync depuis le serveur (source de vérité) ───────────────────
 export async function syncCreditsFromServer() {
   try {
+    // Connectée → source de vérité = table `credits` (user_id / balance)
+    // Ne jamais laisser la table `sessions` écraser ces crédits
+    const { getCurrentUser, getSupabaseCredits } = await import('./useSupabaseCredits.js')
+    const user = await getCurrentUser()
+    if (user) {
+      const balance = await getSupabaseCredits(user.id)
+      setCredits(balance)
+      return balance
+    }
+  } catch {}
+
+  // Anonyme → table `sessions` via /api/credits
+  try {
     const sessionId = await getSessionIdWithFp()
     if (!sessionId) return getCredits()
 
-    const res = await fetch(`/api/credits?sessionId=${encodeURIComponent(sessionId)}`)
+    // sessionId envoyé en header — lu par api/credits.js via x-session-id
+    const res = await fetch('/api/credits', {
+      headers: { 'x-session-id': sessionId },
+    })
     if (!res.ok) return getCredits()
 
     const { credits } = await res.json()
@@ -122,11 +138,17 @@ async function _consumeSupabase(amount) {
     }
 
     // Sync localStorage avec le vrai solde Supabase
-    const balance = await getSupabaseCredits(user.id)
-    setCredits(balance)
-    return true
+    // IMPORTANT : ce try/catch est ISOLÉ — une erreur ici ne doit PAS
+    // faire retourner null (ce qui déclencherait une 2ème déduction via /api/consume)
+    try {
+      const balance = await getSupabaseCredits(user.id)
+      setCredits(balance)
+    } catch {
+      // La déduction a réussi — on ignore l'échec du sync
+    }
+    return true // ← toujours true si la boucle a abouti
   } catch {
-    return null // erreur → fallback sessionId
+    return null // erreur avant/pendant la déduction → fallback sessionId
   }
 }
 
