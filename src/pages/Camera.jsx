@@ -96,7 +96,7 @@ export default function Camera() {
   return (
     <>
       <Seo title="AfroTresse" noindex />
-      <div className="min-h-screen bg-brown flex flex-col">
+      <div className="min-h-screen flex flex-col" style={{ background: '#1A0A00' }}>
       {/* Header */}
       <div className="flex items-center gap-4 px-6 pt-14 pb-4">
         <button onClick={() => navigate(-1)} className="w-10 h-10 glass rounded-full flex items-center justify-center text-cream">
