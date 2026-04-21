@@ -198,17 +198,9 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      const raw = sessionStorage.getItem('afrotresse_credit_success')
-      if (raw) {
-        try {
-          const data = JSON.parse(raw)
-          sessionStorage.removeItem('afrotresse_credit_success')
-          setCreditSuccess(data)
-        } catch {}
-      }
-    }, 500)
-    return () => clearInterval(interval)
+    const handler = (e) => setCreditSuccess(e.detail)
+    window.addEventListener('afrotresse:credit_success', handler)
+    return () => window.removeEventListener('afrotresse:credit_success', handler)
   }, [])
 
   return (
