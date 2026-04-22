@@ -5,6 +5,7 @@ import { getCredits, addCredits, PRICING } from '../services/credits.js'
 import { getCurrentUser, addSupabaseCredits } from '../services/useSupabaseCredits.js'
 import Seo from "../components/Seo.jsx";
 import SecureCredits from '../components/SecureCredits.jsx'
+import ReviewsCarousel from '../components/ReviewsCarousel.jsx'
 
 function loadFedaPay() {
   return new Promise((resolve, reject) => {
@@ -233,6 +234,16 @@ export default function Credits() {
                 </svg> Chargement...</>
               : 'Payer avec FedaPay 💳'}
           </motion.button>
+        </div>
+
+        {/* Avis clients — preuve sociale avant paiement */}
+        <div className="mt-10">
+          <ReviewsCarousel
+            title="Elles ont osé, elles ont adoré 💛"
+            minRating={4}
+            compact
+            limit={8}
+          />
         </div>
 
         {/* Infos */}
