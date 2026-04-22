@@ -8,7 +8,9 @@ import {
   getOrCreateSessionId,
   resetMessageAssignment,
 } from "../services/stableMessage.js";
-import { useFavorites } from "../hooks/useFavorites.js";
+import { useFavorites } from "../hooks/useFavorites.js"
+import ReviewFlow from "../components/ReviewForm.jsx"
+import { shouldShowReviewPopup } from "../services/reviews.js";
 
 
 const STYLES_PER_PAGE = 3;
@@ -111,6 +113,7 @@ export default function Results() {
   const [errorMsg, setErrorMsg]       = useState("");
   const [showFireworks, setShowFireworks] = useState(false);
   const [showVirtualTryOnModal, setShowVirtualTryOnModal] = useState(false);
+  const [showReview, setShowReview] = useState(false);
   const [stableMsg, setStableMsg]     = useState({ headline: "Voici tes résultats ✨", subtext: "" });
 
   // Sauvegarde profil
@@ -143,6 +146,13 @@ export default function Results() {
   const topRef   = useRef(null);
   const errorRef = useRef(null);
   const userName = localStorage.getItem("afrotresse_user_name") || "Reine";
+
+  // ── Popup avis — déclenchée 5s après affichage des résultats ─────────────────
+  useEffect(() => {
+    if (!shouldShowReviewPopup()) return
+    const timer = setTimeout(() => setShowReview(true), 5000)
+    return () => clearTimeout(timer)
+  }, [])
 
   // ── Détection navigation fraîche (pas refresh ni retour arrière) ───────────
   // ── Flag posé par Analyze.jsx juste avant navigate("/results") ──────────
@@ -897,6 +907,9 @@ export default function Results() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* POPUP AVIS */}
+      {showReview && <ReviewFlow />}
 
       {/* BOUTONS FLOTTANTS */}
       <div className="fixed bottom-24 right-4 z-40 flex flex-col items-center gap-2">
