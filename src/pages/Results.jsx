@@ -277,9 +277,6 @@ export default function Results() {
   useEffect(() => {
     if (displayedStyles.length > 0) markStylesSeen(displayedStyles);
   }, [currentPage]); // eslint-disable-line
-  const maxPages = styles.length > 0 ? Math.ceil(styles.length / STYLES_PER_PAGE) : 2;
-  const allStylesSeen = currentPage >= maxPages;
-
   const goToPage = (page) => {
     setCurrentPage(page);
     localStorage.setItem("afrotresse_current_page", String(page));
