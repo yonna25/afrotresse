@@ -242,6 +242,20 @@ export default function Results() {
     return arr;
   };
 
+  // ── Anti-doublons : styles déjà affichés cette session ────────
+  const getSeenIdsThisSession = () => {
+    try { return JSON.parse(sessionStorage.getItem("afrotresse_seen_ids") || "[]"); }
+    catch { return []; }
+  };
+
+  const markStylesSeen = (styleList) => {
+    const seen = getSeenIdsThisSession();
+    const newIds = styleList.map(s => s.id).filter(id => !seen.includes(id));
+    if (newIds.length > 0) {
+      sessionStorage.setItem("afrotresse_seen_ids", JSON.stringify([...seen, ...newIds]));
+    }
+  };
+
   const getPageStyles = (page) => {
     const total = styles.length;
     if (total === 0) return [];
@@ -250,12 +264,23 @@ export default function Results() {
     const shuffleIndex = Math.floor(((page - 1) * STYLES_PER_PAGE) / stylesPerShuffle);
     const positionInShuffle = ((page - 1) * STYLES_PER_PAGE) % stylesPerShuffle;
     const shuffled = getShuffledStyles(baseSeed + shuffleIndex * 9973);
+
+    // Exclure les styles déjà vus cette session (sauf page 1)
+    const seenIds = page > 1 ? getSeenIdsThisSession() : [];
+    const unseen = shuffled.filter(s => !seenIds.includes(s.id));
+    const pool = unseen.length >= STYLES_PER_PAGE ? unseen : shuffled;
+
     const result = [];
-    for (let i = 0; i < STYLES_PER_PAGE; i++) result.push(shuffled[(positionInShuffle + i) % total]);
+    for (let i = 0; i < STYLES_PER_PAGE; i++) result.push(pool[(positionInShuffle + i) % pool.length]);
     return result;
   };
 
   const displayedStyles = getPageStyles(currentPage);
+
+  // Marquer les styles affichés comme vus
+  useEffect(() => {
+    if (displayedStyles.length > 0) markStylesSeen(displayedStyles);
+  }, [currentPage]); // eslint-disable-line
   const maxPages = styles.length > 0 ? Math.ceil(styles.length / STYLES_PER_PAGE) : 2;
   const allStylesSeen = currentPage >= maxPages;
 
@@ -281,6 +306,42 @@ export default function Results() {
     setShowFireworks(true);
     topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
+
+  // ── Fin de catalogue ────────────────────────────────────────
+  const [showCatalogueEnd, setShowCatalogueEnd] = useState(false);
+
+  // Détection : tous les styles du catalogue global vus cette session
+  const TOTAL_CATALOGUE = styles.length; // 6 styles par forme
+  const allCatalogueSeen = () => {
+    const seen = getSeenIdsThisSession();
+    return TOTAL_CATALOGUE > 0 && seen.length >= TOTAL_CATALOGUE;
+  };
+
+  const handleDiscoverMore = () => {
+    if (credits <= 0) { navigate("/credits"); return; }
+    const ok = consumeCredits(1);
+    if (!ok) { navigate("/credits"); return; }
+    setCredits(getCredits());
+    syncCreditsFromServer().catch(() => {});
+    // Vider les styles vus sauf les 2 derniers (éviter répétition immédiate)
+    const seen = getSeenIdsThisSession();
+    const keep = seen.slice(-2);
+    sessionStorage.setItem("afrotresse_seen_ids", JSON.stringify(keep));
+    // Reset pagination et shuffle
+    const nextPage = unlockedPages + 1;
+    setUnlockedPages(nextPage);
+    setCurrentPage(nextPage);
+    localStorage.setItem("afrotresse_unlocked_pages", String(nextPage));
+    localStorage.setItem("afrotresse_current_page", String(nextPage));
+    setShowCatalogueEnd(false);
+    setShowFireworks(true);
+    topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  // Déclencher la détection après chaque changement de page
+  useEffect(() => {
+    if (allCatalogueSeen()) setShowCatalogueEnd(true);
+  }, [currentPage, styles]); // eslint-disable-line
 
   const handleSaveProfile = () => {
     const nom = savePrenom.trim() || "Reine";
@@ -625,7 +686,7 @@ export default function Results() {
         })}
       </div>
 
-      {/* VOIR 3 AUTRES STYLES */}
+      {/* VOIR 3 AUTRES STYLES / FIN DE CATALOGUE */}
       {currentPage === 1 && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }} className="mt-10 flex flex-col items-center gap-3">
@@ -634,39 +695,112 @@ export default function Results() {
             <span className="text-[10px] text-white/30 uppercase tracking-widest">Envie de plus ?</span>
             <div className="flex-1 h-px bg-white/10" />
           </div>
-          {allStylesSeen ? (
-            <div className="w-full max-w-xs py-5 rounded-2xl text-center"
-              style={{ background: "rgba(201,150,58,0.08)", border: "1.5px solid rgba(201,150,58,0.2)" }}>
-              <p className="text-sm font-black text-[#C9963A]">Tu as découvert tous tes styles ✨</p>
-              <p className="text-[11px] text-white/40 mt-1">Reprends un selfie pour de nouvelles recommandations</p>
-              <motion.button whileTap={{ scale: 0.97 }}
-                onClick={() => navigate("/camera")}
-                className="mt-3 px-5 py-2 rounded-xl font-black text-xs text-[#1A0A00]"
-                style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}>
-                Nouveau selfie
-              </motion.button>
-            </div>
-          ) : (
-            <motion.button whileTap={{ scale: 0.97 }} onClick={handleGenerateMore}
-              className="w-full max-w-xs py-5 rounded-2xl font-black text-base relative overflow-hidden"
-              style={{
-                background: "linear-gradient(135deg, #3D2616, #4A2E1A)",
-                border: "1.5px solid rgba(201,150,58,0.4)",
-                boxShadow: "0 0 30px rgba(201,150,58,0.1)",
-              }}>
-              <span className="flex items-center justify-center gap-2 text-[#C9963A]">
-                ✨ Voir 3 autres styles
-                <span className="text-[10px] bg-[#C9963A]/20 border border-[#C9963A]/40 text-[#C9963A] px-2 py-0.5 rounded-full font-black">
-                  1 crédit
-                </span>
+          <motion.button whileTap={{ scale: 0.97 }} onClick={handleGenerateMore}
+            className="w-full max-w-xs py-5 rounded-2xl font-black text-base relative overflow-hidden"
+            style={{
+              background: "linear-gradient(135deg, #3D2616, #4A2E1A)",
+              border: "1.5px solid rgba(201,150,58,0.4)",
+              boxShadow: "0 0 30px rgba(201,150,58,0.1)",
+            }}>
+            <span className="flex items-center justify-center gap-2 text-[#C9963A]">
+              ✨ Voir 3 autres styles
+              <span className="text-[10px] bg-[#C9963A]/20 border border-[#C9963A]/40 text-[#C9963A] px-2 py-0.5 rounded-full font-black">
+                1 crédit
               </span>
-              <p className="text-[10px] text-white/30 mt-1 font-normal">
-                Solde actuel : {credits} crédit{credits > 1 ? "s" : ""}
-              </p>
-            </motion.button>
-          )}
+            </span>
+            <p className="text-[10px] text-white/30 mt-1 font-normal">
+              Solde actuel : {credits} crédit{credits > 1 ? "s" : ""}
+            </p>
+          </motion.button>
         </motion.div>
       )}
+
+      {/* MODULE FIN DE CATALOGUE */}
+      <AnimatePresence>
+        {showCatalogueEnd && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[150] flex items-end justify-center px-4 pb-8"
+            style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(10px)" }}
+          >
+            <motion.div
+              initial={{ y: 80, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 80, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 280, damping: 26 }}
+              className="w-full max-w-sm rounded-[2.5rem] p-7 text-center relative overflow-hidden"
+              style={{
+                background: "linear-gradient(160deg, #2C1A0E 0%, #3D2616 100%)",
+                border: "2px solid rgba(201,150,58,0.5)",
+                boxShadow: "0 0 60px rgba(201,150,58,0.3)",
+              }}
+            >
+              {/* Particules décoratives */}
+              <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                {[...Array(6)].map((_, i) => (
+                  <motion.div key={i} className="absolute text-lg"
+                    initial={{ opacity: 0, y: 40, x: `${10 + i * 15}%` }}
+                    animate={{ opacity: [0, 1, 0], y: -60 }}
+                    transition={{ delay: i * 0.2, duration: 2, repeat: Infinity, repeatDelay: 2 }}>
+                    {['✨', '👑', '💛', '✨', '👑', '💛'][i]}
+                  </motion.div>
+                ))}
+              </div>
+
+              <motion.div initial={{ scale: 0 }} animate={{ scale: [0, 1.2, 1] }}
+                transition={{ delay: 0.1, duration: 0.5 }} className="text-5xl mb-3">
+                ✨
+              </motion.div>
+
+              <h2 className="text-xl font-black text-[#C9963A] mb-1">
+                Tu as exploré toutes les suggestions !
+              </h2>
+              <p className="text-[12px] text-white/50 mb-6 leading-relaxed">
+                Prête à découvrir de nouvelles combinaisons ?{" "}
+                <span className="text-white/30 italic">Chaque génération peut te surprendre…</span>
+              </p>
+
+              {/* CTA principal */}
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={handleDiscoverMore}
+                className="w-full py-4 rounded-2xl font-black text-base text-[#2C1A0E] mb-3 relative overflow-hidden"
+                style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}
+              >
+                <span className="flex items-center justify-center gap-2">
+                  🔀 Découvrir encore des styles
+                  <span className="text-[10px] bg-[#2C1A0E]/20 px-2 py-0.5 rounded-full font-black">
+                    1 crédit
+                  </span>
+                </span>
+              </motion.button>
+
+              {/* CTA secondaire */}
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={() => { setShowCatalogueEnd(false); navigate("/library"); }}
+                className="w-full py-3.5 rounded-2xl font-black text-sm mb-2"
+                style={{
+                  background: "rgba(201,150,58,0.08)",
+                  border: "1.5px solid rgba(201,150,58,0.3)",
+                  color: "#C9963A",
+                }}
+              >
+                ❤️ Voir mes favoris
+              </motion.button>
+
+              <button
+                onClick={() => setShowCatalogueEnd(false)}
+                className="w-full py-2 text-xs text-white/20"
+              >
+                Fermer
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* PAGINATION */}
       {unlockedPages > 1 && (
