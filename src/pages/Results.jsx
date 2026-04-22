@@ -304,8 +304,8 @@ export default function Results() {
   // Déclencheur : toutes les pages possibles ont été débloquées
   // 6 styles / 3 par page = 2 pages → fin atteinte quand unlockedPages >= totalPages
   const [showCatalogueEnd, setShowCatalogueEnd] = useState(false);
-  const totalPages = styles.length > 0 ? Math.ceil(styles.length / STYLES_PER_PAGE) : 2;
-  const allStylesSeen = unlockedPages >= totalPages;
+  const totalPages = styles.length > 0 ? Math.ceil(styles.length / STYLES_PER_PAGE) : 4;
+  const allStylesSeen = unlockedPages >= totalPages && unlockedPages > 1;
 
   const handleDiscoverMore = () => {
     if (credits <= 0) { navigate("/credits"); return; }
@@ -523,7 +523,7 @@ export default function Results() {
                 ⚡ Il te reste 1 analyse gratuite — inscris-toi pour ne pas la perdre.
               </p>
             )}
-            {credits === 0 && (
+            {credits === 0 && !saveDone && (
               <p className="text-[11px] text-red-300 font-bold mt-1">
                 Tes analyses gratuites sont terminées — crée un compte pour continuer.
               </p>
