@@ -1,6 +1,7 @@
-// api/credits.js
-// Compatible Next.js API Routes (pages/api) et Express.
-// Adaptez req/res à votre framework si nécessaire.
+// api/credits.js — AfroTresse
+// Vercel Serverless Function — NE PAS confondre avec src/services/credits.js
+// Lecture du solde depuis Supabase (source de vérité) + anti-fraude fingerprint
+// ─────────────────────────────────────────────────────
 
 import { createClient } from '@supabase/supabase-js'; // ou votre ORM
 
