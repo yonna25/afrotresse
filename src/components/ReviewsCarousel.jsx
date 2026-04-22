@@ -100,7 +100,7 @@ function ReviewSkeleton() {
 export default function ReviewsCarousel({
   minRating = 4,
   limit     = 12,
-  title     = 'Ce qu'elles disent 💛',
+  title     = "Ce qu'elles disent 💛",
   compact   = false,
 }) {
   const [reviews,  setReviews]  = useState([])
