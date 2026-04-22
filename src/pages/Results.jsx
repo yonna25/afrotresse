@@ -259,19 +259,15 @@ export default function Results() {
   const getPageStyles = (page) => {
     const total = styles.length;
     if (total === 0) return [];
+    // Shuffle stable basé sur le prénom — même ordre à chaque visite
     const baseSeed = userName.split("").reduce((acc, c) => acc + c.charCodeAt(0), 12345);
-    const stylesPerShuffle = Math.floor(total / STYLES_PER_PAGE) * STYLES_PER_PAGE || STYLES_PER_PAGE;
-    const shuffleIndex = Math.floor(((page - 1) * STYLES_PER_PAGE) / stylesPerShuffle);
-    const positionInShuffle = ((page - 1) * STYLES_PER_PAGE) % stylesPerShuffle;
-    const shuffled = getShuffledStyles(baseSeed + shuffleIndex * 9973);
-
-    // Exclure les styles déjà vus cette session (sauf page 1)
-    const seenIds = page > 1 ? getSeenIdsThisSession() : [];
-    const unseen = shuffled.filter(s => !seenIds.includes(s.id));
-    const pool = unseen.length >= STYLES_PER_PAGE ? unseen : shuffled;
-
+    const shuffled = getShuffledStyles(baseSeed);
+    // Chaque page prend une tranche séquentielle — jamais de doublon
+    const start = ((page - 1) * STYLES_PER_PAGE) % total;
     const result = [];
-    for (let i = 0; i < STYLES_PER_PAGE; i++) result.push(pool[(positionInShuffle + i) % pool.length]);
+    for (let i = 0; i < STYLES_PER_PAGE; i++) {
+      result.push(shuffled[(start + i) % total]);
+    }
     return result;
   };
 
@@ -308,14 +304,11 @@ export default function Results() {
   };
 
   // ── Fin de catalogue ────────────────────────────────────────
+  // Déclencheur : toutes les pages possibles ont été débloquées
+  // 6 styles / 3 par page = 2 pages → fin atteinte quand unlockedPages >= totalPages
   const [showCatalogueEnd, setShowCatalogueEnd] = useState(false);
-
-  // Détection : tous les styles du catalogue global vus cette session
-  const TOTAL_CATALOGUE = styles.length; // 6 styles par forme
-  const allCatalogueSeen = () => {
-    const seen = getSeenIdsThisSession();
-    return TOTAL_CATALOGUE > 0 && seen.length >= TOTAL_CATALOGUE;
-  };
+  const totalPages = styles.length > 0 ? Math.ceil(styles.length / STYLES_PER_PAGE) : 2;
+  const allStylesSeen = unlockedPages >= totalPages;
 
   const handleDiscoverMore = () => {
     if (credits <= 0) { navigate("/credits"); return; }
@@ -327,21 +320,22 @@ export default function Results() {
     const seen = getSeenIdsThisSession();
     const keep = seen.slice(-2);
     sessionStorage.setItem("afrotresse_seen_ids", JSON.stringify(keep));
-    // Reset pagination et shuffle
-    const nextPage = unlockedPages + 1;
-    setUnlockedPages(nextPage);
-    setCurrentPage(nextPage);
-    localStorage.setItem("afrotresse_unlocked_pages", String(nextPage));
-    localStorage.setItem("afrotresse_current_page", String(nextPage));
+    // Reset pagination
+    setUnlockedPages(1);
+    setCurrentPage(1);
+    localStorage.setItem("afrotresse_unlocked_pages", "1");
+    localStorage.setItem("afrotresse_current_page", "1");
     setShowCatalogueEnd(false);
     setShowFireworks(true);
     topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  // Déclencher la détection après chaque changement de page
+  // Déclencher uniquement quand toutes les pages ont été débloquées
   useEffect(() => {
-    if (allCatalogueSeen()) setShowCatalogueEnd(true);
-  }, [currentPage, styles]); // eslint-disable-line
+    if (styles.length > 0 && allStylesSeen && unlockedPages > 1) {
+      setShowCatalogueEnd(true);
+    }
+  }, [unlockedPages, styles.length]); // eslint-disable-line
 
   const handleSaveProfile = () => {
     const nom = savePrenom.trim() || "Reine";
