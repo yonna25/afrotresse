@@ -150,12 +150,10 @@ export default function Analyze() {
 
         const result = await analyzeFace(selfieUrl);
 
-        // ── Stocker résultats dans sessionStorage ET localStorage ──
-        // sessionStorage : accès rapide pendant la session
-        // localStorage   : persistance si le navigateur vide la session en arrière-plan
+        // Stocker résultats en sessionStorage uniquement
+        // → perdus à la fermeture/refresh (incitation à s'inscrire)
         const resultsJson = JSON.stringify(result);
         sessionStorage.setItem("afrotresse_results", resultsJson);
-        localStorage.setItem("afrotresse_results_backup", resultsJson);
         localStorage.setItem("afrotresse_face_shape", result.faceShape);
 
         if (result.creditsRemaining !== undefined) {
