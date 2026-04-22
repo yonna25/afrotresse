@@ -175,7 +175,7 @@ export default function Profile() {
       <div className="mt-16 flex flex-col items-center px-5 w-full">
         <h1 className="text-2xl font-black uppercase tracking-tight">{userName}</h1>
         <p className="text-[11px] text-[#C9963A] font-medium tracking-[0.2em] uppercase opacity-80 mt-0.5">
-          Votre Majesté
+          Sublimez votre couronne
         </p>
       </div>
 
