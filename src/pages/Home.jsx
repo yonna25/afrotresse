@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getCredits, syncCreditsFromServer } from '../services/credits.js';
 import Seo from "../components/Seo.jsx";
+import { getApprovedReviews } from '../services/reviews.js';
 
 const SLIDES = [
   { id: 1, image: '/Afrotresse1.jpg', style: 'Knotless Braids' },
@@ -54,6 +55,7 @@ export default function Home() {
   const storedName = localStorage.getItem('afrotresse_user_name');
   const userName = storedName || 'Reine';
   const [showArrow] = useState(true);
+  const [socialProof, setSocialProof] = useState(null);
 
   // ── Crédits : lecture locale immédiate, sync en arrière-plan ────
   const [credits, setCreditsState] = useState(() => getCredits());
@@ -62,6 +64,14 @@ export default function Home() {
       .then(c => { if (c !== undefined) setCreditsState(c); })
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    getApprovedReviews({ limit: 50, minRating: 4 }).then(reviews => {
+      if (!reviews.length) return
+      const avg = reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
+      setSocialProof({ avg: avg.toFixed(1), count: reviews.length })
+    }).catch(() => {})
+  }, [])
 
   const handleStart = () => {
     if (credits === 0) {
@@ -167,6 +177,28 @@ export default function Home() {
                 </motion.div>
               )}
             </AnimatePresence>
+
+            {/* BADGE PREUVE SOCIALE */}
+            {socialProof && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                className="pointer-events-auto flex items-center gap-2 px-4 py-2 rounded-full mb-3"
+                style={{
+                  background: 'rgba(44,26,14,0.75)',
+                  border: '1px solid rgba(201,150,58,0.35)',
+                  backdropFilter: 'blur(10px)',
+                }}
+              >
+                <span className="text-sm">{'⭐'.repeat(Math.round(parseFloat(socialProof.avg)))}</span>
+                <span className="text-[#C9963A] font-black text-sm">{socialProof.avg}</span>
+                <span className="text-white/40 text-xs">·</span>
+                <span className="text-white/70 text-xs font-medium">
+                  {socialProof.count}+ reines satisfaites
+                </span>
+              </motion.div>
+            )}
 
             <div className="pointer-events-auto">
               <button
