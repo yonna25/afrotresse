@@ -65,6 +65,34 @@ const STYLES_BY_SHAPE = {
       tags: ["Graphique", "Précision", "Moderne"],
       duration: "3-5h"
     },
+    {
+      id: "pompom",
+      name: "Pom Pom Braids",
+      description: "Un style ludique et volumineux avec des pompons qui apportent du caractère à ton visage ovale.",
+      tags: ["Créatif", "Volume", "Original"],
+      duration: "3-5h"
+    },
+    {
+      id: "crochetbraids",
+      name: "Crochet Braids",
+      description: "Des tresses au crochet naturelles et légères qui encadrent parfaitement un visage ovale.",
+      tags: ["Naturel", "Léger", "Tendance"],
+      duration: "2-4h"
+    },
+    {
+      id: "fanbraids",
+      name: "Fan Braids",
+      description: "Des tresses en éventail élaborées qui mettent en valeur la symétrie naturelle du visage ovale.",
+      tags: ["Élaboré", "Artistique", "Unique"],
+      duration: "4-6h"
+    },
+    {
+      id: "cornowspuffs",
+      name: "Cornrows & Puffs",
+      description: "Un mix tendance entre cornrows plaqués et puffs volumineux, parfait pour les visages ovales.",
+      tags: ["Mixte", "Volume", "Moderne"],
+      duration: "2-3h"
+    },
   ],
 
   round: [
@@ -108,6 +136,34 @@ const STYLES_BY_SHAPE = {
       name: "Stitch Braids",
       description: "Les lignes graphiques des stitch braids créent un effet visuel allongeant parfait pour ton visage rond.",
       tags: ["Graphique", "Allongeant", "Moderne"],
+      duration: "3-5h"
+    },
+    {
+      id: "fanbraids",
+      name: "Fan Braids",
+      description: "Les fan braids créent de la hauteur et de la structure, parfait pour allonger un visage rond.",
+      tags: ["Élaboré", "Hauteur", "Artistique"],
+      duration: "4-6h"
+    },
+    {
+      id: "crochetbraids",
+      name: "Crochet Braids",
+      description: "Des tresses légères et volumineuses en hauteur qui allongent et allègent un visage rond.",
+      tags: ["Léger", "Volume", "Allongeant"],
+      duration: "2-4h"
+    },
+    {
+      id: "cornowspuffs",
+      name: "Cornrows & Puffs",
+      description: "Des puffs en hauteur combinés à des cornrows créent l'illusion d'un visage plus long.",
+      tags: ["Hauteur", "Moderne", "Volume"],
+      duration: "2-3h"
+    },
+    {
+      id: "pompom",
+      name: "Pom Pom Braids",
+      description: "Portés en hauteur, les pompons allongent visuellement et donnent du caractère à un visage rond.",
+      tags: ["Créatif", "Hauteur", "Original"],
       duration: "3-5h"
     },
   ],
@@ -155,6 +211,34 @@ const STYLES_BY_SHAPE = {
       tags: ["Structuré", "Créatif", "Adoucissant"],
       duration: "2-4h"
     },
+    {
+      id: "crochetbraids",
+      name: "Crochet Braids",
+      description: "Des tresses au crochet souples et naturelles qui adoucissent les angles d'un visage carré.",
+      tags: ["Doux", "Naturel", "Adoucissant"],
+      duration: "2-4h"
+    },
+    {
+      id: "pompom",
+      name: "Pom Pom Braids",
+      description: "Des pompons arrondis qui contrebalancent les angles de ton visage carré avec légèreté.",
+      tags: ["Arrondi", "Doux", "Original"],
+      duration: "3-5h"
+    },
+    {
+      id: "fanbraids",
+      name: "Fan Braids",
+      description: "Des fan braids courbées qui adoucissent les contours anguleux tout en restant élégantes.",
+      tags: ["Courbé", "Élégant", "Adoucissant"],
+      duration: "4-6h"
+    },
+    {
+      id: "cornowspuffs",
+      name: "Cornrows & Puffs",
+      description: "La combinaison de cornrows et puffs ronds atténue la carrure et crée un look équilibré.",
+      tags: ["Équilibré", "Arrondi", "Moderne"],
+      duration: "2-3h"
+    },
   ],
 
   heart: [
@@ -199,6 +283,34 @@ const STYLES_BY_SHAPE = {
       description: "Des cornrows plaqués en haut avec des tresses libres en bas équilibrent les proportions de ton visage.",
       tags: ["Structuré", "Net", "Équilibré"],
       duration: "2-4h"
+    },
+    {
+      id: "pompom",
+      name: "Pom Pom Braids",
+      description: "Des pompons en bas du visage élargissent visuellement le menton et équilibrent un visage en cœur.",
+      tags: ["Équilibrant", "Volume", "Original"],
+      duration: "3-5h"
+    },
+    {
+      id: "crochetbraids",
+      name: "Crochet Braids",
+      description: "Des tresses légères qui créent du volume en bas pour équilibrer un front large.",
+      tags: ["Léger", "Équilibrant", "Naturel"],
+      duration: "2-4h"
+    },
+    {
+      id: "fanbraids",
+      name: "Fan Braids",
+      description: "Des fan braids qui s'élargissent vers le bas pour équilibrer harmonieusement un visage en cœur.",
+      tags: ["Élargissant", "Artistique", "Harmonieux"],
+      duration: "4-6h"
+    },
+    {
+      id: "cornowspuffs",
+      name: "Cornrows & Puffs",
+      description: "Des puffs placés bas créent le volume nécessaire pour équilibrer un visage en cœur.",
+      tags: ["Équilibrant", "Volume", "Moderne"],
+      duration: "2-3h"
     },
   ],
 
@@ -245,6 +357,34 @@ const STYLES_BY_SHAPE = {
       tags: ["Léger", "Volume", "Naturel"],
       duration: "2-4h"
     },
+    {
+      id: "pompom",
+      name: "Pom Pom Braids",
+      description: "Des pompons sur les côtés créent de la largeur et cassent l'effet longueur d'un visage allongé.",
+      tags: ["Élargissant", "Original", "Volume"],
+      duration: "3-5h"
+    },
+    {
+      id: "crochetbraids",
+      name: "Crochet Braids",
+      description: "Des tresses au crochet volumineuses sur les côtés qui élargissent harmonieusement un visage long.",
+      tags: ["Volume", "Élargissant", "Naturel"],
+      duration: "2-4h"
+    },
+    {
+      id: "cornowspuffs",
+      name: "Cornrows & Puffs",
+      description: "Des puffs latéraux combinés à des cornrows créent de la largeur pour équilibrer un visage long.",
+      tags: ["Élargissant", "Moderne", "Volume"],
+      duration: "2-3h"
+    },
+    {
+      id: "fanbraids",
+      name: "Fan Braids",
+      description: "Des fan braids horizontales qui créent de la largeur et équilibrent un visage trop allongé.",
+      tags: ["Horizontal", "Élargissant", "Artistique"],
+      duration: "4-6h"
+    },
   ],
 
   diamond: [
@@ -289,6 +429,34 @@ const STYLES_BY_SHAPE = {
       description: "Des torsades naturelles qui encadrent ton visage diamant en douceur et mettent en valeur tes traits.",
       tags: ["Naturel", "Doux", "Chic"],
       duration: "2-4h"
+    },
+    {
+      id: "pompom",
+      name: "Pom Pom Braids",
+      description: "Des pompons qui encadrent et subliment les pommettes prononcées d'un visage diamant.",
+      tags: ["Sublimant", "Original", "Volume"],
+      duration: "3-5h"
+    },
+    {
+      id: "fanbraids",
+      name: "Fan Braids",
+      description: "Des fan braids structurées qui encadrent parfaitement les pommettes larges d'un visage diamant.",
+      tags: ["Structuré", "Encadrant", "Artistique"],
+      duration: "4-6h"
+    },
+    {
+      id: "crochetbraids",
+      name: "Crochet Braids",
+      description: "Des tresses légères qui encadrent en douceur les traits prononcés d'un visage diamant.",
+      tags: ["Doux", "Léger", "Encadrant"],
+      duration: "2-4h"
+    },
+    {
+      id: "cornowspuffs",
+      name: "Cornrows & Puffs",
+      description: "Un mix moderne qui encadre et met en valeur la structure unique d'un visage diamant.",
+      tags: ["Moderne", "Encadrant", "Mixte"],
+      duration: "2-3h"
     },
   ],
 };
