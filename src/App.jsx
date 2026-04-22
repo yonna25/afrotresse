@@ -19,6 +19,7 @@ import CookiePolicy from './pages/CookiePolicy.jsx'
 import FAQ from './pages/FAQ.jsx'
 import MagicLink from './pages/MagicLink.jsx'
 import Library from './pages/Library.jsx'
+import AdminReviews from './pages/AdminReviews.jsx'
 
 // Import de la navigation
 import BottomNav from './components/BottomNav.jsx'
@@ -134,7 +135,7 @@ function CreditSuccessPopup({ data, onClose }) {
 // ROUTES
 function AnimatedRoutes() {
   const location = useLocation()
-  const hideNav = ['/camera', '/analyze', '/magic-link'].includes(location.pathname)
+  const hideNav = ['/camera', '/analyze', '/magic-link', '/admin-reviews'].includes(location.pathname)
 
   return (
     <>
@@ -153,6 +154,7 @@ function AnimatedRoutes() {
           <Route path="/faq" element={<FAQ />} />
           <Route path="/magic-link" element={<MagicLink />} />
           <Route path="/library" element={<Library />} />
+          <Route path="/admin-reviews" element={<AdminReviews />} />
         </Routes>
       </AnimatePresence>
       {!hideNav && <BottomNav />}
