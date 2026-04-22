@@ -483,14 +483,14 @@ export default function Results() {
           )}
           <div className="absolute -bottom-2 -right-2 bg-[#C9963A] text-[#2C1A0E] text-[10px] font-black px-2 py-1 rounded-md uppercase">Moi</div>
         </div>
-        <div className="flex flex-col flex-1">
-          <h1 className="font-bold text-2xl text-[#C9963A] leading-tight">
+        <div className="flex flex-col flex-1 min-w-0">
+          <h1 className="font-bold text-lg sm:text-2xl text-[#C9963A] leading-tight break-words">
             {displayName
-              ? <>Voici tes résultats <span className="text-white">{displayName}</span> ✨</>
+              ? <><span className="block">Voici tes résultats</span><span className="text-white">{displayName}</span> ✨</>
               : stableMsg.headline
             }
           </h1>
-          <p className="text-[11px] opacity-80 leading-snug mt-1.5 max-w-xs">{stableMsg.subtext}</p>
+          <p className="text-[11px] opacity-80 leading-snug mt-1.5">{stableMsg.subtext}</p>
         </div>
       </motion.div>
 
@@ -662,22 +662,15 @@ export default function Results() {
 
                 {/* Virtual Try-On — Coming Soon */}
                 <button onClick={() => credits === 0 ? navigate("/credits") : setShowVirtualTryOnModal(true)}
-                  className="w-full py-4 rounded-2xl font-bold text-base active:scale-[0.98] transition-all relative overflow-hidden"
-                  style={{
-                    background: "linear-gradient(135deg, rgba(201,150,58,0.08), rgba(201,150,58,0.03))",
-                    border: "1.5px solid rgba(201,150,58,0.25)",
-                  }}>
-                  <motion.div className="absolute inset-0 -skew-x-12 pointer-events-none"
-                    style={{ background: "linear-gradient(90deg, transparent 0%, rgba(201,150,58,0.08) 50%, transparent 100%)" }}
-                    animate={{ x: ["-100%", "200%"] }}
-                    transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 3, ease: "easeInOut" }} />
-                  <span className="flex items-center justify-center gap-2.5 relative">
-                    <span className="text-lg">🧖‍♀️</span>
-                    <span className="text-white/50 font-bold text-sm">Essayer virtuellement</span>
-                    <span className="flex items-center gap-1 text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full"
-                      style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)", color: "#2C1A0E", boxShadow: "0 0 10px rgba(201,150,58,0.4)" }}>
-                      ⏳ Bientôt
-                    </span>
+                  className="w-full py-3 rounded-2xl font-medium text-sm active:scale-[0.98] transition-all flex items-center justify-between px-4"
+                  style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                  <span className="flex items-center gap-2 text-white/35">
+                    <span className="text-base">🧖‍♀️</span>
+                    <span>Essayer virtuellement</span>
+                  </span>
+                  <span className="text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-full"
+                    style={{ background: "rgba(201,150,58,0.12)", color: "rgba(201,150,58,0.6)", border: "1px solid rgba(201,150,58,0.2)" }}>
+                    ⏳ Bientôt
                   </span>
                 </button>
               </div>
@@ -696,19 +689,18 @@ export default function Results() {
             <div className="flex-1 h-px bg-white/10" />
           </div>
           <motion.button whileTap={{ scale: 0.97 }} onClick={handleGenerateMore}
-            className="w-full max-w-xs py-5 rounded-2xl font-black text-base relative overflow-hidden"
+            className="w-full max-w-xs py-4 rounded-2xl font-semibold text-sm relative overflow-hidden"
             style={{
-              background: "linear-gradient(135deg, #3D2616, #4A2E1A)",
-              border: "1.5px solid rgba(201,150,58,0.4)",
-              boxShadow: "0 0 30px rgba(201,150,58,0.1)",
+              background: "rgba(201,150,58,0.06)",
+              border: "1px solid rgba(201,150,58,0.2)",
             }}>
-            <span className="flex items-center justify-center gap-2 text-[#C9963A]">
+            <span className="flex items-center justify-center gap-2 text-[#C9963A]/80">
               ✨ Voir 3 autres styles
-              <span className="text-[10px] bg-[#C9963A]/20 border border-[#C9963A]/40 text-[#C9963A] px-2 py-0.5 rounded-full font-black">
+              <span className="text-[9px] bg-[#C9963A]/10 border border-[#C9963A]/20 text-[#C9963A]/70 px-2 py-0.5 rounded-full font-bold">
                 1 crédit
               </span>
             </span>
-            <p className="text-[10px] text-white/30 mt-1 font-normal">
+            <p className="text-[10px] text-white/20 mt-1 font-normal">
               Solde actuel : {credits} crédit{credits > 1 ? "s" : ""}
             </p>
           </motion.button>
@@ -833,19 +825,7 @@ export default function Results() {
           <p className="text-[10px] text-[#C9963A]/60">
             Solde : {credits} crédit{credits > 1 ? "s" : ""}
           </p>
-          <motion.button whileTap={{ scale: 0.97 }} onClick={handleGenerateMore}
-            className="mt-2 w-full max-w-xs py-5 rounded-2xl font-black text-base relative overflow-hidden"
-            style={{ background: "linear-gradient(135deg, #3D2616, #4A2E1A)", border: "1.5px solid rgba(201,150,58,0.4)", boxShadow: "0 0 30px rgba(201,150,58,0.1)" }}>
-            <span className="flex items-center justify-center gap-2 text-[#C9963A]">
-              ✨ Voir 3 autres styles
-              <span className="text-[10px] bg-[#C9963A]/20 border border-[#C9963A]/40 text-[#C9963A] px-2 py-0.5 rounded-full font-black">
-                1 crédit
-              </span>
-            </span>
-            <p className="text-[10px] text-white/30 mt-1 font-normal">
-              Solde actuel : {credits} crédit{credits > 1 ? "s" : ""}
-            </p>
-          </motion.button>
+
         </motion.div>
       )}
 
@@ -935,7 +915,6 @@ export default function Results() {
           <div className="text-[5px] font-black uppercase opacity-60 leading-tight">Solde</div>
           <div className="text-xl font-black leading-none">{credits}</div>
         </motion.div>
-        {!allStylesSeen && (
         <motion.button initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
           whileTap={{ scale: 0.95 }} onClick={handleGenerateMore}
           className="w-12 h-12 rounded-lg flex flex-col items-center justify-center shadow-lg relative border border-white/10 active:scale-95 transition-all"
@@ -946,7 +925,6 @@ export default function Results() {
             -1
           </div>
         </motion.button>
-        )}
       </div>
 
     </div>
