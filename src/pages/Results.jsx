@@ -377,8 +377,8 @@ export default function Results() {
               initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
               className="text-white font-black text-2xl text-center px-4 leading-tight">
-              Tes styles parfaits<br />
-              <span className="text-[#C9963A]">t'attendent</span>
+              Ton visage,<br />
+              <span className="text-[#C9963A]">tes styles ✨</span>
             </motion.p>
           </div>
           <div className="absolute bottom-0 left-0 right-0 h-24"
@@ -392,10 +392,10 @@ export default function Results() {
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }} className="mb-5">
             <h2 className="text-xl font-black text-white mb-2">
-              Découvre les tresses faites pour toi 💛
+              Découvre les tresses adaptées à ton visage 💛
             </h2>
             <p className="text-[12px] text-white/50 leading-relaxed">
-              Un selfie suffit. Notre technologie lit les proportions de ton visage et sélectionne les styles faits pour toi.
+              Un selfie suffit pour trouver la coiffure qui te correspond.
             </p>
           </motion.div>
 
