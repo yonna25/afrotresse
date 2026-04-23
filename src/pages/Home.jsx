@@ -157,7 +157,7 @@ export default function Home() {
           </div>
 
           {/* CTA — badge + flèche pointant la navbar */}
-          <div className="absolute bottom-16 left-0 right-0 z-40 flex flex-col items-center gap-3 pointer-events-none">
+          <div className="absolute bottom-20 left-0 right-0 z-40 flex flex-col items-start gap-3 pointer-events-none px-5">
 
             {/* BADGE PREUVE SOCIALE */}
             {socialProof && (
