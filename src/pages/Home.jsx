@@ -181,14 +181,14 @@ export default function Home() {
               </motion.div>
             )}
 
-            {/* FLÈCHE vers l'icône photo de la navbar */}
+            {/* FLÈCHE vers l'icône photo de la navbar — centrée */}
             <AnimatePresence>
               {showArrow && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="flex flex-col items-center gap-1"
+                  className="w-full flex flex-col items-center gap-1"
                 >
                   <span className="text-white/50 text-xs font-medium tracking-wide">Appuie ici</span>
                   <motion.div
