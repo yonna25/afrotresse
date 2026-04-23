@@ -24,7 +24,6 @@ const TICKER_MESSAGES = [
 
 const INTERVAL = 3500;
 
-// ── Ticker stable : pas de calcul dynamique d'offset ────────────
 function TickerBar() {
   const text = TICKER_MESSAGES.join('   ✺   ');
   return (
@@ -57,7 +56,6 @@ export default function Home() {
   const [showArrow] = useState(true);
   const [socialProof, setSocialProof] = useState(null);
 
-  // ── Crédits : lecture locale immédiate, sync en arrière-plan ────
   const [credits, setCreditsState] = useState(() => getCredits());
   useEffect(() => {
     syncCreditsFromServer()
@@ -67,11 +65,11 @@ export default function Home() {
 
   useEffect(() => {
     getApprovedReviews({ limit: 50, minRating: 4 }).then(reviews => {
-      if (!reviews.length) return
-      const avg = reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
-      setSocialProof({ avg: avg.toFixed(1), count: reviews.length })
-    }).catch(() => {})
-  }, [])
+      if (!reviews.length) return;
+      const avg = reviews.reduce((s, r) => s + r.rating, 0) / reviews.length;
+      setSocialProof({ avg: avg.toFixed(1), count: reviews.length });
+    }).catch(() => {});
+  }, []);
 
   const handleStart = () => {
     if (credits === 0) {
@@ -124,11 +122,11 @@ export default function Home() {
           {/* LOGO */}
           <div className="absolute inset-x-0 top-0 z-30 px-5 pt-4">
             <div className="flex flex-col leading-tight">
-              <span className="font-display text-2xl leading-none">
+              <span className="font-display text-4xl leading-none">
                 <span className="text-white font-bold">Afro</span>
                 <span className="text-[#C9963A] font-bold">Tresse</span>
               </span>
-              <span className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.75)' }}>
+              <span className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.75)' }}>
                 Chaque visage a sa tresse
               </span>
             </div>
@@ -155,7 +153,7 @@ export default function Home() {
               ))}
             </div>
 
-            {/* BADGE PREUVE SOCIALE — avatars + étoiles */}
+            {/* BADGE PREUVE SOCIALE */}
             {socialProof && (
               <motion.div
                 initial={{ opacity: 0, y: 6 }}
@@ -163,7 +161,6 @@ export default function Home() {
                 transition={{ delay: 0.6 }}
                 className="mt-4 flex items-center gap-3"
               >
-                {/* Avatars avec initiales */}
                 <div className="flex -space-x-2">
                   {[
                     { initial: 'A', bg: '#C9963A' },
@@ -181,10 +178,8 @@ export default function Home() {
                   ))}
                 </div>
 
-                {/* Séparateur */}
                 <div className="w-px h-6 bg-white/15" />
 
-                {/* Étoiles + texte */}
                 <div className="flex flex-col gap-0.5">
                   <div className="flex items-center gap-1">
                     <span className="text-[11px]">⭐⭐⭐⭐⭐</span>
@@ -198,12 +193,8 @@ export default function Home() {
             )}
           </div>
 
-          {/* CTA — badge + flèche pointant la navbar */}
+          {/* CTA — flèche vers navbar */}
           <div className="absolute bottom-20 left-0 right-0 z-40 flex flex-col items-start gap-3 pointer-events-none px-5">
-
-
-
-            {/* FLÈCHE vers l'icône photo de la navbar — centrée */}
             <AnimatePresence>
               {showArrow && (
                 <motion.div
