@@ -77,8 +77,8 @@ export default async function handler(req, res) {
     // ── Utilisatrice anonyme → table `anonymous_usage` ──────
     const { data: session, error } = await supabase
       .from("anonymous_usage")
-      .select("credits")
-      .eq("session_id", sessionId)
+      .select("crédits")
+      .eq("empreinte_digitale_id", fingerprintId || sessionId)
       .maybeSingle();
 
     if (error) throw error;
@@ -87,18 +87,18 @@ export default async function handler(req, res) {
       return res.status(403).json({ error: "Session non initialisée. Appelez /api/credits d'abord." });
     }
 
-    if (session.credits <= 0) {
+    if (session["crédits"] <= 0) {
       return res.status(402).json({ error: "Plus de crédits disponibles", creditsRemaining: 0 });
     }
 
     const { data: updated, error: updateError } = await supabase
       .from("anonymous_usage")
       .update({
-        credits:    session.credits - 1,
-        updated_at: new Date().toISOString(),
+        "crédits":    session["crédits"] - 1,
+        "mise_a_jour_a": new Date().toISOString(),
       })
-      .eq("session_id", sessionId)
-      .select("credits")
+      .eq("empreinte_digitale_id", fingerprintId || sessionId)
+      .select("crédits")
       .single();
 
     if (updateError) throw updateError;
@@ -107,7 +107,7 @@ export default async function handler(req, res) {
       faceShape:        shape,
       faceShapeName:    FACE_SHAPE_NAMES[shape],
       confidence:       95,
-      creditsRemaining: updated.credits,
+      creditsRemaining: updated["crédits"],
     });
 
   } catch (err) {
