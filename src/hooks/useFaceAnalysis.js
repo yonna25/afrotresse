@@ -73,10 +73,13 @@ export async function analyzeFaceWithAI(photoData, timeoutMs = 10000) {
       // Hash échoué → continuer sans cache
     }
 
-    // Analyse locale MediaPipe
-    const faceShape = await detectFaceShapeLocal(file);
-    if (!faceShape) {
-      throw new Error("Impossible de détecter le visage");
+    // Analyse locale MediaPipe — fallback oval si indisponible
+    let faceShape = "oval";
+    try {
+      const detected = await detectFaceShapeLocal(file);
+      if (detected) faceShape = detected;
+    } catch {
+      console.warn("MediaPipe indisponible, fallback oval");
     }
 
     // Fingerprint navigateur
@@ -90,24 +93,18 @@ export async function analyzeFaceWithAI(photoData, timeoutMs = 10000) {
       // FingerprintJS indisponible → IP seule s'applique
     }
 
-    // Récupérer l'userId si connectée
-    let userId = null;
-    try {
-      const { createClient } = await import("@supabase/supabase-js");
-      const sb = createClient(
-        import.meta.env.VITE_SUPABASE_URL,
-        import.meta.env.VITE_SUPABASE_ANON_KEY
-      );
-      const { data: { user } } = await sb.auth.getUser();
-      userId = user?.id || null;
-    } catch {
-      // Non connectée → userId reste null
-    }
-
     // Appel API
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     const requestId = generateUUID();
+
+    // Récupérer userId si connectée
+    let userId = null;
+    try {
+      const { getCurrentUser } = await import('../services/useSupabaseCredits.js');
+      const user = await getCurrentUser();
+      if (user?.id) userId = user.id;
+    } catch {}
 
     let response;
     try {
