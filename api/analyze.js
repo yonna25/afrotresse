@@ -5,7 +5,7 @@
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
-  process.env.VITE_SUPABASE_URL,
+  process.env.SUPABASEE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
@@ -74,10 +74,10 @@ export default async function handler(req, res) {
       });
     }
 
-    // ── Utilisatrice anonyme → table `sessions` ─────────────
+    // ── Utilisatrice anonyme → table `anonymous_usage` ──────
     const { data: session, error } = await supabase
-      .from("sessions")
-      .select("credits, last_used")
+      .from("anonymous_usage")
+      .select("credits")
       .eq("session_id", sessionId)
       .maybeSingle();
 
@@ -92,10 +92,10 @@ export default async function handler(req, res) {
     }
 
     const { data: updated, error: updateError } = await supabase
-      .from("sessions")
+      .from("anonymous_usage")
       .update({
-        credits:   session.credits - 1,
-        last_used: new Date().toISOString(),
+        credits:    session.credits - 1,
+        updated_at: new Date().toISOString(),
       })
       .eq("session_id", sessionId)
       .select("credits")
