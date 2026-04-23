@@ -38,9 +38,8 @@ function extractFingerprint(sessionId) {
 async function fingerprintAlreadyUsedFreeCredits(fingerprint) {
   const { data, error } = await supabase
     .from('fingerprint_usage')
-    .select('id')
+    .select('fingerprint')
     .eq('fingerprint', fingerprint)
-    .eq('free_credits_used', true)
     .maybeSingle();
 
   if (error) {
@@ -62,9 +61,7 @@ async function markFingerprintAsUsed(fingerprint, sessionId) {
   const { error } = await supabase.from('fingerprint_usage').upsert(
     {
       fingerprint,
-      free_credits_used: true,
-      first_session_id: sessionId,
-      used_at: new Date().toISOString(),
+      session: sessionId,
     },
     { onConflict: 'fingerprint' }
   );
@@ -104,13 +101,13 @@ export default async function handler(req, res) {
   // ── Crédits achetés dans anonymous_usage (prioritaire) ──────────────
   const { data: usage } = await supabase
     .from('anonymous_usage')
-    .select('credits')
-    .eq('session_id', sessionId)
+    .select('"crédits"')
+    .eq('empreinte_digitale_id', sessionId)
     .maybeSingle();
 
-  if (usage && usage.credits > 0) {
+  if (usage && usage["crédits"] > 0) {
     return res.status(200).json({
-      credits: usage.credits,
+      credits: usage["crédits"],
       fingerprint,
       blocked: false,
     });
