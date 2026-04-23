@@ -90,6 +90,20 @@ export async function analyzeFaceWithAI(photoData, timeoutMs = 10000) {
       // FingerprintJS indisponible → IP seule s'applique
     }
 
+    // Récupérer l'userId si connectée
+    let userId = null;
+    try {
+      const { createClient } = await import("@supabase/supabase-js");
+      const sb = createClient(
+        import.meta.env.VITE_SUPABASE_URL,
+        import.meta.env.VITE_SUPABASE_ANON_KEY
+      );
+      const { data: { user } } = await sb.auth.getUser();
+      userId = user?.id || null;
+    } catch {
+      // Non connectée → userId reste null
+    }
+
     // Appel API
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -100,7 +114,7 @@ export async function analyzeFaceWithAI(photoData, timeoutMs = 10000) {
       response = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ faceShape, requestId, fingerprintId }),
+        body: JSON.stringify({ faceShape, requestId, fingerprintId, userId }),
         signal: controller.signal,
       });
     } catch (fetchErr) {
