@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useEffect } from 'react'
 import { PRICING, isPaidCredit, saveStyle, unsaveStyle, isStyleSaved } from '../services/credits.js'
-import { getStyleStats, addView, downloadStyleImage, formatNumber } from '../services/stats.js'
+import { getStyleStats, addView, addLike, hasLiked, fetchStyleStats, downloadStyleImage, formatNumber } from '../services/stats.js'
 
 export default function EnhancedBraidCard({ braid, index = 0, onTryStyle, isLoading = false, canAnalyze = true, canTransform = true, credits = 0 }) {
   const [zoomedImage, setZoomedImage] = useState(null)
@@ -9,6 +9,7 @@ export default function EnhancedBraidCard({ braid, index = 0, onTryStyle, isLoad
   const [isSaved, setIsSaved] = useState(() => isStyleSaved(braid.id))
   const [stats, setStats] = useState(getStyleStats(braid.id))
   const [isDownloading, setIsDownloading] = useState(false)
+  const [liked, setLiked] = useState(() => hasLiked(braid.id))
 
   // Construire les noms des images
   const styleKey = braid.id?.replace(/-/g, '') || braid.name?.toLowerCase().replace(/\s+/g, '')
@@ -16,14 +17,26 @@ export default function EnhancedBraidCard({ braid, index = 0, onTryStyle, isLoad
   const backImg = `/styles/${styleKey}-back.jpg`
   const topImg = `/styles/${styleKey}-top.jpg`
 
-  // Compter la vue au montage
+  // Compter la vue + charger stats Supabase au montage
   useEffect(() => {
     addView(braid.id)
     setStats(getStyleStats(braid.id))
+    // Sync stats globales en arrière-plan
+    fetchStyleStats(braid.id).then(s => setStats(s)).catch(() => {})
   }, [braid.id])
 
   const handleImageError = (view) => {
     setImgErrors(prev => ({ ...prev, [view]: true }))
+  }
+
+  // Gérer le like
+  const handleLike = () => {
+    if (liked) return
+    const ok = addLike(braid.id)
+    if (ok) {
+      setLiked(true)
+      setStats(prev => ({ ...prev, likes: (prev.likes || 0) + 1 }))
+    }
   }
 
   // Gérer la sauvegarde
@@ -148,7 +161,13 @@ export default function EnhancedBraidCard({ braid, index = 0, onTryStyle, isLoad
         <div className="px-4 pt-3 pb-1 flex items-center justify-between text-[10px] text-gray-400">
           <div className="flex gap-3">
             <span>👁️ {formatNumber(stats.views)}</span>
-            <span>📤 {formatNumber(stats.shares)}</span>
+            <button
+              onClick={handleLike}
+              className="flex items-center gap-1 transition-transform active:scale-90"
+              style={{ color: liked ? '#e05a5a' : 'inherit' }}
+            >
+              {liked ? '❤️' : '🤍'} {formatNumber(stats.likes || 0)}
+            </button>
             <span>⬇️ {formatNumber(stats.downloads)}</span>
           </div>
         </div>
