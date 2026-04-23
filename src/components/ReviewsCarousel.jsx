@@ -25,7 +25,7 @@ function Stars({ rating, size = 'sm' }) {
 function ReviewCard({ review, compact }) {
   return (
     <div
-      className={`flex-shrink-0 ${compact ? 'w-64' : 'w-72'} rounded-3xl p-5 flex flex-col gap-3`}
+      className={`flex-shrink-0 ${compact ? 'w-[260px]' : 'w-[280px]'} rounded-3xl p-5 flex flex-col gap-3`}
       style={{
         background: 'linear-gradient(145deg, rgba(201,150,58,0.08), rgba(255,255,255,0.03))',
         border: '1px solid rgba(201,150,58,0.2)',
@@ -149,7 +149,7 @@ export default function ReviewsCarousel({
   const items = [...reviews, ...reviews]
 
   return (
-    <section className="py-6">
+    <section className="py-6 w-full overflow-hidden">
       {title && (
         <h2 className="text-[#C9963A] font-black text-xl px-6 mb-4">{title}</h2>
       )}
@@ -170,7 +170,7 @@ export default function ReviewsCarousel({
       {/* Carousel */}
       <div
         ref={scrollRef}
-        className="flex gap-4 overflow-x-auto px-6 pb-2"
+        className="flex gap-3 overflow-x-auto px-4 pb-2 sm:px-6 sm:gap-4"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}
       >
         {loading
