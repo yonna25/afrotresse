@@ -36,7 +36,45 @@ export default async function handler(req, res) {
   const sessionId = fingerprintId ? `fp_${fingerprintId}` : `anon_${requestId}`;
 
   try {
-    // ── 1. Récupérer la session ──────────────────────────────
+    const shape = FACE_SHAPE_NAMES[faceShape] ? faceShape : "oval";
+
+    // ── Détecter si utilisatrice connectée (userId dans le body) ──
+    const { userId } = req.body;
+
+    if (userId) {
+      // ── Utilisatrice connectée → table `credits` ────────────
+      const { data: userCredits, error: ucError } = await supabase
+        .from("credits")
+        .select("balance")
+        .eq("user_id", userId)
+        .single();
+
+      if (ucError || !userCredits) {
+        return res.status(403).json({ error: "Compte introuvable." });
+      }
+
+      if (userCredits.balance <= 0) {
+        return res.status(402).json({ error: "Plus de crédits disponibles", creditsRemaining: 0 });
+      }
+
+      const { data: updatedUser, error: updateUserError } = await supabase
+        .from("credits")
+        .update({ balance: userCredits.balance - 1, updated_at: new Date().toISOString() })
+        .eq("user_id", userId)
+        .select("balance")
+        .single();
+
+      if (updateUserError) throw updateUserError;
+
+      return res.status(200).json({
+        faceShape:        shape,
+        faceShapeName:    FACE_SHAPE_NAMES[shape],
+        confidence:       95,
+        creditsRemaining: updatedUser.balance,
+      });
+    }
+
+    // ── Utilisatrice anonyme → table `sessions` ─────────────
     const { data: session, error } = await supabase
       .from("sessions")
       .select("credits, last_used")
@@ -45,17 +83,14 @@ export default async function handler(req, res) {
 
     if (error) throw error;
 
-    // ── 2. Session inconnue → refus (credits.js doit être appelé avant) ──
     if (!session) {
       return res.status(403).json({ error: "Session non initialisée. Appelez /api/credits d'abord." });
     }
 
-    // ── 3. Plus de crédits ───────────────────────────────────
     if (session.credits <= 0) {
       return res.status(402).json({ error: "Plus de crédits disponibles", creditsRemaining: 0 });
     }
 
-    // ── 4. Débit crédit + mise à jour last_used ──────────────
     const { data: updated, error: updateError } = await supabase
       .from("sessions")
       .update({
@@ -67,9 +102,6 @@ export default async function handler(req, res) {
       .single();
 
     if (updateError) throw updateError;
-
-    // ── 5. Retourner le résultat ─────────────────────────────
-    const shape = FACE_SHAPE_NAMES[faceShape] ? faceShape : "oval";
 
     return res.status(200).json({
       faceShape:        shape,
