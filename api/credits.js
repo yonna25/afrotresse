@@ -5,7 +5,7 @@
 import { createClient } from '@supabase/supabase-js'; // ou votre ORM
 
 const supabase = createClient(
-  process.env.SUPABASEE_URL,
+  process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
@@ -101,7 +101,7 @@ export default async function handler(req, res) {
   // ── Crédits achetés dans anonymous_usage (prioritaire) ──────────────
   const { data: usage } = await supabase
     .from('anonymous_usage')
-    .select('"crédits"')
+    .select('crédits')
     .eq('empreinte_digitale_id', sessionId)
     .maybeSingle();
 
