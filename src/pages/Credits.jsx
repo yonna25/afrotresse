@@ -237,7 +237,7 @@ export default function Credits() {
         </div>
 
         {/* Avis clients — preuve sociale avant paiement */}
-        <div className="mt-10">
+        <div className="mt-10 w-full overflow-hidden">
           <ReviewsCarousel
             title="Elles ont osé, elles ont adoré 💛"
             minRating={4}
