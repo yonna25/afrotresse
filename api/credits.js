@@ -129,6 +129,12 @@ export default async function handler(req, res) {
   // Marquer le fingerprint comme ayant reçu ses crédits gratuits
   await markFingerprintAsUsed(fingerprint, sessionId);
 
+  // Enregistrer le solde dans anonymous_usage pour les syncs suivants
+  await supabase.from('anonymous_usage').upsert(
+    { empreinte_digitale_id: sessionId, credits: FREE_CREDITS },
+    { onConflict: 'empreinte_digitale_id' }
+  );
+
   return res.status(200).json({
     credits: FREE_CREDITS,
     fingerprint,
