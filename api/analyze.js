@@ -1,127 +1,49 @@
-// api/analyze.js — AfroTresse
-// Reçoit le résultat MediaPipe côté client
-// → vérifie les crédits, débite, met à jour last_used
-
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
-  process.env.SUPABASEE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY // Important : clé service pour bypasser le RLS
 );
 
-const FACE_SHAPE_NAMES = {
-  oval:    "Ovale",
-  round:   "Ronde",
-  square:  "Carrée",
-  heart:   "Cœur",
-  long:    "Allongée",
-  diamond: "Diamant",
-};
-
 export default async function handler(req, res) {
-  console.log("[/api/analyze] ENV check:", {
-    hasUrl: !!process.env.SUPABASEE_URL,
-    hasKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-  });
-  res.setHeader("Access-Control-Allow-Origin", "https://afrotresse.com");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  if (req.method === "OPTIONS") return res.status(200).end();
-  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
-
-  const { faceShape, requestId, fingerprintId } = req.body;
-
-  if (!faceShape || !requestId) {
-    return res.status(400).json({ error: "faceShape et requestId requis" });
-  }
-
-  // ── Construire le sessionId stable à partir du fingerprint ──
-  const sessionId = fingerprintId ? `fp_${fingerprintId}` : `anon_${requestId}`;
+  const { userId, sessionId } = req.body;
+  const identifier = userId ? { user_id: userId } : { session_id: sessionId };
 
   try {
-    const shape = FACE_SHAPE_NAMES[faceShape] ? faceShape : "oval";
-
-    // ── Détecter si utilisatrice connectée (userId dans le body) ──
-    const { userId } = req.body;
-
-    if (userId) {
-      // ── Utilisatrice connectée → table `credits` ────────────
-      const { data: userCredits, error: ucError } = await supabase
-        .from("credits")
-        .select("balance")
-        .eq("user_id", userId)
-        .single();
-
-      if (ucError || !userCredits) {
-        return res.status(403).json({ error: "Compte introuvable." });
-      }
-
-      if (userCredits.balance <= 0) {
-        return res.status(402).json({ error: "Plus de crédits disponibles", creditsRemaining: 0 });
-      }
-
-      const { data: updatedUser, error: updateUserError } = await supabase
-        .from("credits")
-        .update({ balance: userCredits.balance - 1, updated_at: new Date().toISOString() })
-        .eq("user_id", userId)
-        .select("balance")
-        .single();
-
-      if (updateUserError) throw updateUserError;
-
-      return res.status(200).json({
-        faceShape:        shape,
-        faceShapeName:    FACE_SHAPE_NAMES[shape],
-        confidence:       95,
-        creditsRemaining: updatedUser.balance,
-      });
-    }
-
-    // ── Utilisatrice anonyme → table `anonymous_usage` ──────
-    const { data: session, error } = await supabase
-      .from("anonymous_usage")
-      .select("crédits")
-      .eq("empreinte_digitale_id", fingerprintId || sessionId)
-      .maybeSingle();
-
-    if (error) throw error;
-
-    if (!session) {
-      return res.status(403).json({ error: "Session non initialisée. Appelez /api/credits d'abord." });
-    }
-
-    if (session["crédits"] <= 0) {
-      return res.status(402).json({ error: "Plus de crédits disponibles", creditsRemaining: 0 });
-    }
-
-    const { data: updated, error: updateError } = await supabase
-      .from("anonymous_usage")
-      .update({
-        "crédits":    session["crédits"] - 1,
-        "mise_a_jour_a": new Date().toISOString(),
-      })
-      .eq("empreinte_digitale_id", fingerprintId || sessionId)
-      .select("crédits")
+    // 1. Récupérer ou Créer le compte crédit
+    let { data: account, error } = await supabase
+      .from('usage_credits')
+      .select('credits')
+      .or(`user_id.eq.${userId},session_id.eq.${sessionId}`)
       .single();
+
+    if (!account) {
+      const { data: newAccount } = await supabase
+        .from('usage_credits')
+        .insert([ { ...identifier, credits: 2 } ])
+        .select()
+        .single();
+      account = newAccount;
+    }
+
+    // 2. Vérifier si assez de crédits
+    if (account.credits <= 0) {
+      return res.status(403).json({ error: 'Crédits épuisés' });
+    }
+
+    // 3. Déduire 1 crédit
+    const { error: updateError } = await supabase
+      .from('usage_credits')
+      .update({ credits: account.credits - 1 })
+      .match(identifier);
 
     if (updateError) throw updateError;
 
-    return res.status(200).json({
-      faceShape:        shape,
-      faceShapeName:    FACE_SHAPE_NAMES[shape],
-      confidence:       95,
-      creditsRemaining: updated["crédits"],
-    });
+    return res.status(200).json({ success: true, remaining: account.credits - 1 });
 
-  } catch (err) {
-    console.error("[/api/analyze] ERREUR DÉTAILLÉE:", {
-      message: err.message,
-      code: err.code,
-      details: err.details,
-      hint: err.hint,
-      stack: err.stack?.split("\n")[0],
-    });
-    return res.status(500).json({ error: "Erreur serveur", detail: err.message });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
   }
 }
