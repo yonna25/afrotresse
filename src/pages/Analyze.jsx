@@ -157,9 +157,12 @@ export default function Analyze() {
         localStorage.setItem("afrotresse_face_shape", result.faceShape);
 
         if (result.creditsRemaining !== undefined) {
+          // Solde retourné par api/analyze — source de vérité
           setCredits(result.creditsRemaining);
         } else {
-          syncCreditsFromServer().catch(() => {});
+          // api/analyze n'a pas retourné de solde → déduire 1 localement
+          const current = getCredits();
+          if (current > 0) setCredits(current - 1);
         }
 
         const prevTrials = parseInt(localStorage.getItem('afrotresse_ai_trials') || '0', 10);
