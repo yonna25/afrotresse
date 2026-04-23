@@ -37,10 +37,10 @@ export function ReviewTriggerPopup({ onOpen, onDismiss }) {
       animate={{ y: 0,  opacity: 1 }}
       exit={{    y: 80, opacity: 0 }}
       transition={{ type: 'spring', stiffness: 260, damping: 22 }}
-      className="fixed bottom-24 left-4 right-4 z-50"
+      className="fixed bottom-24 left-4 right-4 z-50 flex justify-center"
     >
       <div
-        className="rounded-3xl p-5 flex flex-col gap-3"
+        className="rounded-3xl p-5 flex flex-col gap-3 w-full max-w-sm"
         style={{
           background: 'linear-gradient(135deg, #2A1200, #1A0A00)',
           border: '1px solid rgba(201,150,58,0.35)',
@@ -122,7 +122,7 @@ export function ReviewFormModal({ onClose, onSuccess }) {
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        className="w-full rounded-t-3xl p-6 pb-10 flex flex-col gap-5"
+        className="w-full max-w-lg mx-auto rounded-t-3xl sm:rounded-3xl p-6 pb-10 flex flex-col gap-5 max-h-[90vh] overflow-y-auto"
         style={{ background: '#1A0A00', border: '1px solid rgba(201,150,58,0.2)' }}
       >
         {/* Handle bar */}
