@@ -1,125 +1,289 @@
-// api/credits.js
-// Compatible Next.js API Routes (pages/api) et Express.
-// Adaptez req/res à votre framework si nécessaire.
-
-import { createClient } from '@supabase/supabase-js'; // ou votre ORM
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
-
-/** Nombre de crédits offerts à un nouvel appareil */
-const FREE_CREDITS = parseInt(process.env.FREE_CREDITS_AMOUNT ?? '3', 10);
-
-/**
- * Extrait le fingerprint (visitorId) depuis un sessionId enrichi.
- *
- * sessionId format : fp_<visitorId>_<timestamp>_<random>
- * Retourne null si le format est invalide ou absent.
- *
- * @param {string | null} sessionId
- * @returns {string | null}
- */
-function extractFingerprint(sessionId) {
-  if (!sessionId || !sessionId.startsWith('fp_')) return null;
-
-  // On garde uniquement la partie "fp_<visitorId>"  (16 chars hex après fp_)
-  const match = sessionId.match(/^(fp_[a-f0-9]{16})/i);
-  return match ? match[1] : null;
+// ─── Configuration prix (modifier ici uniquement) ────────────────
+export const PRICING = {
+  currency:     'FCFA',
+  packs: [
+    { id: 'starter', label: '3 essais',          credits: 3,  price: 500,  popular: false },
+    { id: 'plus',    label: '10 essais',         credits: 10, price: 1500, popular: true  },
+    { id: 'pro',     label: 'Abonnement mensuel', credits: 99, price: 2500, popular: false, monthly: true },
+  ],
+  referral: {
+    giver:    2,
+    receiver: 2,
+    cashback: 0.1,
+  },
+  freeCredits:   2,
+  reviewBonus:   2,
+  analysisCost:  1,
+  transformCost: 2,
 }
 
-/**
- * Vérifie si un fingerprint a déjà consommé les crédits gratuits.
- *
- * @param {string} fingerprint  — ex: "fp_8a3f2c91b7d04e6a"
- * @returns {Promise<boolean>}
- */
-async function fingerprintAlreadyUsedFreeCredits(fingerprint) {
-  const { data, error } = await supabase
-    .from('fingerprint_usage')
-    .select('id')
-    .eq('fingerprint', fingerprint)
-    .eq('free_credits_used', true)
-    .maybeSingle();
+// ─── Clés localStorage ───────────────────────────────────────────
+const KEY_CREDITS      = 'afrotresse_credits'
+const KEY_USED         = 'afrotresse_used_tests'
+const KEY_REVIEW       = 'afrotresse_review_done'
+const KEY_REF_CODE     = 'afrotresse_ref_code'
+const KEY_REF_BY       = 'afrotresse_ref_by'
+const KEY_REFERRALS    = 'afrotresse_referrals'
+const KEY_SEEN_STYLES  = 'afrotresse_seen_styles'
+// KEY_INITIALIZED supprimé — Supabase est la seule source de vérité
+const KEY_SAVED_STYLES = 'afrotresse_saved_styles'
+const KEY_INITIALIZED  = 'afrotresse_credits_initialized'
 
-  if (error) {
-    console.error('[credits] Supabase lookup error:', error.message);
-    // En cas d'erreur DB → on bloque par sécurité (fail-closed)
-    return true;
-  }
-
-  return data !== null;
-}
-
-/**
- * Marque un fingerprint comme ayant utilisé ses crédits gratuits.
- *
- * @param {string} fingerprint
- * @param {string} sessionId    — sessionId complet pour audit
- */
-async function markFingerprintAsUsed(fingerprint, sessionId) {
-  const { error } = await supabase.from('fingerprint_usage').upsert(
-    {
-      fingerprint,
-      free_credits_used: true,
-      first_session_id: sessionId,
-      used_at: new Date().toISOString(),
-    },
-    { onConflict: 'fingerprint' }
-  );
-
-  if (error) {
-    console.error('[credits] Failed to mark fingerprint as used:', error.message);
+// ─── Session ID (identifiant unique par navigateur) ──────────────
+export function getSessionId() {
+  try {
+    let id = localStorage.getItem('afrotresse_session')
+    if (!id) {
+      id = typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : Math.random().toString(36).substring(2)
+      localStorage.setItem('afrotresse_session', id)
+    }
+    return id
+  } catch {
+    return null
   }
 }
 
-/**
- * GET /api/credits
- *
- * Headers requis :
- *   x-session-id : sessionId enrichi (fp_<visitorId>_<ts>_<rand>)
- *
- * Réponse :
- *   { credits: number, fingerprint: string | null, blocked: boolean }
- */
-export default async function handler(req, res) {
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+export async function getSessionIdWithFp() {
+  try {
+    const cached = localStorage.getItem('afrotresse_session')
+    if (cached && cached.startsWith('fp_')) return cached
 
-  const sessionId = req.headers['x-session-id'] ?? null;
-  const fingerprint = extractFingerprint(sessionId);
-
-  // ── Pas de fingerprint valide → 0 crédit, accès refusé ──────────────
-  if (!fingerprint) {
-    return res.status(200).json({
-      credits: 0,
-      fingerprint: null,
-      blocked: true,
-      reason: 'missing_or_invalid_fingerprint',
-    });
-  }
-
-  // ── Empreinte connue ayant déjà utilisé les crédits gratuits ─────────
-  const alreadyUsed = await fingerprintAlreadyUsedFreeCredits(fingerprint);
-
-  if (alreadyUsed) {
-    return res.status(200).json({
-      credits: 0,
-      fingerprint,
-      blocked: true,
-      reason: 'free_credits_already_used',
-    });
-  }
-
-  // ── Nouveau appareil → crédits offerts ───────────────────────────────
-  return res.status(200).json({
-    credits: FREE_CREDITS,
-    fingerprint,
-    blocked: false,
-  });
+    const { getFingerprint } = await import('./fingerprint.js')
+    const fp = await getFingerprint()
+    if (fp) {
+      const fpSessionId = `fp_${fp}`
+      localStorage.setItem('afrotresse_session', fpSessionId)
+      return fpSessionId
+    }
+  } catch {}
+  return getSessionId()
 }
 
-// ── Export utilitaires pour les autres routes (ex: POST /api/generate) ──
-export { extractFingerprint, fingerprintAlreadyUsedFreeCredits, markFingerprintAsUsed };
+// ─── Lecture / écriture crédits (localStorage = cache) ──────────
+// Jamais d'initialisation locale — Supabase est la seule source de vérité
+// syncCreditsFromServer() est appelé au chargement de l'app (App.jsx)
+export function getCredits() {
+  const raw = localStorage.getItem(KEY_CREDITS)
+  if (raw !== null) return parseInt(raw, 10)
+  return 0  // Retourne 0 jusqu'à la réponse du serveur
+}
+
+export function setCredits(n) {
+  localStorage.setItem(KEY_CREDITS, String(Math.max(0, n)))
+}
+
+export function addCredits(n) {
+  setCredits(getCredits() + n)
+}
+
+export function consumeCredits(amount) {
+  const current = getCredits()
+  if (current < amount) return false
+  setCredits(current - amount)
+  return true
+}
+
+// ─── Vérifications ───────────────────────────────────────────────
+export function canAnalyze()  { return getCredits() >= PRICING.analysisCost  }
+export function canTransform(){ return getCredits() >= PRICING.transformCost }
+export function hasCredits()  { return getCredits() > 0 }
+export function isPaidCredit(){ return getCredits() > PRICING.freeCredits }
+
+// ─── Sync depuis le serveur (source de vérité) ───────────────────
+export async function syncCreditsFromServer() {
+  try {
+    // Connectée → source de vérité = table `credits` (user_id / balance)
+    // Ne jamais laisser la table `sessions` écraser ces crédits
+    const { getCurrentUser, getSupabaseCredits } = await import('./useSupabaseCredits.js')
+    const user = await getCurrentUser()
+    if (user) {
+      const balance = await getSupabaseCredits(user.id)
+      setCredits(balance)
+      return balance
+    }
+  } catch {}
+
+  // Anonyme → table `sessions` via /api/credits
+  try {
+    const sessionId = await getSessionIdWithFp()
+    if (!sessionId) return getCredits()
+
+    // sessionId envoyé en header — lu par api/credits.js via x-session-id
+    const res = await fetch('/api/credits', {
+      headers: { 'x-session-id': sessionId },
+    })
+    if (!res.ok) return getCredits()
+
+    const { credits } = await res.json()
+    localStorage.setItem(KEY_CREDITS, String(Math.max(0, credits)))
+    return credits
+  } catch {
+    return getCredits()
+  }
+}
+
+// ─── Helper interne : consommer via Supabase (utilisatrice connectée) ────────
+async function _consumeSupabase(amount) {
+  try {
+    const { getCurrentUser, useSupabaseCredit, getSupabaseCredits } = await import('./useSupabaseCredits.js')
+    const user = await getCurrentUser()
+    if (!user) return null // pas connectée → fallback sessionId
+
+    // useSupabaseCredit ne déduit que 1 crédit — on boucle si amount > 1
+    for (let i = 0; i < amount; i++) {
+      const ok = await useSupabaseCredit(user.id)
+      if (!ok) {
+        // Supabase indique 0 crédit.
+        // NE PAS appeler setCredits(0) ici : si l'achat n'a été enregistré
+        // qu'en localStorage (et pas encore en Supabase), cela effacerait
+        // tous les crédits de l'utilisatrice d'un coup.
+        // On retourne null → fallback vers la consommation localStorage.
+        return null
+      }
+    }
+
+    // Sync localStorage avec le vrai solde Supabase
+    // IMPORTANT : ce try/catch est ISOLÉ — une erreur ici ne doit PAS
+    // faire retourner null (ce qui déclencherait une 2ème déduction via /api/consume)
+    try {
+      const balance = await getSupabaseCredits(user.id)
+      setCredits(balance)
+    } catch {
+      // La déduction a réussi — on ignore l'échec du sync
+    }
+    return true // ← toujours true si la boucle a abouti
+  } catch {
+    return null // erreur avant/pendant la déduction → fallback sessionId
+  }
+}
+
+// ─── Consommation SÉCURISÉE ──────────────────────────────────────
+// Le débit est géré uniquement par api/analyze.js côté serveur.
+// consumeAnalysis() se contente de syncer le localStorage après.
+export async function consumeAnalysis() {
+  // Le vrai débit a déjà eu lieu dans api/analyze.js
+  // On sync juste le solde depuis le serveur
+  try {
+    await syncCreditsFromServer()
+    return true
+  } catch {
+    return true // Ne jamais bloquer l'UX ici
+  }
+}
+
+export async function consumeTransform() {
+  // 1. Utilisatrice connectée → table `credits`
+  const supabaseResult = await _consumeSupabase(PRICING.transformCost)
+  if (supabaseResult !== null) return supabaseResult
+
+  // 2. Anonyme → /api/consume
+  try {
+    const sessionId = await getSessionIdWithFp()
+    if (!sessionId) return consumeCredits(PRICING.transformCost)
+
+    const res = await fetch('/api/consume', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId, amount: PRICING.transformCost }),
+    })
+
+    if (res.status === 402) { return consumeCredits(PRICING.transformCost) }
+    if (!res.ok) return consumeCredits(PRICING.transformCost)
+
+    const { credits } = await res.json()
+    setCredits(credits)
+    return true
+  } catch {
+    return consumeCredits(PRICING.transformCost)
+  }
+}
+
+// ─── Compteur analyses ───────────────────────────────────────────
+export function getTotalUsed() {
+  return parseInt(localStorage.getItem(KEY_USED) || '0', 10)
+}
+
+export function incrementAnalyses() {
+  const current = getTotalUsed()
+  localStorage.setItem(KEY_USED, (current + 1).toString())
+}
+
+// ─── Styles vus (anti-répétition) ───────────────────────────────
+export function getSeenStyleIds() {
+  const raw = localStorage.getItem(KEY_SEEN_STYLES)
+  return raw ? JSON.parse(raw) : []
+}
+
+export function addSeenStyleId(styleId) {
+  const seen = getSeenStyleIds()
+  if (!seen.includes(styleId)) {
+    seen.push(styleId)
+    localStorage.setItem(KEY_SEEN_STYLES, JSON.stringify(seen))
+  }
+}
+
+export function resetSeenStyles() {
+  localStorage.removeItem(KEY_SEEN_STYLES)
+}
+
+// ─── Styles sauvegardés ──────────────────────────────────────────
+export function getSavedStyles() {
+  const raw = localStorage.getItem(KEY_SAVED_STYLES)
+  return raw ? JSON.parse(raw) : []
+}
+
+export function saveStyle(style) {
+  if (!isPaidCredit()) return false
+  const saved = getSavedStyles()
+  if (!saved.find(s => s.id === style.id)) {
+    saved.push({ ...style, savedAt: new Date().toISOString() })
+    localStorage.setItem(KEY_SAVED_STYLES, JSON.stringify(saved))
+  }
+  return true
+}
+
+export function unsaveStyle(styleId) {
+  const saved = getSavedStyles()
+  localStorage.setItem(KEY_SAVED_STYLES, JSON.stringify(saved.filter(s => s.id !== styleId)))
+}
+
+export function isStyleSaved(styleId) {
+  return getSavedStyles().some(s => s.id === styleId)
+}
+
+// ─── Avis ────────────────────────────────────────────────────────
+export function hasGivenReview() {
+  return localStorage.getItem(KEY_REVIEW) === 'true'
+}
+
+export function submitReview() {
+  if (hasGivenReview()) return false
+  localStorage.setItem(KEY_REVIEW, 'true')
+  addCredits(PRICING.reviewBonus)
+  return true
+}
+
+// ─── Parrainage ──────────────────────────────────────────────────
+export function getMyReferralCode() {
+  let code = localStorage.getItem(KEY_REF_CODE)
+  if (!code) {
+    code = 'AFRO-' + Math.random().toString(36).substring(2, 7).toUpperCase()
+    localStorage.setItem(KEY_REF_CODE, code)
+  }
+  return code
+}
+
+export function applyReferralCode(code) {
+  const myCode = getMyReferralCode()
+  if (code === myCode) return { success: false, message: 'Tu ne peux pas utiliser ton propre code !' }
+  if (localStorage.getItem(KEY_REF_BY)) return { success: false, message: 'Tu as déjà utilisé un code parrain.' }
+  localStorage.setItem(KEY_REF_BY, code)
+  addCredits(PRICING.referral.receiver)
+  return { success: true, message: `+${PRICING.referral.receiver} crédits offerts grâce au parrainage !` }
+}
+
+export function getReferralCount() {
+  return parseInt(localStorage.getItem(KEY_REFERRALS) || '0', 10)
+}
