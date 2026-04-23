@@ -19,6 +19,10 @@ const FACE_SHAPE_NAMES = {
 };
 
 export default async function handler(req, res) {
+  console.log("[/api/analyze] ENV check:", {
+    hasUrl: !!process.env.SUPABASEE_URL,
+    hasKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+  });
   res.setHeader("Access-Control-Allow-Origin", "https://afrotresse.com");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -111,7 +115,13 @@ export default async function handler(req, res) {
     });
 
   } catch (err) {
-    console.error("[/api/analyze]", err.message);
-    return res.status(500).json({ error: "Erreur serveur" });
+    console.error("[/api/analyze] ERREUR DÉTAILLÉE:", {
+      message: err.message,
+      code: err.code,
+      details: err.details,
+      hint: err.hint,
+      stack: err.stack?.split("\n")[0],
+    });
+    return res.status(500).json({ error: "Erreur serveur", detail: err.message });
   }
 }
