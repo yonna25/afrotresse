@@ -156,27 +156,8 @@ export default function Home() {
             </div>
           </div>
 
-          {/* CTA */}
+          {/* CTA — badge + flèche pointant la navbar */}
           <div className="absolute bottom-16 left-0 right-0 z-40 flex flex-col items-center gap-3 pointer-events-none">
-            <AnimatePresence>
-              {showArrow && (
-                <motion.div
-                  initial={{ opacity: 0, y: -8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className="flex flex-col items-center"
-                >
-                  <motion.div
-                    animate={{ y: [0, 10, 0] }}
-                    transition={{ duration: 1, repeat: Infinity, ease: 'easeInOut' }}
-                  >
-                    <svg width="52" height="52" viewBox="0 0 24 24" fill="none">
-                      <path d="M12 4v16M4 12l8 8 8-8" stroke="#C9963A" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </motion.div>
-                </motion.div>
-              )}
-            </AnimatePresence>
 
             {/* BADGE PREUVE SOCIALE */}
             {socialProof && (
@@ -184,7 +165,7 @@ export default function Home() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
-                className="pointer-events-auto flex items-center gap-2 px-4 py-2 rounded-full mb-3"
+                className="pointer-events-auto flex items-center gap-2 px-4 py-2 rounded-full"
                 style={{
                   background: 'rgba(44,26,14,0.75)',
                   border: '1px solid rgba(201,150,58,0.35)',
@@ -200,15 +181,27 @@ export default function Home() {
               </motion.div>
             )}
 
-            <div className="pointer-events-auto">
-              <button
-                onClick={handleStart}
-                className="px-10 py-4 rounded-full font-display font-bold text-lg shadow-2xl active:scale-95 transition-transform"
-                style={{ background: 'linear-gradient(135deg,#C9963A,#E8B96A)', color: '#2C1A0E' }}
-              >
-                Découvrir mon style ✨
-              </button>
-            </div>
+            {/* FLÈCHE vers l'icône photo de la navbar */}
+            <AnimatePresence>
+              {showArrow && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="flex flex-col items-center gap-1"
+                >
+                  <span className="text-white/50 text-xs font-medium tracking-wide">Appuie ici</span>
+                  <motion.div
+                    animate={{ y: [0, 8, 0] }}
+                    transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+                  >
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                      <path d="M12 4v16M4 12l8 8 8-8" stroke="#C9963A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
         </div>
