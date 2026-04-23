@@ -154,32 +154,54 @@ export default function Home() {
                 />
               ))}
             </div>
+
+            {/* BADGE PREUVE SOCIALE — avatars + étoiles */}
+            {socialProof && (
+              <motion.div
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+                className="mt-4 flex items-center gap-3"
+              >
+                {/* Avatars avec initiales */}
+                <div className="flex -space-x-2">
+                  {[
+                    { initial: 'A', bg: '#C9963A' },
+                    { initial: 'F', bg: '#8B5E3C' },
+                    { initial: 'K', bg: '#6B3F2A' },
+                    { initial: 'M', bg: '#A0522D' },
+                  ].map((a, i) => (
+                    <div
+                      key={i}
+                      className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black border-2"
+                      style={{ background: a.bg, borderColor: '#2C1A0E', color: '#FAF4EC', zIndex: 4 - i }}
+                    >
+                      {a.initial}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Séparateur */}
+                <div className="w-px h-6 bg-white/15" />
+
+                {/* Étoiles + texte */}
+                <div className="flex flex-col gap-0.5">
+                  <div className="flex items-center gap-1">
+                    <span className="text-[11px]">⭐⭐⭐⭐⭐</span>
+                    <span className="text-[#C9963A] font-black text-xs">{socialProof.avg}</span>
+                  </div>
+                  <span className="text-white/55 text-[10px] font-medium">
+                    {socialProof.count}+ reines satisfaites
+                  </span>
+                </div>
+              </motion.div>
+            )}
           </div>
 
           {/* CTA — badge + flèche pointant la navbar */}
           <div className="absolute bottom-20 left-0 right-0 z-40 flex flex-col items-start gap-3 pointer-events-none px-5">
 
-            {/* BADGE PREUVE SOCIALE */}
-            {socialProof && (
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-                className="pointer-events-auto flex items-center gap-2 px-4 py-2 rounded-full"
-                style={{
-                  background: 'rgba(44,26,14,0.75)',
-                  border: '1px solid rgba(201,150,58,0.35)',
-                  backdropFilter: 'blur(10px)',
-                }}
-              >
-                <span className="text-sm">{'⭐'.repeat(Math.round(parseFloat(socialProof.avg)))}</span>
-                <span className="text-[#C9963A] font-black text-sm">{socialProof.avg}</span>
-                <span className="text-white/40 text-xs">·</span>
-                <span className="text-white/70 text-xs font-medium">
-                  {socialProof.count}+ reines satisfaites
-                </span>
-              </motion.div>
-            )}
+
 
             {/* FLÈCHE vers l'icône photo de la navbar — centrée */}
             <AnimatePresence>
