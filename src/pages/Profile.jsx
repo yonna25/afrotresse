@@ -306,6 +306,7 @@ export default function Profile() {
         {selfieUrl && (
           <motion.button
             whileTap={{ scale: 0.96 }}
+            id="analyze-selfie-btn"
             onClick={() => navigate("/analyze")}
             className="w-full flex items-center gap-3 px-5 py-4 rounded-2xl font-bold text-left"
             style={{ background: 'linear-gradient(135deg, rgba(201,150,58,0.15), rgba(201,150,58,0.05))', border: '1px solid rgba(201,150,58,0.3)' }}
