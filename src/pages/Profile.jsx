@@ -44,7 +44,6 @@ export default function Profile() {
   const [referralCode, setReferralCode] = useState("");
   const [referralCount, setReferralCount] = useState(0);
   const [totalEarned, setTotalEarned] = useState(0);
-  const [reviewDone, setReviewDone] = useState(false);
   const [toastMsg, setToastMsg] = useState("");
   const [showReferralInfo, setShowReferralInfo] = useState(false);
   const [favoritesCount, setFavoritesCount] = useState(0);
@@ -60,7 +59,6 @@ export default function Profile() {
     setReferralCode(getReferralCode());
     setReferralCount(getReferralCount());
     setTotalEarned(getTotalEarned());
-    setReviewDone(getReviewDone());
 
     const savedName = localStorage.getItem("afrotresse_user_name");
     if (savedName) setUserName(savedName);
@@ -116,21 +114,7 @@ export default function Profile() {
     }
   };
 
-  // ── Laisser un avis (+ 1 crédit, 1 seule fois) ───────────────────────────
-  const handleReview = () => {
-    if (reviewDone) {
-      showToast("👑 Avis déjà donné — merci !");
-      return;
-    }
-    window.open("https://afrotresse.com", "_blank");
-    setTimeout(() => {
-      addCredits(PRICING.reviewBonus || 1);
-      setCredits(getCredits());
-      localStorage.setItem("afrotresse_review_done", "true");
-      setReviewDone(true);
-      showToast(`✅ Merci ! +${PRICING.reviewBonus || 1} crédit offert 🎁`);
-    }, 2000);
-  };
+
 
   return (
     <>
@@ -437,38 +421,6 @@ export default function Profile() {
             )}
           </AnimatePresence>
         </motion.div>
-      </div>
-
-      {/* ── AVIS ── */}
-      <div className="w-full max-w-sm px-5 mt-3">
-        <motion.button
-          whileTap={{ scale: 0.97 }}
-          onClick={handleReview}
-          className={`w-full rounded-3xl p-5 flex items-center justify-between border transition-all ${
-            reviewDone
-              ? "bg-white/5 border-white/10 opacity-50"
-              : "border-[#C9963A]/30 bg-[#1A0A00]"
-          }`}
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#C9963A]/20 flex items-center justify-center text-xl">
-              {reviewDone ? "✅" : "⭐"}
-            </div>
-            <div className="text-left">
-              <p className="font-black text-sm">
-                {reviewDone ? "Avis donné — merci !" : "Laisser un avis"}
-              </p>
-              <p className="text-[10px] text-[#C9963A] font-bold">
-                {reviewDone ? "👑 Crédit offert" : `+${PRICING.reviewBonus || 1} crédit offert`}
-              </p>
-            </div>
-          </div>
-          {!reviewDone && (
-            <svg viewBox="0 0 24 24" className="w-4 h-4 text-white/40" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          )}
-        </motion.button>
       </div>
 
 
