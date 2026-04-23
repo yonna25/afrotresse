@@ -8,9 +8,7 @@ import {
   getOrCreateSessionId,
   resetMessageAssignment,
 } from "../services/stableMessage.js";
-import { useFavorites } from "../hooks/useFavorites.js"
-import ReviewFlow from "../components/ReviewForm.jsx"
-import { shouldShowReviewPopup } from "../services/reviews.js";
+import { useFavorites } from "../hooks/useFavorites.js";
 
 
 const STYLES_PER_PAGE = 3;
@@ -113,7 +111,6 @@ export default function Results() {
   const [errorMsg, setErrorMsg]       = useState("");
   const [showFireworks, setShowFireworks] = useState(false);
   const [showVirtualTryOnModal, setShowVirtualTryOnModal] = useState(false);
-  const [showReview, setShowReview] = useState(false);
   const [stableMsg, setStableMsg]     = useState({ headline: "Voici tes résultats ✨", subtext: "" });
 
   // Sauvegarde profil
@@ -146,13 +143,6 @@ export default function Results() {
   const topRef   = useRef(null);
   const errorRef = useRef(null);
   const userName = localStorage.getItem("afrotresse_user_name") || "Reine";
-
-  // ── Popup avis — déclenchée 5s après affichage des résultats ─────────────────
-  useEffect(() => {
-    if (!shouldShowReviewPopup()) return
-    const timer = setTimeout(() => setShowReview(true), 5000)
-    return () => clearTimeout(timer)
-  }, [])
 
   // ── Détection navigation fraîche (pas refresh ni retour arrière) ───────────
   // ── Flag posé par Analyze.jsx juste avant navigate("/results") ──────────
@@ -681,7 +671,8 @@ export default function Results() {
       </div>
 
       {/* VOIR 3 AUTRES STYLES / FIN DE CATALOGUE */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+      {currentPage === 1 && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }} className="mt-10 flex flex-col items-center gap-3">
           <div className="flex items-center gap-3 w-full max-w-xs">
             <div className="flex-1 h-px bg-white/10" />
@@ -707,7 +698,92 @@ export default function Results() {
         </motion.div>
       )}
 
+      {/* MODULE FIN DE CATALOGUE */}
+      <AnimatePresence>
+        {showCatalogueEnd && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[150] flex items-end justify-center px-4 pb-8"
+            style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(10px)" }}
+          >
+            <motion.div
+              initial={{ y: 80, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 80, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 280, damping: 26 }}
+              className="w-full max-w-sm rounded-[2.5rem] p-7 text-center relative overflow-hidden"
+              style={{
+                background: "linear-gradient(160deg, #2C1A0E 0%, #3D2616 100%)",
+                border: "2px solid rgba(201,150,58,0.5)",
+                boxShadow: "0 0 60px rgba(201,150,58,0.3)",
+              }}
+            >
+              {/* Particules décoratives */}
+              <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                {[...Array(6)].map((_, i) => (
+                  <motion.div key={i} className="absolute text-lg"
+                    initial={{ opacity: 0, y: 40, x: `${10 + i * 15}%` }}
+                    animate={{ opacity: [0, 1, 0], y: -60 }}
+                    transition={{ delay: i * 0.2, duration: 2, repeat: Infinity, repeatDelay: 2 }}>
+                    {['✨', '👑', '💛', '✨', '👑', '💛'][i]}
+                  </motion.div>
+                ))}
+              </div>
 
+              <motion.div initial={{ scale: 0 }} animate={{ scale: [0, 1.2, 1] }}
+                transition={{ delay: 0.1, duration: 0.5 }} className="text-5xl mb-3">
+                ✨
+              </motion.div>
+
+              <h2 className="text-xl font-black text-[#C9963A] mb-1">
+                Tu as exploré toutes les suggestions !
+              </h2>
+              <p className="text-[12px] text-white/50 mb-6 leading-relaxed">
+                Prête à découvrir de nouvelles combinaisons ?{" "}
+                <span className="text-white/30 italic">Chaque génération peut te surprendre…</span>
+              </p>
+
+              {/* CTA principal */}
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={handleDiscoverMore}
+                className="w-full py-4 rounded-2xl font-black text-base text-[#2C1A0E] mb-3 relative overflow-hidden"
+                style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}
+              >
+                <span className="flex items-center justify-center gap-2">
+                  🔀 Découvrir encore des styles
+                  <span className="text-[10px] bg-[#2C1A0E]/20 px-2 py-0.5 rounded-full font-black">
+                    1 crédit
+                  </span>
+                </span>
+              </motion.button>
+
+              {/* CTA secondaire */}
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={() => { setShowCatalogueEnd(false); navigate("/library"); }}
+                className="w-full py-3.5 rounded-2xl font-black text-sm mb-2"
+                style={{
+                  background: "rgba(201,150,58,0.08)",
+                  border: "1.5px solid rgba(201,150,58,0.3)",
+                  color: "#C9963A",
+                }}
+              >
+                ❤️ Voir mes favoris
+              </motion.button>
+
+              <button
+                onClick={() => setShowCatalogueEnd(false)}
+                className="w-full py-2 text-xs text-white/20"
+              >
+                Fermer
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* PAGINATION */}
       {unlockedPages > 1 && (
@@ -821,9 +897,6 @@ export default function Results() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* POPUP AVIS */}
-      {showReview && <ReviewFlow />}
 
       {/* BOUTONS FLOTTANTS */}
       <div className="fixed bottom-24 right-4 z-40 flex flex-col items-center gap-2">
