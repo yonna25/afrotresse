@@ -92,6 +92,13 @@ export default function Credits() {
             addCredits(pack.credits)
             setCreditsState(getCredits())
 
+            // Effacer le garde anti-double consommation pour permettre
+            // la prochaine analyse après achat (même photo, même session)
+            const photo = sessionStorage.getItem('afrotresse_photo')
+            if (photo) {
+              sessionStorage.removeItem(`afrotresse_consumed_${photo.slice(-20)}`)
+            }
+
             // 2. Déclencher le popup
             setSuccess(true)
             const successData = { credits: pack.credits, label: pack.label, userName }
