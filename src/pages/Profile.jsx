@@ -5,6 +5,8 @@ import { getCredits, addCredits, PRICING } from "../services/credits.js";
 import { getCurrentUser } from "../services/useSupabaseCredits.js";
 import Seo from "../components/Seo.jsx";
 import { supabase } from "../services/supabase.js";
+import ReviewFlow from "../components/ReviewForm.jsx";
+import { shouldShowReviewPopup, hasAlreadyReviewed } from "../services/reviews.js";
 
 // ── Helpers localStorage ─────────────────────────────────────────────────────
 const getAiTrials = () => {
@@ -53,6 +55,7 @@ export default function Profile() {
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   // Formulaire connexion : fermé par défaut
   const [showLoginForm, setShowLoginForm] = useState(false);
+  const [showReviewFlow, setShowReviewFlow] = useState(false);
 
   useEffect(() => {
     setCredits(getCredits());
@@ -317,6 +320,22 @@ export default function Profile() {
             <polyline points="9 18 15 12 9 6" />
           </svg>
         </motion.button>
+
+        {/* Analyser selfie existant */}
+        {selfieUrl && (
+          <motion.button
+            whileTap={{ scale: 0.96 }}
+            onClick={() => navigate("/analyze")}
+            className="w-full flex items-center gap-3 px-5 py-4 rounded-2xl font-bold text-left"
+            style={{ background: 'linear-gradient(135deg, rgba(201,150,58,0.15), rgba(201,150,58,0.05))', border: '1px solid rgba(201,150,58,0.3)' }}
+          >
+            <span className="text-2xl">✨</span>
+            <div>
+              <p className="text-[#C9963A] font-black text-sm">Analyser ce selfie</p>
+              <p className="text-white/40 text-xs">Sans reprendre de photo</p>
+            </div>
+          </motion.button>
+        )}
 
         {/* Nouveau selfie */}
         <motion.button
