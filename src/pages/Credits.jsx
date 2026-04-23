@@ -110,8 +110,14 @@ export default function Credits() {
               }
             }).catch(() => {})
 
-            // 4. Redirection vers Profil (pas Home)
-            setTimeout(() => navigate('/profile'), 2000)
+            // 4. Redirection vers Profil + scroll vers "Analyser ce selfie"
+            setTimeout(() => {
+              navigate('/profile')
+              setTimeout(() => {
+                const el = document.getElementById('analyze-selfie-btn')
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+              }, 400)
+            }, 2000)
 
           } else {
             setErrorMsg('Paiement annulé ou échoué. Réessaie.')
