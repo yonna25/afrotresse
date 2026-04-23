@@ -102,7 +102,7 @@ export default async function handler(req, res) {
   const { data: usage } = await supabase
     .from('anonymous_usage')
     .select('credits')
-    .eq('empreinte_digitale_id', sessionId)
+    .eq('fingerprint_id', fingerprint)
     .maybeSingle();
 
   if (usage && usage["credits"] > 0) {
@@ -131,8 +131,8 @@ export default async function handler(req, res) {
 
   // Enregistrer le solde dans anonymous_usage pour les syncs suivants
   await supabase.from('anonymous_usage').upsert(
-    { empreinte_digitale_id: sessionId, credits: FREE_CREDITS },
-    { onConflict: 'empreinte_digitale_id' }
+    { fingerprint_id: fingerprint, credits: FREE_CREDITS },
+    { onConflict: 'fingerprint_id' }
   );
 
   return res.status(200).json({
