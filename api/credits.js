@@ -101,13 +101,13 @@ export default async function handler(req, res) {
   // ── Crédits achetés dans anonymous_usage (prioritaire) ──────────────
   const { data: usage } = await supabase
     .from('anonymous_usage')
-    .select('crédits')
+    .select('credits')
     .eq('empreinte_digitale_id', sessionId)
     .maybeSingle();
 
-  if (usage && usage["crédits"] > 0) {
+  if (usage && usage["credits"] > 0) {
     return res.status(200).json({
-      credits: usage["crédits"],
+      credits: usage["credits"],
       fingerprint,
       blocked: false,
     });
