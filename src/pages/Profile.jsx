@@ -119,20 +119,13 @@ export default function Profile() {
     }
   };
 
-  // ── Laisser un avis (+ 1 crédit, 1 seule fois) ───────────────────────────
+  // ── Laisser un avis — connecté au nouveau ReviewFlow ────────────────────
   const handleReview = () => {
-    if (reviewDone) {
+    if (hasAlreadyReviewed()) {
       showToast("👑 Avis déjà donné — merci !");
       return;
     }
-    window.open("https://afrotresse.com", "_blank");
-    setTimeout(() => {
-      addCredits(PRICING.reviewBonus || 1);
-      setCredits(getCredits());
-      localStorage.setItem("afrotresse_review_done", "true");
-      setReviewDone(true);
-      showToast(`✅ Merci ! +${PRICING.reviewBonus || 1} crédit offert 🎁`);
-    }, 2000);
+    setShowReviewFlow(true);
   };
 
   return (
