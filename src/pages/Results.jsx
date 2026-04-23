@@ -681,8 +681,7 @@ export default function Results() {
       </div>
 
       {/* VOIR 3 AUTRES STYLES / FIN DE CATALOGUE */}
-      {currentPage === 1 && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }} className="mt-10 flex flex-col items-center gap-3">
           <div className="flex items-center gap-3 w-full max-w-xs">
             <div className="flex-1 h-px bg-white/10" />
