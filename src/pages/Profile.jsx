@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { addCredits, PRICING } from "../services/credits.js";
+import { addCredits, PRICING, getCredits } from "../services/credits.js";
 import { getCurrentUser, getSupabaseCredits } from "../services/useSupabaseCredits.js";
 import Seo from "../components/Seo.jsx";
 import { supabase } from "../services/supabase.js";
@@ -32,7 +32,8 @@ const getFavoritesCount = () => {
 
 export default function Profile() {
   const navigate = useNavigate();
-  const [credits, setCredits] = useState(() => parseInt(localStorage.getItem("afrotresse_credits") || "0", 10));
+  // On initialise avec la valeur réelle en local
+  const [credits, setCredits] = useState(getCredits());
   const [userName, setUserName] = useState("Ma Reine");
   const [selfieUrl, setSelfieUrl] = useState(null);
   const [aiTrials, setAiTrials] = useState(0);
@@ -65,11 +66,12 @@ export default function Profile() {
           setIsLoggedIn(true);
           setUserEmail(user.email || "");
           const dbCredits = await getSupabaseCredits(user.id);
-          // Synchro critique pour éviter le retour à 0 au rafraîchissement
           localStorage.setItem("afrotresse_credits", dbCredits.toString());
+          // Mise à jour immédiate de l'état pour l'affichage
           setCredits(dbCredits);
         } else {
           setIsLoggedIn(false);
+          setCredits(getCredits());
         }
       } catch (err) {
         console.error("Erreur:", err);
@@ -78,7 +80,17 @@ export default function Profile() {
       }
     };
     loadProfileData();
-  }, []);
+
+    // Optionnel : Un intervalle court pour vérifier le localStorage si une action a eu lieu ailleurs
+    const interval = setInterval(() => {
+        const currentLocal = getCredits();
+        if (currentLocal !== credits) {
+            setCredits(currentLocal);
+        }
+    }, 1000);
+    return () => clearInterval(interval);
+
+  }, [credits]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
