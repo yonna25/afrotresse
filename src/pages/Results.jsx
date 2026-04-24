@@ -15,7 +15,8 @@ const ProtectedImg = ({ src, alt, className, onClick }) => (
   <div className="relative w-full h-full" onClick={onClick}>
     <img src={src} alt={alt} className={className}
       draggable={false} onContextMenu={(e) => e.preventDefault()}
-      style={{ userSelect: "none", WebkitUserSelect: "none" }} />
+      style={{ userSelect: "none", WebkitUserSelect: "none" }} 
+      onError={(e) => { e.target.src = "/logo.png"; e.target.className += " opacity-20"; }} />
     <div className="absolute inset-0" onContextMenu={(e) => e.preventDefault()} onDragStart={(e) => e.preventDefault()} />
   </div>
 );
@@ -27,8 +28,10 @@ export default function Results() {
   const [zoomImage, setZoomImage] = useState(null);
   const [stableMsg, setStableMsg] = useState({ headline: "", subtext: "" });
   
-  // TECHNIQUE : On récupère le selfie en priorité, sinon on cherche dans le backup local
-  const selfieUrl = sessionStorage.getItem("afrotresse_photo") || localStorage.getItem("afrotresse_photo_backup");
+  // TECHNIQUE : Sécurité de persistance
+  const [selfieUrl, setSelfieUrl] = useState(
+    sessionStorage.getItem("afrotresse_photo") || localStorage.getItem("afrotresse_photo_persist")
+  );
 
   const { isFav, toggleFav } = useFavorites();
   const [currentPage, setCurrentPage] = useState(() => parseInt(localStorage.getItem("afrotresse_current_page") || "1", 10));
@@ -42,9 +45,9 @@ export default function Results() {
         const parsed = JSON.parse(raw);
         setStyles(parsed.recommendations || []);
         
-        // TECHNIQUE : On crée le backup pour la survie des images
+        // TECHNIQUE : Sauvegarde miroir pour éviter la perte au refresh
         if (sessionStorage.getItem("afrotresse_photo")) {
-          localStorage.setItem("afrotresse_photo_backup", sessionStorage.getItem("afrotresse_photo"));
+          localStorage.setItem("afrotresse_photo_persist", sessionStorage.getItem("afrotresse_photo"));
         }
 
         setStableMsg(generateStableMessage({ 
@@ -52,18 +55,21 @@ export default function Results() {
           sessionId: getOrCreateSessionId(),
           name: localStorage.getItem("afrotresse_user_name") || ""
         }));
-      } catch (e) { console.error(e); }
+      } catch (e) { console.error("Erreur parsing résultats", e); }
     }
     syncCreditsFromServer().then(c => setCredits(c));
   }, []);
 
-  // ÉTAT ZÉRO : Si aucune donnée, redirection vers le début du tunnel
+  // ÉTAT ZÉRO : Redirection si les données n'existent pas
   if (!selfieUrl || styles.length === 0) {
     return (
-      <div className="min-h-screen bg-[#1A0A00] flex flex-col items-center justify-center p-6 text-center">
-        <motion.div animate={{ y: [0, -10, 0] }} transition={{ repeat: Infinity, duration: 2 }} className="text-5xl mb-4">👑</motion.div>
-        <h2 className="text-[#C9963A] font-bold text-xl mb-4">Tes styles parfaits t'attendent</h2>
-        <button onClick={() => navigate("/camera")} className="bg-[#C9963A] text-[#2C1A0E] px-8 py-3 rounded-full font-bold">📸 Prendre mon selfie</button>
+      <div className="min-h-screen bg-[#1A0A00] flex flex-col items-center justify-center p-8 text-center">
+        <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 3 }} className="text-6xl mb-6">👑</motion.div>
+        <h2 className="text-[#C9963A] text-xl font-bold mb-2">Découvre les tresses faites pour toi 💛</h2>
+        <p className="text-white/40 text-xs mb-8 max-w-[250px]">Prends un selfie pour que notre IA analyse ton visage et te propose les meilleurs styles.</p>
+        <button onClick={() => navigate("/camera")} className="bg-[#C9963A] text-[#2C1A0E] px-10 py-4 rounded-2xl font-black shadow-2xl active:scale-95 transition-all">
+          📸 Prendre mon selfie
+        </button>
       </div>
     );
   }
@@ -73,17 +79,18 @@ export default function Results() {
   return (
     <div className="min-h-screen bg-[#1A0A00] text-[#FAF4EC] p-4 pb-32">
       <div ref={topRef} />
-      <Seo title="Résultats" />
+      <Seo title="Mes Résultats" />
 
-      {/* HEADER */}
-      <div className="mb-8 flex items-center gap-4 bg-white/5 p-4 rounded-3xl border border-white/10">
+      {/* HEADER : Ton design d'origine */}
+      <div className="mb-8 flex items-center gap-4 bg-white/5 p-4 rounded-[2rem] border border-white/10 shadow-lg">
         <ProtectedImg src={selfieUrl} className="w-16 h-16 rounded-2xl object-cover border border-[#C9963A]" />
         <div className="flex-1">
-          <h1 className="font-bold text-[#C9963A] text-sm">{stableMsg.headline}</h1>
+          <h1 className="font-bold text-[#C9963A] text-sm leading-tight">{stableMsg.headline}</h1>
+          <p className="text-[10px] opacity-40 uppercase mt-0.5 tracking-tighter">Analyse terminée</p>
         </div>
       </div>
 
-      {/* GRID TECHNIQUE : Respect de ta structure d'origine */}
+      {/* GRID : Ton design d'origine préservé */}
       <div className="space-y-8">
         {displayedStyles.map((style, idx) => (
           <div key={idx} className="bg-[#2C1A0E] rounded-[2.5rem] overflow-hidden border border-white/5 shadow-xl">
@@ -96,27 +103,30 @@ export default function Results() {
                 <ProtectedImg src={style.views?.top} className="w-full h-full object-cover" onClick={() => setZoomImage(style.views?.top)} />
               </div>
             </div>
-            <div className="p-5 flex justify-between items-center">
-              <h3 className="font-bold">{style.name}</h3>
-              <button onClick={() => toggleFav(style)} className="text-xl">{isFav(style.id) ? "❤️" : "🤍"}</button>
+            <div className="p-5 flex justify-between items-center bg-[#2C1A0E]">
+              <h3 className="font-bold text-lg">{style.name}</h3>
+              <button onClick={() => toggleFav(style)} className="text-xl active:scale-90 transition-transform">
+                {isFav(style.id) ? "❤️" : "🤍"}
+              </button>
             </div>
           </div>
         ))}
       </div>
 
-      {/* BOUTON RÉDUIT : Moins de padding, texte plus petit */}
+      {/* BOUTON RÉDUIT : Technique uniquement */}
       {unlockedPages < Math.ceil(styles.length / STYLES_PER_PAGE) && (
-        <div className="mt-8 px-10">
+        <div className="mt-8 px-14">
           <button 
-            onClick={() => {
-              consumeCredits(1).then(ok => {
-                if(ok) {
-                  setUnlockedPages(prev => prev + 1);
-                  setCurrentPage(unlockedPages + 1);
-                } else { navigate("/credits"); }
-              });
+            onClick={async () => {
+              const ok = await consumeCredits(1);
+              if (ok) {
+                setUnlockedPages(p => p + 1);
+                setCurrentPage(unlockedPages + 1);
+                setCredits(getCredits());
+                topRef.current?.scrollIntoView({ behavior: "smooth" });
+              } else { navigate("/credits"); }
             }}
-            className="w-full py-3 rounded-full bg-[#C9963A] text-[#2C1A0E] font-black text-[10px] uppercase tracking-widest shadow-lg"
+            className="w-full py-4 rounded-full bg-gradient-to-r from-[#C9963A] to-[#E8B96A] text-[#2C1A0E] font-black text-[10px] uppercase tracking-widest shadow-xl"
           >
             Voir 3 autres styles (-1cr)
           </button>
@@ -125,17 +135,17 @@ export default function Results() {
 
       {/* SOLDE FLOTTANT */}
       <div className="fixed bottom-24 right-4 z-50">
-        <div onClick={() => navigate("/credits")} className="w-12 h-12 bg-[#C9963A] text-[#2C1A0E] rounded-xl flex flex-col items-center justify-center shadow-xl font-black cursor-pointer">
-          <span className="text-[6px] uppercase opacity-60">Solde</span>
-          <span className="text-lg leading-none">{credits}</span>
+        <div onClick={() => navigate("/credits")} className="w-12 h-12 bg-[#C9963A] text-[#2C1A0E] rounded-xl flex flex-col items-center justify-center shadow-2xl cursor-pointer">
+          <span className="text-[5px] font-black uppercase opacity-60 leading-none">Solde</span>
+          <span className="text-lg font-black leading-none">{credits}</span>
         </div>
       </div>
 
-      {/* MODAL ZOOM */}
+      {/* ZOOM MODAL */}
       <AnimatePresence>
         {zoomImage && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setZoomImage(null)} className="fixed inset-0 z-[100] bg-black/90 backdrop-blur flex items-center justify-center p-4">
-            <ProtectedImg src={zoomImage} className="max-w-full max-h-[80vh] rounded-2xl object-contain" />
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setZoomImage(null)} className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+            <ProtectedImg src={zoomImage} className="max-w-full max-h-[80vh] rounded-2xl object-contain shadow-2xl" />
           </motion.div>
         )}
       </AnimatePresence>
