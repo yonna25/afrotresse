@@ -10,7 +10,31 @@ export const getCredits = () => {
   return parseInt(localStorage.getItem("afrotresse_credits") || "0", 10);
 };
 
-// AJUSTEMENT : Fonction demandée par Home.jsx pour le build
+// AJUSTEMENT : Fonction demandée par Analyze.jsx pour le build
+export const setCredits = async (amount) => {
+  try {
+    const user = await getCurrentUser();
+    const newTotal = parseInt(amount, 10);
+
+    if (user) {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ credits: newTotal })
+        .eq('id', user.id);
+      
+      if (error) throw error;
+    }
+
+    localStorage.setItem("afrotresse_credits", newTotal.toString());
+    return newTotal;
+  } catch (err) {
+    console.error("Erreur setCredits:", err);
+    localStorage.setItem("afrotresse_credits", amount.toString());
+    return amount;
+  }
+};
+
+// Synchronisation depuis le serveur (utilisé par Home.jsx)
 export const syncCreditsFromServer = async () => {
   try {
     const user = await getCurrentUser();
