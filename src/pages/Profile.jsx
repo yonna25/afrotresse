@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { getCredits, addCredits, PRICING } from "../services/credits.js";
-import { getCurrentUser } from "../services/useSupabaseCredits.js";
+import { getCurrentUser, getSupabaseCredits } from "../services/useSupabaseCredits.js";
 import Seo from "../components/Seo.jsx";
 import { supabase } from "../services/supabase.js";
 
@@ -50,11 +50,10 @@ export default function Profile() {
   const [userEmail, setUserEmail] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
-  // Formulaire connexion : fermé par défaut
   const [showLoginForm, setShowLoginForm] = useState(false);
 
   useEffect(() => {
-    setCredits(getCredits());
+    // Stats locales
     setAiTrials(getAiTrials());
     setReferralCode(getReferralCode());
     setReferralCount(getReferralCount());
@@ -66,14 +65,20 @@ export default function Profile() {
     const photo = sessionStorage.getItem("afrotresse_photo");
     if (photo) setSelfieUrl(photo);
     setFavoritesCount(getFavoritesCount());
-    // Vérifier session Supabase
-    getCurrentUser().then(user => {
+
+    // CORRECTION TECHNIQUE : On demande à Supabase au lieu du localStorage
+    getCurrentUser().then(async (user) => {
       if (user) {
         setIsLoggedIn(true);
         setUserEmail(user.email || localStorage.getItem("afrotresse_email") || "");
+        
+        // On récupère le vrai solde (les 3 crédits que tu as vus en base)
+        const dbCredits = await getSupabaseCredits(user.id);
+        setCredits(dbCredits);
       } else {
         setIsLoggedIn(false);
         setUserEmail(localStorage.getItem("afrotresse_email") || "");
+        setCredits(getCredits()); // Fallback invité
       }
       setIsLoadingAuth(false);
     });
@@ -82,6 +87,7 @@ export default function Profile() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setIsLoggedIn(false);
+    setCredits(0);
     showToast("👋 Déconnectée avec succès");
   };
 
@@ -90,7 +96,6 @@ export default function Profile() {
     setTimeout(() => setToastMsg(""), 3000);
   };
 
-  // ── Partage du lien de parrainage ─────────────────────────────────────────
   const handleShare = async () => {
     const referralLink = `${window.location.origin}?ref=${referralCode}`;
     const text = `👑 Découvre AfroTresse — l'IA qui trouve tes tresses parfaites en 10 secondes ! Utilise mon code ${referralCode} et reçois ${PRICING.referral?.receiver || 2} crédits offerts 🎁\n${referralLink}`;
@@ -104,7 +109,6 @@ export default function Profile() {
     } catch (e) {}
   };
 
-  // ── Copier le code de parrainage ──────────────────────────────────────────
   const handleCopyCode = async () => {
     try {
       await navigator.clipboard.writeText(referralCode);
@@ -114,14 +118,11 @@ export default function Profile() {
     }
   };
 
-
-
   return (
     <>
       <Seo title="Mon profil — AfroTresse" noindex />
       <div className="min-h-screen bg-[#1A0A00] text-white flex flex-col items-center pb-32 relative">
 
-      {/* ── TOAST ── */}
       <AnimatePresence>
         {toastMsg && (
           <motion.div
@@ -135,7 +136,6 @@ export default function Profile() {
         )}
       </AnimatePresence>
 
-      {/* ── HERO — Photo + Prénom ── */}
       <div className="w-full relative">
         <div className="h-48 w-full bg-[#1A0A00]" />
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2">
@@ -155,7 +155,6 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* Prénom */}
       <div className="mt-16 flex flex-col items-center px-5 w-full">
         <h1 className="text-2xl font-black uppercase tracking-tight">{userName}</h1>
         <p className="text-[11px] text-[#C9963A] font-medium tracking-[0.2em] uppercase opacity-80 mt-0.5">
@@ -163,7 +162,6 @@ export default function Profile() {
         </p>
       </div>
 
-      {/* ── STATUT CONNEXION ── */}
       <div className="w-full max-w-sm px-5 mt-4">
         {isLoggedIn ? (
           <motion.div
@@ -196,7 +194,6 @@ export default function Profile() {
               border: "1.5px solid rgba(201,150,58,0.4)"
             }}
           >
-            {/* Bouton toggle — toujours visible */}
             <button
               onClick={() => setShowLoginForm(prev => !prev)}
               className="w-full px-4 py-3 flex items-center justify-between"
@@ -215,7 +212,6 @@ export default function Profile() {
               </motion.div>
             </button>
 
-            {/* Formulaire expandable */}
             <AnimatePresence>
               {showLoginForm && (
                 <motion.div
@@ -232,7 +228,6 @@ export default function Profile() {
                     <motion.button
                       whileTap={{ scale: 0.97 }}
                       onClick={() => {
-                        // Sauvegarder les résultats avant le redirect Magic Link
                         const keys = ['afrotresse_photo', 'afrotresse_results', 'afrotresse_trigger_fireworks'];
                         const backup = {};
                         keys.forEach(k => { const v = sessionStorage.getItem(k); if (v) backup[k] = v; });
@@ -253,9 +248,7 @@ export default function Profile() {
         )}
       </div>
 
-      {/* ── STATS RÉELLES ── */}
       <div className="grid grid-cols-3 w-full max-w-sm mt-6 px-5 gap-3">
-        {/* Solde (Crédits) - CLIQUABLE */}
         <motion.div
           whileTap={{ scale: 0.97 }}
           onClick={() => navigate("/credits")}
@@ -267,7 +260,6 @@ export default function Profile() {
           <p className="text-[7px] text-[#1A0A00]/50 mt-1">Appuie</p>
         </motion.div>
 
-        {/* Favoris - CLIQUABLE */}
         <motion.div
           whileTap={{ scale: 0.97 }}
           onClick={() => navigate("/library")}
@@ -278,7 +270,6 @@ export default function Profile() {
           <p className="text-[7px] text-[#C9963A]/50 mt-1">Voir</p>
         </motion.div>
 
-        {/* Gagnés (Referral) - AFFICHAGE */}
         <div className="bg-white/5 border border-white/10 rounded-3xl p-4 flex flex-col items-center">
           <p className="text-2xl font-black text-[#C9963A]">{totalEarned}</p>
           <p className="text-[8px] uppercase font-black opacity-40 tracking-widest mt-0.5">Gagnés</p>
@@ -286,10 +277,7 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* ── ACTIONS PRINCIPALES ── */}
       <div className="w-full max-w-sm px-5 mt-6 flex flex-col gap-3">
-
-        {/* Recharger les crédits */}
         <motion.button
           whileTap={{ scale: 0.97 }}
           onClick={() => navigate("/credits")}
@@ -302,7 +290,6 @@ export default function Profile() {
           </svg>
         </motion.button>
 
-        {/* Analyser selfie existant */}
         {selfieUrl && (
           <motion.button
             whileTap={{ scale: 0.96 }}
@@ -319,7 +306,6 @@ export default function Profile() {
           </motion.button>
         )}
 
-        {/* Nouveau selfie */}
         <motion.button
           whileTap={{ scale: 0.97 }}
           onClick={() => navigate("/camera")}
@@ -331,7 +317,6 @@ export default function Profile() {
           </svg>
         </motion.button>
 
-        {/* Voir mes résultats */}
         <motion.button
           whileTap={{ scale: 0.97 }}
           onClick={() => navigate("/results")}
@@ -344,13 +329,11 @@ export default function Profile() {
         </motion.button>
       </div>
 
-      {/* ── PARRAINAGE ── */}
       <div className="w-full max-w-sm px-5 mt-6">
         <motion.div
           className="rounded-3xl overflow-hidden border border-[#C9963A]/30"
           style={{ background: "#1A0A00" }}
         >
-          {/* Header parrainage */}
           <button
             onClick={() => setShowReferralInfo(!showReferralInfo)}
             className="w-full p-5 flex items-center justify-between"
@@ -371,7 +354,6 @@ export default function Profile() {
             </motion.div>
           </button>
 
-          {/* Détails parrainage */}
           <AnimatePresence>
             {showReferralInfo && (
               <motion.div
@@ -381,12 +363,10 @@ export default function Profile() {
                 className="overflow-hidden"
               >
                 <div className="px-5 pb-5 flex flex-col gap-3">
-                  {/* Explication */}
                   <div className="bg-white/5 rounded-2xl p-3 text-[11px] text-white/60 leading-relaxed">
                     Partage ton code à une amie. Elle reçoit <span className="text-[#C9963A] font-bold">+{PRICING.referral?.receiver || 2} crédits</span>, et toi <span className="text-[#C9963A] font-bold">+{PRICING.referral?.sender || 2} crédits</span> dès qu'elle s'inscrit. 👑
                   </div>
 
-                  {/* Code unique */}
                   <div className="flex items-center gap-2">
                     <div className="flex-1 bg-white/10 border border-[#C9963A]/40 rounded-xl px-4 py-3 font-black text-[#C9963A] tracking-widest text-center text-sm">
                       {referralCode}
@@ -399,7 +379,6 @@ export default function Profile() {
                     </button>
                   </div>
 
-                  {/* Filleules */}
                   <div className="flex items-center justify-between bg-white/5 rounded-2xl px-4 py-3">
                     <div>
                       <p className="text-xs font-black text-white">Filleules</p>
@@ -408,7 +387,6 @@ export default function Profile() {
                     <p className="text-2xl font-black text-[#C9963A]">{referralCount}</p>
                   </div>
 
-                  {/* Bouton partager */}
                   <motion.button
                     whileTap={{ scale: 0.97 }}
                     onClick={handleShare}
@@ -424,8 +402,6 @@ export default function Profile() {
         </motion.div>
       </div>
 
-
-      {/* ── FAQ ── */}
       <div className="w-full max-w-sm px-5 mt-3">
         <motion.button
           whileTap={{ scale: 0.97 }}
@@ -445,19 +421,16 @@ export default function Profile() {
         </motion.button>
       </div>
 
-      {/* ── INFORMATIONS LÉGALES ── */}
       <div className="mt-10 pb-4 flex flex-col items-center gap-2 opacity-30">
         <div className="flex gap-4 text-[9px] font-medium uppercase tracking-tighter">
           <button onClick={() => navigate("/privacy-policy")}>Mentions Légales</button>
           <span>•</span>
-          <button onClick={() => navigate("/terms-of-service")}>CGU</button>
-          <span>•</span>
-          <button onClick={() => navigate("/cookie-policy")}>Confidentialité</button>
+          <button onClick={() => navigate("/terms-of-service")}>Conditions d'Utilisation</button>
         </div>
-        <p className="text-[8px]">© 2026 AfroTresse — Tous droits réservés</p>
+        <p className="text-[8px] font-bold text-[#C9963A]">© 2024 AfroTresse · Fait avec amour 💛</p>
       </div>
 
-    </div>
+      </div>
     </>
   );
 }
