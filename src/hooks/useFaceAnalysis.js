@@ -1,6 +1,6 @@
 /**
  * useFaceAnalysis.js — AfroTresse
- * Exporte analyzeFaceWithAI (appelé par faceAnalysis.js)
+ * Version Sécurisée (Anti-consommation vide)
  */
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -23,13 +23,20 @@ function generateUUID() {
   });
 }
 
-// ── État global (module-level) ───────────────────────────────
+// ── État global ───────────────────────────────
 let isAnalyzing = false;
 const STORAGE_KEY  = "afrotresse_last_analysis_done";
 const CACHE_PREFIX = "afrotresse_cache_";
 
-// ── Export principal — appelé par faceAnalysis.js ────────────
+// ── Export principal ────────────
 export async function analyzeFaceWithAI(photoData, timeoutMs = 15000) {
+  
+  // SÉCURITÉ : Si photoData est vide ou absent, on stop tout ici.
+  // Cela évite de consommer un crédit pour rien.
+  if (!photoData) {
+    console.warn("Aucune photo détectée. Appel API annulé.");
+    return null;
+  }
 
   if (isAnalyzing) {
     throw new Error("Analyse déjà en cours");
@@ -58,9 +65,7 @@ export async function analyzeFaceWithAI(photoData, timeoutMs = 15000) {
         isAnalyzing = false;
         return JSON.parse(cached);
       }
-    } catch {
-      // Ignorer erreur cache
-    }
+    } catch {}
 
     // Analyse locale MediaPipe
     let faceShape = "oval";
@@ -132,7 +137,7 @@ export async function analyzeFaceWithAI(photoData, timeoutMs = 15000) {
       faceShape:        data.faceShape || faceShape,
       faceShapeName:    data.faceShapeName,
       confidence:       data.confidence || 0.85,
-      creditsRemaining: data.remaining, // Synchronisé avec api/analyze.js
+      creditsRemaining: data.remaining,
     };
 
     // Mise en cache
