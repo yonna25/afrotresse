@@ -3,7 +3,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { getCredits, consumeCredits, hasCredits, syncCreditsFromServer } from "../services/credits.js";
 import Seo from "../components/Seo.jsx";
-import { getGeneratedStyles, saveStyle, isStyleSaved } from "../services/styles.js";
+
+// ── HELPERS INTERNES (Pour éviter l'erreur d'import) ──
+const getGeneratedStyles = () => {
+  try {
+    return JSON.parse(localStorage.getItem("afrotresse_generated_styles") || "[]");
+  } catch (e) {
+    return [];
+  }
+};
 
 export default function Results() {
   const navigate = useNavigate();
@@ -19,8 +27,6 @@ export default function Results() {
       setCredits(updatedCredits);
 
       const generated = getGeneratedStyles();
-      // Correction technique : On s'assure que le tableau de styles 
-      // correspond exactement au nombre de crédits consommés ou disponibles
       setStyles(generated);
       setLoading(false);
     };
@@ -28,7 +34,6 @@ export default function Results() {
   }, []);
 
   const handleNext = () => {
-    // Correction de la pagination : Empêche d'aller au-delà du dernier style réel
     if (currentIndex < styles.length - 1) {
       setCurrentIndex(prev => prev + 1);
     }
@@ -48,11 +53,8 @@ export default function Results() {
 
     const success = await consumeCredits();
     if (success) {
-      // Mise à jour immédiate de l'état local pour l'affichage
       const newBalance = getCredits();
       setCredits(newBalance);
-      
-      // Ici, on redirige vers la caméra pour une nouvelle génération
       navigate("/camera");
     }
   };
@@ -70,9 +72,9 @@ export default function Results() {
       <Seo title="Vos Résultats — AfroTresse" />
       <div className="min-h-screen bg-[#1A0A00] text-white flex flex-col items-center pb-20">
         
-        {/* HEADER & SOLDE (Réactif) */}
+        {/* HEADER & SOLDE */}
         <div className="w-full px-6 pt-10 flex justify-between items-center">
-          <button onClick={() => navigate("/profile")} className="text-2xl">←</button>
+          <button onClick={() => navigate("/profile")} className="text-2xl font-bold">←</button>
           <div className="bg-[#C9963A]/20 px-4 py-2 rounded-full border border-[#C9963A]/50">
             <span className="text-[#C9963A] font-black text-xs uppercase tracking-widest">
               {credits} Crédits
@@ -92,12 +94,11 @@ export default function Results() {
           {styles.length > 0 ? (
             <div className="relative aspect-[3/4] rounded-[2rem] overflow-hidden border-2 border-[#C9963A]/30 shadow-2xl">
               <img 
-                src={styles[currentIndex].url} 
+                src={styles[currentIndex].url || styles[currentIndex]} 
                 className="w-full h-full object-cover" 
                 alt="Résultat coiffure" 
               />
               
-              {/* Navigation interne */}
               <div className="absolute inset-0 flex justify-between items-center px-4">
                 <button 
                   onClick={handlePrev}
@@ -120,7 +121,7 @@ export default function Results() {
           )}
         </div>
 
-        {/* ACTIONS BASSES */}
+        {/* ACTIONS */}
         <div className="mt-10 flex flex-col gap-4 w-full max-w-sm px-6">
           <button 
             onClick={handleGenerateMore}
