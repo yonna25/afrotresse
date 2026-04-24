@@ -5,22 +5,20 @@ export const PRICING = {
   referral: { sender: 2, receiver: 2 }
 };
 
-// Récupérer les crédits (Lecture locale)
+// ── CRÉDITS ──
+
 export const getCredits = () => {
   return parseInt(localStorage.getItem("afrotresse_credits") || "0", 10);
 };
 
-// Vérifier si l'utilisateur a des crédits (Requis par Results.jsx)
 export const hasCredits = () => {
   return getCredits() > 0;
 };
 
-// AJUSTEMENT : Alias pour useCredit (Requis par Results.jsx)
 export const consumeCredits = async () => {
   return await useCredit();
 };
 
-// Mise à jour forcée (Requis par Analyze.jsx)
 export const setCredits = async (amount) => {
   try {
     const user = await getCurrentUser();
@@ -41,7 +39,6 @@ export const setCredits = async (amount) => {
   }
 };
 
-// Synchronisation depuis le serveur (Requis par Home.jsx)
 export const syncCreditsFromServer = async () => {
   try {
     const user = await getCurrentUser();
@@ -57,7 +54,6 @@ export const syncCreditsFromServer = async () => {
   }
 };
 
-// Soustraire un crédit avec synchronisation base de données
 export const useCredit = async () => {
   try {
     const user = await getCurrentUser();
@@ -79,7 +75,6 @@ export const useCredit = async () => {
   }
 };
 
-// Ajouter des crédits avec synchronisation base de données
 export const addCredits = async (amount) => {
   try {
     const user = await getCurrentUser();
@@ -97,5 +92,26 @@ export const addCredits = async (amount) => {
   } catch (err) {
     console.error("Erreur addCredits:", err);
     return getCredits();
+  }
+};
+
+// ── FAVORIS (Requis par Library.jsx) ──
+
+export const getSavedStyles = () => {
+  try {
+    return JSON.parse(localStorage.getItem("afrotresse_saved_styles") || "[]");
+  } catch (e) {
+    return [];
+  }
+};
+
+export const unsaveStyle = (styleId) => {
+  try {
+    const styles = getSavedStyles();
+    const filtered = styles.filter(s => s.id !== styleId);
+    localStorage.setItem("afrotresse_saved_styles", JSON.stringify(filtered));
+    return true;
+  } catch (e) {
+    return false;
   }
 };
