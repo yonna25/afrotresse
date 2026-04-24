@@ -25,11 +25,11 @@ const Profile = () => {
 
       setUser(currentUser);
 
-      // RÉPARATION : Utilisation de la bonne fonction pour lire la table usage_credits
+      // Correction technique : lecture du solde réel
       const userCredits = await getSupabaseCredits(currentUser.id);
       setCredits(userCredits);
     } catch (error) {
-      console.error("Erreur lors du chargement du profil:", error);
+      console.error("Erreur chargement profil:", error);
     } finally {
       setLoading(false);
     }
@@ -43,39 +43,55 @@ const Profile = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#FAF4EC] flex items-center justify-center">
-        <p className="text-[#2C1A0E]">Chargement du profil...</p>
+        <p className="text-[#2C1A0E]">Chargement...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#FAF4EC] p-6">
-      <div className="max-w-md mx-auto bg-white rounded-2xl shadow-sm p-8 border border-[#C9963A]/20">
-        <h1 className="text-2xl font-bold text-[#2C1A0E] mb-6">Mon Profil</h1>
-        
-        <div className="space-y-6">
-          <div className="pb-6 border-bottom border-gray-100">
-            <p className="text-sm text-gray-500 mb-1">Email</p>
-            <p className="text-[#2C1A0E] font-medium">{user?.email}</p>
-          </div>
+    <div className="min-h-screen bg-[#FAF4EC] p-4 pb-24">
+      <div className="max-w-md mx-auto space-y-6">
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-2xl font-bold text-[#2C1A0E]">Mon profil</h1>
+          <button 
+            onClick={handleLogout}
+            className="text-sm text-red-600 font-medium"
+          >
+            Déconnexion
+          </button>
+        </div>
 
-          <div className="bg-[#2C1A0E] rounded-xl p-6 text-white">
-            <p className="text-sm opacity-80 mb-1">Crédits d'analyse disponibles</p>
-            <p className="text-3xl font-bold text-[#C9963A]">{credits}</p>
+        {/* Carte Crédits */}
+        <div className="bg-[#2C1A0E] rounded-3xl p-8 text-white relative overflow-hidden shadow-xl">
+          <div className="relative z-10">
+            <p className="text-sm opacity-70 mb-2">Crédits disponibles</p>
+            <div className="flex items-baseline gap-2">
+              <span className="text-5xl font-bold text-[#C9963A]">{credits}</span>
+              <span className="text-[#C9963A] opacity-70">analyses</span>
+            </div>
             <button 
               onClick={() => navigate('/credits')}
-              className="mt-4 text-sm bg-white/10 hover:bg-white/20 py-2 px-4 rounded-lg transition-colors"
+              className="mt-6 w-full py-3 bg-[#C9963A] hover:bg-[#B08332] text-[#2C1A0E] font-bold rounded-xl transition-colors shadow-lg"
             >
-              Acheter plus de crédits
+              Acheter des crédits
             </button>
           </div>
+          <div className="absolute top-[-20%] right-[-10%] w-48 h-48 bg-[#C9963A] opacity-10 rounded-full blur-3xl"></div>
+        </div>
 
-          <button
-            onClick={handleLogout}
-            className="w-full py-3 px-4 border border-red-200 text-red-600 rounded-xl hover:bg-red-50 transition-colors font-medium"
-          >
-            Se déconnecter
-          </button>
+        {/* Infos Utilisateur */}
+        <div className="bg-white rounded-3xl p-6 border border-[#C9963A]/10 shadow-sm">
+          <div className="space-y-4">
+            <div>
+              <label className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Email</label>
+              <p className="text-[#2C1A0E] font-medium">{user?.email}</p>
+            </div>
+            <div className="h-[1px] bg-gray-50"></div>
+            <div>
+              <label className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Statut</label>
+              <p className="text-[#2C1A0E] font-medium">Membre AfroTresse</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
