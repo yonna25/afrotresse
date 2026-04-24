@@ -1,13 +1,6 @@
 /**
  * useFaceAnalysis.js — AfroTresse
  * Exporte analyzeFaceWithAI (appelé par faceAnalysis.js)
- * Protections :
- *   ✅ Anti double analyse (isAnalyzing)
- *   ✅ Anti refresh / back navigation (sessionStorage)
- *   ✅ Timeout API 10s (AbortController)
- *   ✅ RequestId unique par envoi
- *   ✅ Fingerprint navigateur (anti changement IP/VPN)
- *   ✅ Cache image SHA-256 (sessionStorage)
  */
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -36,15 +29,11 @@ const STORAGE_KEY  = "afrotresse_last_analysis_done";
 const CACHE_PREFIX = "afrotresse_cache_";
 
 // ── Export principal — appelé par faceAnalysis.js ────────────
-export async function analyzeFaceWithAI(photoData, timeoutMs = 10000) {
+export async function analyzeFaceWithAI(photoData, timeoutMs = 15000) {
 
-  // Garde 1 : double analyse
   if (isAnalyzing) {
     throw new Error("Analyse déjà en cours");
   }
-
-  // Garde 2 : anti refresh désactivé temporairement
-  // (réactiver après confirmation que le flux fonctionne)
 
   isAnalyzing = true;
 
@@ -70,10 +59,10 @@ export async function analyzeFaceWithAI(photoData, timeoutMs = 10000) {
         return JSON.parse(cached);
       }
     } catch {
-      // Hash échoué → continuer sans cache
+      // Ignorer erreur cache
     }
 
-    // Analyse locale MediaPipe — fallback oval si indisponible
+    // Analyse locale MediaPipe
     let faceShape = "oval";
     try {
       const detected = await detectFaceShapeLocal(file);
@@ -89,16 +78,16 @@ export async function analyzeFaceWithAI(photoData, timeoutMs = 10000) {
       const fp = await FingerprintJS.load();
       const fpResult = await fp.get();
       fingerprintId = fpResult.visitorId;
-    } catch {
-      // FingerprintJS indisponible → IP seule s'applique
+    } catch {}
+
+    // Identification session (Invité)
+    let sessionId = localStorage.getItem('afrotresse_session_id');
+    if (!sessionId) {
+      sessionId = generateUUID();
+      localStorage.setItem('afrotresse_session_id', sessionId);
     }
 
-    // Appel API
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-    const requestId = generateUUID();
-
-    // Récupérer userId si connectée
+    // Récupérer userId si connecté
     let userId = null;
     try {
       const { getCurrentUser } = await import('../services/useSupabaseCredits.js');
@@ -106,16 +95,27 @@ export async function analyzeFaceWithAI(photoData, timeoutMs = 10000) {
       if (user?.id) userId = user.id;
     } catch {}
 
+    // Appel API Vercel
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const requestId = generateUUID();
+
     let response;
     try {
       response = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ faceShape, requestId, fingerprintId, userId }),
+        body: JSON.stringify({ 
+          faceShape, 
+          requestId, 
+          fingerprintId, 
+          userId, 
+          sessionId 
+        }),
         signal: controller.signal,
       });
     } catch (fetchErr) {
-      if (fetchErr.name === "AbortError") throw new Error("Timeout API analyse");
+      if (fetchErr.name === "AbortError") throw new Error("Le serveur met trop de temps à répondre.");
       throw fetchErr;
     } finally {
       clearTimeout(timer);
@@ -123,27 +123,23 @@ export async function analyzeFaceWithAI(photoData, timeoutMs = 10000) {
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      throw new Error(err.error ?? `Erreur serveur (${response.status})`);
+      throw new Error(err.error ?? "Erreur lors de l'analyse");
     }
 
     const data = await response.json();
 
-    // Verrou session désactivé temporairement
-
     const result = {
-      faceShape:        data.faceShape,
+      faceShape:        data.faceShape || faceShape,
       faceShapeName:    data.faceShapeName,
-      confidence:       data.confidence,
-      creditsRemaining: data.creditsRemaining,
+      confidence:       data.confidence || 0.85,
+      creditsRemaining: data.remaining, // Synchronisé avec api/analyze.js
     };
 
     // Mise en cache
     if (imageHash) {
       try {
         sessionStorage.setItem(`${CACHE_PREFIX}${imageHash}`, JSON.stringify(result));
-      } catch {
-        // sessionStorage plein → ignorer
-      }
+      } catch {}
     }
 
     return result;
@@ -164,11 +160,9 @@ async function detectFaceShapeLocal(photoBlob) {
   try {
     const module = await import("@mediapipe/face_mesh");
     const FaceMesh = module.default || module.FaceMesh;
-    if (!FaceMesh) throw new Error("MediaPipe Face Mesh non disponible");
-
+    
     const faceMesh = new FaceMesh({
-      locateFile: (file) =>
-        `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
+      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
     });
 
     faceMesh.setOptions({
@@ -179,12 +173,10 @@ async function detectFaceShapeLocal(photoBlob) {
     });
 
     await faceMesh.initialize();
-
     const objectUrl = URL.createObjectURL(photoBlob);
 
     return new Promise((resolve, reject) => {
       const img = new Image();
-
       img.onload = async () => {
         try {
           const results = await faceMesh.send({ image: img });
@@ -196,41 +188,30 @@ async function detectFaceShapeLocal(photoBlob) {
           reject(err);
         }
       };
-
       img.onerror = () => {
         URL.revokeObjectURL(objectUrl);
-        reject(new Error("Erreur chargement image"));
+        reject(new Error("Erreur image"));
       };
-
       img.src = objectUrl;
     });
-
   } catch (err) {
-    console.error("MediaPipe error:", err);
     throw err;
   }
 }
 
 // ── Calcul forme visage ───────────────────────────────────────
 function calculateFaceShape(landmarks) {
-  if (!landmarks || landmarks.length < 10) return null;
+  if (!landmarks || landmarks.length < 10) return "oval";
 
-  const forehead = landmarks[10];
-  const chin     = landmarks[152];
-  const left     = landmarks[234];
-  const right    = landmarks[454];
-  const jawLeft  = landmarks[205];
-  const jawRight = landmarks[425];
-
-  const faceHeight = Math.abs(chin.y - forehead.y);
-  const faceWidth  = Math.abs(right.x - left.x);
-  const jawWidth   = Math.abs(jawRight.x - jawLeft.x);
+  const faceHeight = Math.abs(landmarks[152].y - landmarks[10].y);
+  const faceWidth  = Math.abs(landmarks[454].x - landmarks[234].x);
+  const jawWidth   = Math.abs(landmarks[425].x - landmarks[205].x);
   const ratio      = faceHeight / faceWidth;
 
   if (ratio > 1.4) return "long";
   if (ratio < 0.85) return "round";
   if (Math.abs(jawWidth - faceWidth) < 0.05) return "square";
-
+  
   const foreheadWidth = Math.abs(landmarks[54].x - landmarks[284].x);
   if (foreheadWidth > jawWidth * 1.2) return "heart";
   if (ratio > 1.1) return "diamond";
