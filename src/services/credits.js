@@ -5,26 +5,33 @@ export const PRICING = {
   referral: { sender: 2, receiver: 2 }
 };
 
-// Récupérer les crédits (Lecture locale pour l'UI)
+// Récupérer les crédits (Lecture locale)
 export const getCredits = () => {
   return parseInt(localStorage.getItem("afrotresse_credits") || "0", 10);
 };
 
-// AJUSTEMENT : Fonction demandée par Analyze.jsx pour le build
+// Vérifier si l'utilisateur a des crédits (Requis par Results.jsx)
+export const hasCredits = () => {
+  return getCredits() > 0;
+};
+
+// AJUSTEMENT : Alias pour useCredit (Requis par Results.jsx)
+export const consumeCredits = async () => {
+  return await useCredit();
+};
+
+// Mise à jour forcée (Requis par Analyze.jsx)
 export const setCredits = async (amount) => {
   try {
     const user = await getCurrentUser();
     const newTotal = parseInt(amount, 10);
-
     if (user) {
       const { error } = await supabase
         .from('profiles')
         .update({ credits: newTotal })
         .eq('id', user.id);
-      
       if (error) throw error;
     }
-
     localStorage.setItem("afrotresse_credits", newTotal.toString());
     return newTotal;
   } catch (err) {
@@ -34,7 +41,7 @@ export const setCredits = async (amount) => {
   }
 };
 
-// Synchronisation depuis le serveur (utilisé par Home.jsx)
+// Synchronisation depuis le serveur (Requis par Home.jsx)
 export const syncCreditsFromServer = async () => {
   try {
     const user = await getCurrentUser();
@@ -55,20 +62,15 @@ export const useCredit = async () => {
   try {
     const user = await getCurrentUser();
     const currentCredits = getCredits();
-
     if (currentCredits <= 0) return false;
-
     const newTotal = currentCredits - 1;
-
     if (user) {
       const { error } = await supabase
         .from('profiles')
         .update({ credits: newTotal })
         .eq('id', user.id);
-      
       if (error) throw error;
     }
-
     localStorage.setItem("afrotresse_credits", newTotal.toString());
     return true;
   } catch (err) {
@@ -83,16 +85,13 @@ export const addCredits = async (amount) => {
     const user = await getCurrentUser();
     const currentCredits = getCredits();
     const newTotal = currentCredits + amount;
-
     if (user) {
       const { error } = await supabase
         .from('profiles')
         .update({ credits: newTotal })
         .eq('id', user.id);
-      
       if (error) throw error;
     }
-
     localStorage.setItem("afrotresse_credits", newTotal.toString());
     return newTotal;
   } catch (err) {
