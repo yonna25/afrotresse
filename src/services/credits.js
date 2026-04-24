@@ -1,13 +1,29 @@
 import { supabase } from "./supabase.js";
-import { getCurrentUser } from "./useSupabaseCredits.js";
+import { getCurrentUser, getSupabaseCredits } from "./useSupabaseCredits.js";
 
 export const PRICING = {
   referral: { sender: 2, receiver: 2 }
 };
 
-// Récupérer les crédits (Lecture autoritaire du localStorage pour l'UI)
+// Récupérer les crédits (Lecture locale pour l'UI)
 export const getCredits = () => {
   return parseInt(localStorage.getItem("afrotresse_credits") || "0", 10);
+};
+
+// AJUSTEMENT : Fonction demandée par Home.jsx pour le build
+export const syncCreditsFromServer = async () => {
+  try {
+    const user = await getCurrentUser();
+    if (user) {
+      const dbCredits = await getSupabaseCredits(user.id);
+      localStorage.setItem("afrotresse_credits", dbCredits.toString());
+      return dbCredits;
+    }
+    return getCredits();
+  } catch (err) {
+    console.error("Erreur syncCredits:", err);
+    return getCredits();
+  }
 };
 
 // Soustraire un crédit avec synchronisation base de données
@@ -21,7 +37,6 @@ export const useCredit = async () => {
     const newTotal = currentCredits - 1;
 
     if (user) {
-      // Ajustement technique : Mise à jour de la table profiles
       const { error } = await supabase
         .from('profiles')
         .update({ credits: newTotal })
@@ -30,7 +45,6 @@ export const useCredit = async () => {
       if (error) throw error;
     }
 
-    // Mise à jour du stockage local pour refléter le changement
     localStorage.setItem("afrotresse_credits", newTotal.toString());
     return true;
   } catch (err) {
@@ -47,7 +61,6 @@ export const addCredits = async (amount) => {
     const newTotal = currentCredits + amount;
 
     if (user) {
-      // Ajustement technique : Mise à jour de la table profiles
       const { error } = await supabase
         .from('profiles')
         .update({ credits: newTotal })
