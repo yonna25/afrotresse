@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { getCredits, consumeCredits, syncCreditsFromServer } from "../services/credits.js";
 import Seo from "../components/Seo.jsx";
 import {
@@ -12,7 +12,7 @@ import { useFavorites } from "../hooks/useFavorites.js";
 
 const STYLES_PER_PAGE = 3;
 
-// ─── ProtectedImg ─────────────────────────────────────────────────────────────
+// ─── ProtectedImg (Ton composant de protection d'images) ──────────────────────
 const ProtectedImg = ({ src, alt, className, onClick }) => (
   <div className="relative w-full h-full" onClick={onClick}>
     <img src={src} alt={alt} className={className}
@@ -24,7 +24,7 @@ const ProtectedImg = ({ src, alt, className, onClick }) => (
   </div>
 );
 
-// ─── Fireworks ────────────────────────────────────────────────────────────────
+// ─── Fireworks (Ton composant d'origine) ──────────────────────────────────────
 function Fireworks({ onDone }) {
   const canvasRef = useRef(null);
   useEffect(() => {
@@ -74,9 +74,9 @@ function Fireworks({ onDone }) {
   return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none" style={{ zIndex: 9999 }} />;
 }
 
-// ─── Composant principal ──────────────────────────────────────────────────────
 export default function Results() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [styles, setStyles] = useState([]);
   const [credits, setCredits] = useState(0);
   const [zoomImage, setZoomImage] = useState(null);
@@ -90,22 +90,27 @@ export default function Results() {
   const [unlockedPages, setUnlockedPages] = useState(() => parseInt(localStorage.getItem("afrotresse_unlocked_pages") || "1", 10));
 
   const topRef = useRef(null);
+  const soldeRef = useRef(null);
   const userName = localStorage.getItem("afrotresse_user_name") || "Reine";
 
   useEffect(() => {
+    // GESTION REDIRECTION VERS SOLDE
+    if (location.hash === "#solde") {
+      setTimeout(() => {
+        soldeRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 600);
+    }
+
     const raw = sessionStorage.getItem("afrotresse_results");
     if (raw) {
       try {
         const parsed = JSON.parse(raw);
-        const recs = parsed.recommendations || [];
-        setStyles(recs);
-        
+        setStyles(parsed.recommendations || []);
         if (sessionStorage.getItem("afrotresse_trigger_fireworks")) {
           setShowFireworks(true);
           sessionStorage.removeItem("afrotresse_trigger_fireworks");
           resetMessageAssignment();
         }
-        
         setStableMsg(generateStableMessage({ 
           faceShape: parsed.faceShape || "oval", 
           sessionId: getOrCreateSessionId(),
@@ -114,7 +119,7 @@ export default function Results() {
       } catch (e) { console.error("Data error", e); }
     }
     syncCreditsFromServer().then(c => setCredits(c));
-  }, []);
+  }, [location]);
 
   const getShuffledStyles = (seedNum) => {
     const seeded = (s) => () => { s = (s * 1664525 + 1013904223) & 0xffffffff; return (s >>> 0) / 0xffffffff; };
@@ -139,7 +144,10 @@ export default function Results() {
   const totalPages = Math.ceil(styles.length / STYLES_PER_PAGE);
 
   const handleGenerateMore = async () => {
-    if (credits <= 0) { navigate("/credits"); return; }
+    if (credits <= 0) { 
+      navigate("/credits#solde"); // Redirige avec l'ancre pour le scroll auto
+      return; 
+    }
     const success = await consumeCredits(1);
     if (success) {
       const nextP = unlockedPages + 1;
@@ -169,7 +177,7 @@ export default function Results() {
       <div className="mb-10 flex flex-row gap-5 items-center bg-white/5 p-5 rounded-[2.5rem] border border-white/10 shadow-2xl">
         <div className="relative shrink-0">
           <ProtectedImg src={selfieUrl} className="w-20 h-20 rounded-2xl border-2 border-[#C9963A] object-cover" alt="Moi" />
-          <div className="absolute -bottom-2 -right-2 bg-[#C9963A] text-[#2C1A0E] text-[8px] font-black px-2 py-1 rounded uppercase shadow-lg">Moi</div>
+          <div className="absolute -bottom-2 -right-2 bg-[#C9963A] text-[#2C1A0E] text-[8px] font-black px-2 py-1 rounded-md uppercase">Moi</div>
         </div>
         <div className="flex flex-col flex-1">
           <h1 className="font-bold text-lg text-[#C9963A] leading-tight">
@@ -190,8 +198,8 @@ export default function Results() {
                   <ProtectedImg src={style.views?.face || `/styles/${styleId}-face.webp`} className="w-full h-full object-cover cursor-zoom-in" onClick={() => setZoomImage(style.views?.face || `/styles/${styleId}-face.webp`)} alt="Face" />
                 </div>
                 <div className="col-span-1 grid grid-rows-2 gap-0.5">
-                  <ProtectedImg src={style.views?.back || `/styles/${styleId}-back.webp`} className="w-full h-full object-cover cursor-zoom-in" onClick={() => setZoomImage(style.views?.back || `/styles/${styleId}-back.webp`)} alt="Back" />
-                  <ProtectedImg src={style.views?.top || `/styles/${styleId}-top.webp`} className="w-full h-full object-cover cursor-zoom-in" onClick={() => setZoomImage(style.views?.top || `/styles/${styleId}-top.webp`)} alt="Top" />
+                  <ProtectedImg src={style.views?.back || `/styles/${styleId}-back.webp`} className="w-full h-full object-cover cursor-zoom-in" onClick={() => setZoomImage(style.views?.back || `/styles/${styleId}-back.webp`)} />
+                  <ProtectedImg src={style.views?.top || `/styles/${styleId}-top.webp`} className="w-full h-full object-cover cursor-zoom-in" onClick={() => setZoomImage(style.views?.top || `/styles/${styleId}-top.webp`)} />
                 </div>
               </div>
               <div className="p-6">
@@ -208,44 +216,43 @@ export default function Results() {
         })}
       </div>
 
-      {/* BOUTON PREMIUM "VOIR PLUS" */}
+      {/* BOUTON PREMIUM "DÉCOUVRIR 3 NOUVEAUX STYLES" */}
       {unlockedPages < totalPages && (
         <div className="mt-16 mb-8 px-2">
           <motion.button 
             whileTap={{ scale: 0.98 }}
             onClick={handleGenerateMore} 
-            className="relative w-full py-6 rounded-[2.5rem] font-black text-[#2C1A0E] shadow-[0_20px_50px_rgba(201,149,58,0.3)] flex items-center justify-center gap-4 overflow-hidden group"
+            className="relative w-full py-6 rounded-[2.5rem] font-black text-[#2C1A0E] shadow-[0_20px_50px_rgba(201,149,58,0.4)] flex items-center justify-center gap-4 overflow-hidden group"
             style={{ background: "linear-gradient(135deg, #C9963A 0%, #F3D082 50%, #C9963A 100%)" }}
           >
             <span className="text-xl">✨</span>
             <span className="text-lg uppercase tracking-wider">Découvrir 3 nouveaux styles</span>
-            <div className="bg-[#2C1A0E] text-[#C9963A] px-3 py-1 rounded-full text-[10px] font-black uppercase">
-              -1 CRÉDIT
-            </div>
-            {/* Effet shimmer */}
+            <div className="bg-[#2C1A0E] text-[#C9963A] px-3 py-1 rounded-full text-[10px] font-black uppercase">-1 CRÉDIT</div>
+            
+            {/* Effet shimmer (brillance) */}
             <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full animate-[shimmer_2s_infinite]" />
           </motion.button>
         </div>
       )}
 
-      {/* PAGINATION ÉPURÉE */}
+      {/* PAGINATION ÉPURÉE < 1 • 2 > */}
       {unlockedPages > 1 && (
         <div className="mt-10 mb-6 flex flex-col items-center gap-5">
           <div className="flex items-center gap-4">
             <button 
-              disabled={currentPage === 1}
+              disabled={currentPage === 1} 
               onClick={() => goToPage(currentPage - 1)}
-              className={`w-10 h-10 rounded-full flex items-center justify-center border transition-all ${currentPage === 1 ? 'border-white/5 text-white/10' : 'border-[#C9963A]/30 text-[#C9963A] active:scale-90'}`}
+              className={`w-11 h-11 rounded-full flex items-center justify-center border transition-all ${currentPage === 1 ? 'border-white/5 text-white/10' : 'border-[#C9963A]/30 text-[#C9963A] active:scale-90'}`}
             >
-              <span className="text-xl">‹</span>
+              <span className="text-2xl leading-none">‹</span>
             </button>
 
-            <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/10">
+            <div className="flex items-center gap-2 bg-white/5 px-5 py-2.5 rounded-full border border-white/10 shadow-xl">
               {Array.from({ length: unlockedPages }, (_, i) => i + 1).map((p) => (
                 <div key={p} className="flex items-center">
                   <button 
-                    onClick={() => goToPage(p)}
-                    className={`text-sm font-bold transition-all ${p === currentPage ? "text-[#C9963A] scale-125 px-2" : "text-white/30 hover:text-white/60 px-1"}`}
+                    onClick={() => goToPage(p)} 
+                    className={`text-sm font-black transition-all ${p === currentPage ? "text-[#C9963A] scale-125 px-2" : "text-white/20 hover:text-white/50 px-1"}`}
                   >
                     {p}
                   </button>
@@ -255,11 +262,11 @@ export default function Results() {
             </div>
 
             <button 
-              disabled={currentPage === unlockedPages}
+              disabled={currentPage === unlockedPages} 
               onClick={() => goToPage(currentPage + 1)}
-              className={`w-10 h-10 rounded-full flex items-center justify-center border transition-all ${currentPage === unlockedPages ? 'border-white/5 text-white/10' : 'border-[#C9963A]/30 text-[#C9963A] active:scale-90'}`}
+              className={`w-11 h-11 rounded-full flex items-center justify-center border transition-all ${currentPage === unlockedPages ? 'border-white/5 text-white/10' : 'border-[#C9963A]/30 text-[#C9963A] active:scale-90'}`}
             >
-              <span className="text-xl">›</span>
+              <span className="text-2xl leading-none">›</span>
             </button>
           </div>
         </div>
@@ -267,12 +274,21 @@ export default function Results() {
 
       {/* BOUTONS FLOTTANTS */}
       <div className="fixed bottom-24 right-4 z-50 flex flex-col items-center gap-3">
-        <div onClick={() => navigate("/credits")} className="w-12 h-12 bg-[#C9963A] text-[#2C1A0E] rounded-xl flex flex-col items-center justify-center shadow-2xl border border-[#2C1A0E]/20 cursor-pointer active:scale-90 transition-transform">
+        <div 
+          ref={soldeRef} 
+          onClick={() => navigate("/credits#solde")} 
+          className="w-12 h-12 bg-[#C9963A] text-[#2C1A0E] rounded-xl flex flex-col items-center justify-center shadow-2xl border border-[#2C1A0E]/20 cursor-pointer active:scale-90 transition-transform"
+        >
           <span className="text-[6px] font-black uppercase opacity-60">Solde</span>
           <span className="text-xl font-black leading-none">{credits}</span>
         </div>
-        <motion.button whileTap={{ scale: 0.9 }} onClick={handleGenerateMore} className="w-12 h-12 rounded-xl shadow-2xl flex flex-col items-center justify-center border border-white/10" style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}>
-          <span className="text-[7px] font-black text-[#2C1A0E] uppercase leading-none mb-1">Générer</span>
+        <motion.button 
+          whileTap={{ scale: 0.9 }} 
+          onClick={handleGenerateMore} 
+          className="w-12 h-12 rounded-xl shadow-2xl flex flex-col items-center justify-center border border-white/10" 
+          style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}
+        >
+          <span className="text-[7px] font-black text-[#2C1A0E] uppercase mb-1">Générer</span>
           <span className="text-xl">✨</span>
         </motion.button>
       </div>
@@ -282,7 +298,7 @@ export default function Results() {
         {zoomImage && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setZoomImage(null)} className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4">
             <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }} className="relative max-w-full">
-              <ProtectedImg src={zoomImage} className="max-w-full max-h-[80vh] rounded-3xl shadow-2xl border border-white/10 object-contain" alt="Zoom" />
+              <ProtectedImg src={zoomImage} className="max-w-full max-h-[80vh] rounded-3xl shadow-2xl border border-white/10 object-contain" />
               <button className="absolute -top-12 right-0 text-white/50 text-xs font-bold uppercase tracking-widest">Fermer</button>
             </motion.div>
           </motion.div>
