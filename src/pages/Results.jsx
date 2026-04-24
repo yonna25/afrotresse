@@ -12,29 +12,30 @@ import { useFavorites } from "../hooks/useFavorites.js";
 
 const STYLES_PER_PAGE = 3;
 
-// ─── ProtectedImg (Ton composant de protection d'images) ──────────────────────
 const ProtectedImg = ({ src, alt, className, onClick }) => (
   <div className="relative w-full h-full" onClick={onClick}>
     <img src={src} alt={alt} className={className}
       draggable={false} onContextMenu={(e) => e.preventDefault()}
-      style={{ userSelect: "none", WebkitUserSelect: "none" }} />
-    <div className="absolute inset-0"
-      onContextMenu={(e) => e.preventDefault()}
-      onDragStart={(e) => e.preventDefault()} />
+      style={{ userSelect: "none", WebkitUserSelect: "none" }} 
+      onError={(e) => {
+        // Sécurité si l'URL expire : on tente de recharger ou on met un placeholder
+        e.target.src = "/logo.png"; 
+        e.target.className = className + " opacity-20 grayscale";
+      }}
+    />
+    <div className="absolute inset-0" onContextMenu={(e) => e.preventDefault()} onDragStart={(e) => e.preventDefault()} />
   </div>
 );
 
-// ─── Fireworks (Ton composant d'origine) ──────────────────────────────────────
 function Fireworks({ onDone }) {
   const canvasRef = useRef(null);
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
-    const W = canvas.width  = window.innerWidth;
+    const W = canvas.width = window.innerWidth;
     const H = canvas.height = window.innerHeight;
     const COLORS = ["#C9963A", "#E8B96A", "#FAF4EC", "#FFFFFF", "#FFD700"];
-
     class Particle {
       constructor(x, y) {
         this.x = x; this.y = y;
@@ -94,7 +95,6 @@ export default function Results() {
   const userName = localStorage.getItem("afrotresse_user_name") || "Reine";
 
   useEffect(() => {
-    // GESTION REDIRECTION VERS SOLDE
     if (location.hash === "#solde") {
       setTimeout(() => {
         soldeRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -105,7 +105,8 @@ export default function Results() {
     if (raw) {
       try {
         const parsed = JSON.parse(raw);
-        setStyles(parsed.recommendations || []);
+        const recs = parsed.recommendations || [];
+        setStyles(recs);
         if (sessionStorage.getItem("afrotresse_trigger_fireworks")) {
           setShowFireworks(true);
           sessionStorage.removeItem("afrotresse_trigger_fireworks");
@@ -145,7 +146,7 @@ export default function Results() {
 
   const handleGenerateMore = async () => {
     if (credits <= 0) { 
-      navigate("/credits#solde"); // Redirige avec l'ancre pour le scroll auto
+      navigate("/credits#solde"); 
       return; 
     }
     const success = await consumeCredits(1);
@@ -168,7 +169,7 @@ export default function Results() {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-[#1A0A00] text-[#FAF4EC] p-4 pb-40 relative overflow-x-hidden">
+    <div className="min-h-[100dvh] bg-[#1A0A00] text-[#FAF4EC] p-4 pb-40 relative overflow-x-hidden font-sans">
       <Seo title="Tes résultats — AfroTresse" />
       {showFireworks && <Fireworks onDone={() => setShowFireworks(false)} />}
       <div ref={topRef} />
@@ -216,57 +217,41 @@ export default function Results() {
         })}
       </div>
 
-      {/* BOUTON PREMIUM "DÉCOUVRIR 3 NOUVEAUX STYLES" */}
+      {/* BOUTON "VOIR PLUS" RÉDUIT ET AFFINÉ */}
       {unlockedPages < totalPages && (
-        <div className="mt-16 mb-8 px-2">
+        <div className="mt-12 mb-8 px-8">
           <motion.button 
             whileTap={{ scale: 0.98 }}
             onClick={handleGenerateMore} 
-            className="relative w-full py-6 rounded-[2.5rem] font-black text-[#2C1A0E] shadow-[0_20px_50px_rgba(201,149,58,0.4)] flex items-center justify-center gap-4 overflow-hidden group"
+            className="relative w-full py-4 rounded-full font-black text-[#2C1A0E] shadow-xl flex items-center justify-center gap-3 overflow-hidden group"
             style={{ background: "linear-gradient(135deg, #C9963A 0%, #F3D082 50%, #C9963A 100%)" }}
           >
-            <span className="text-xl">✨</span>
-            <span className="text-lg uppercase tracking-wider">Découvrir 3 nouveaux styles</span>
-            <div className="bg-[#2C1A0E] text-[#C9963A] px-3 py-1 rounded-full text-[10px] font-black uppercase">-1 CRÉDIT</div>
-            
-            {/* Effet shimmer (brillance) */}
-            <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full animate-[shimmer_2s_infinite]" />
+            <span className="text-sm uppercase tracking-widest">Voir 3 autres styles</span>
+            <div className="bg-[#2C1A0E]/20 px-2 py-0.5 rounded text-[9px] font-black">-1 CRÉDIT</div>
+            <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full animate-[shimmer_2.5s_infinite]" />
           </motion.button>
         </div>
       )}
 
-      {/* PAGINATION ÉPURÉE < 1 • 2 > */}
+      {/* PAGINATION ÉPURÉE */}
       {unlockedPages > 1 && (
         <div className="mt-10 mb-6 flex flex-col items-center gap-5">
           <div className="flex items-center gap-4">
-            <button 
-              disabled={currentPage === 1} 
-              onClick={() => goToPage(currentPage - 1)}
-              className={`w-11 h-11 rounded-full flex items-center justify-center border transition-all ${currentPage === 1 ? 'border-white/5 text-white/10' : 'border-[#C9963A]/30 text-[#C9963A] active:scale-90'}`}
-            >
-              <span className="text-2xl leading-none">‹</span>
+            <button disabled={currentPage === 1} onClick={() => goToPage(currentPage - 1)}
+              className={`w-10 h-10 rounded-full flex items-center justify-center border transition-all ${currentPage === 1 ? 'border-white/5 text-white/10' : 'border-[#C9963A]/30 text-[#C9963A] active:scale-90'}`}>
+              ‹
             </button>
-
-            <div className="flex items-center gap-2 bg-white/5 px-5 py-2.5 rounded-full border border-white/10 shadow-xl">
+            <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/10">
               {Array.from({ length: unlockedPages }, (_, i) => i + 1).map((p) => (
                 <div key={p} className="flex items-center">
-                  <button 
-                    onClick={() => goToPage(p)} 
-                    className={`text-sm font-black transition-all ${p === currentPage ? "text-[#C9963A] scale-125 px-2" : "text-white/20 hover:text-white/50 px-1"}`}
-                  >
-                    {p}
-                  </button>
+                  <button onClick={() => goToPage(p)} className={`text-sm font-bold ${p === currentPage ? "text-[#C9963A] scale-125 px-2" : "text-white/20 px-1"}`}>{p}</button>
                   {p < unlockedPages && <span className="text-white/10 text-[8px] mx-1">•</span>}
                 </div>
               ))}
             </div>
-
-            <button 
-              disabled={currentPage === unlockedPages} 
-              onClick={() => goToPage(currentPage + 1)}
-              className={`w-11 h-11 rounded-full flex items-center justify-center border transition-all ${currentPage === unlockedPages ? 'border-white/5 text-white/10' : 'border-[#C9963A]/30 text-[#C9963A] active:scale-90'}`}
-            >
-              <span className="text-2xl leading-none">›</span>
+            <button disabled={currentPage === unlockedPages} onClick={() => goToPage(currentPage + 1)}
+              className={`w-10 h-10 rounded-full flex items-center justify-center border transition-all ${currentPage === unlockedPages ? 'border-white/5 text-white/10' : 'border-[#C9963A]/30 text-[#C9963A] active:scale-90'}`}>
+              ›
             </button>
           </div>
         </div>
@@ -274,29 +259,19 @@ export default function Results() {
 
       {/* BOUTONS FLOTTANTS */}
       <div className="fixed bottom-24 right-4 z-50 flex flex-col items-center gap-3">
-        <div 
-          ref={soldeRef} 
-          onClick={() => navigate("/credits#solde")} 
-          className="w-12 h-12 bg-[#C9963A] text-[#2C1A0E] rounded-xl flex flex-col items-center justify-center shadow-2xl border border-[#2C1A0E]/20 cursor-pointer active:scale-90 transition-transform"
-        >
+        <div ref={soldeRef} onClick={() => navigate("/credits#solde")} className="w-12 h-12 bg-[#C9963A] text-[#2C1A0E] rounded-xl flex flex-col items-center justify-center shadow-2xl border border-[#2C1A0E]/20 cursor-pointer active:scale-90">
           <span className="text-[6px] font-black uppercase opacity-60">Solde</span>
           <span className="text-xl font-black leading-none">{credits}</span>
         </div>
-        <motion.button 
-          whileTap={{ scale: 0.9 }} 
-          onClick={handleGenerateMore} 
-          className="w-12 h-12 rounded-xl shadow-2xl flex flex-col items-center justify-center border border-white/10" 
-          style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}
-        >
+        <motion.button whileTap={{ scale: 0.9 }} onClick={handleGenerateMore} className="w-12 h-12 rounded-xl shadow-2xl flex flex-col items-center justify-center border border-white/10" style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}>
           <span className="text-[7px] font-black text-[#2C1A0E] uppercase mb-1">Générer</span>
           <span className="text-xl">✨</span>
         </motion.button>
       </div>
 
-      {/* MODAL ZOOM */}
       <AnimatePresence>
         {zoomImage && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setZoomImage(null)} className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setZoomImage(null)} className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 text-center">
             <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }} className="relative max-w-full">
               <ProtectedImg src={zoomImage} className="max-w-full max-h-[80vh] rounded-3xl shadow-2xl border border-white/10 object-contain" />
               <button className="absolute -top-12 right-0 text-white/50 text-xs font-bold uppercase tracking-widest">Fermer</button>
@@ -306,10 +281,7 @@ export default function Results() {
       </AnimatePresence>
 
       <style>{`
-        @keyframes shimmer {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(100%); }
-        }
+        @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
       `}</style>
     </div>
   );
