@@ -2,11 +2,11 @@ import { NavLink } from 'react-router-dom'
 import { motion } from 'framer-motion'
 
 const ITEMS = [
-  { to: '/',        label: 'Accueil',   Icon: HomeIcon    },
-  { to: '/results', label: 'Résultats', Icon: ResultsIcon },
-  { to: '/camera',  label: 'Selfie',    Icon: CameraIcon, center: true },
-  { to: '/library', label: 'Favoris',   Icon: HeartIcon   },
-  { to: '/profile', label: 'Profil',    Icon: UserIcon    },
+  { to: '/',          label: 'Accueil',      Icon: HomeIcon    },
+  { to: '/results',   label: 'Résultats',    Icon: ResultsIcon },
+  { to: '/camera',    label: 'Selfie',       Icon: CameraIcon, center: true },
+  { to: '/partners',  label: 'Partenaires',  Icon: PartnersIcon },
+  { to: '/profile',   label: 'Profil',       Icon: UserIcon    },
 ]
 
 export default function BottomNav() {
@@ -83,10 +83,12 @@ function CameraIcon({ active }) {
   )
 }
 
-function HeartIcon({ active }) {
+function PartnersIcon({ active }) {
   return (
     <svg className="w-5 h-5" viewBox="0 0 24 24" fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
-      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
