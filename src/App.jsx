@@ -20,6 +20,7 @@ import FAQ from './pages/FAQ.jsx'
 import MagicLink from './pages/MagicLink.jsx'
 import Library from './pages/Library.jsx'
 import AdminReviews from './pages/AdminReviews.jsx'
+import Partners from './pages/Partners.jsx'
 
 // Import de la navigation
 import BottomNav from './components/BottomNav.jsx'
@@ -153,7 +154,8 @@ function AnimatedRoutes() {
           <Route path="/cookie-policy" element={<CookiePolicy />} />
           <Route path="/faq" element={<FAQ />} />
           <Route path="/magic-link" element={<MagicLink />} />
-          <Route path="/library" element={<Library />} />
+          <Route path="/library" element={<Library />} />{/* Favoris — conservé pour éviter les 404, géré depuis Profil */}
+          <Route path="/partners" element={<Partners />} />
           <Route path="/admin-reviews" element={<AdminReviews />} />
         </Routes>
       </AnimatePresence>
