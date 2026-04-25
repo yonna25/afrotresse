@@ -5,7 +5,7 @@ const ITEMS = [
   { to: '/',         label: 'Accueil',    Icon: HomeIcon },
   { to: '/results',  label: 'Styles',     Icon: ResultsIcon },
   { to: '/camera',   label: 'Selfie',     Icon: CameraIcon, center: true },
-  { to: '/partners', label: 'Salons',     Icon: HandshakeIcon }, // 👈 Changement ici
+  { to: '/partners', label: 'Salons',     Icon: HandshakeIcon }, 
   { to: '/profile',  label: 'Profil',     Icon: UserIcon },
 ]
 
@@ -18,9 +18,9 @@ export default function BottomNav() {
         transform: 'translateX(-50%)',
         width: '100%',
         maxWidth: '430px',
-        background: 'rgba(26, 10, 0, 0.85)', // Plus sombre pour le minimalisme
+        background: 'rgba(26, 10, 0, 0.85)', 
         backdropFilter: 'blur(20px)',
-        borderTop: '1px solid rgba(255,255,255,0.05)', // Bordure ultra-fine
+        borderTop: '1px solid rgba(255,255,255,0.05)', 
         paddingBottom: 'env(safe-area-inset-bottom, 20px)',
         paddingTop: '12px'
       }}
@@ -47,7 +47,7 @@ export default function BottomNav() {
   )
 }
 
-// ─── ICÔNES MINIMALISTES ───────────────────────────────────────────────────
+// ─── ICÔNES ───────────────────────────────────────────────────
 
 function HomeIcon({ active }) {
   return (
@@ -81,9 +81,16 @@ function CameraIcon({ active }) {
   )
 }
 
-function HandshakeIcon({ active }) { // 👈 Nouvelle Icône Poignée de Main
+// Nouvelle icône Handshake (Poignée de main)
+function HandshakeIcon({ active }) {
   return (
-    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke={active ? '#C9963A' : '#FAF4EC'} strokeWidth="1.5">
+    <svg 
+      className="w-5 h-5 transition-all duration-300" 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke={active ? '#C9963A' : '#FAF4EC'} 
+      strokeWidth="1.5"
+    >
       <path strokeLinecap="round" strokeLinejoin="round" d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5a1.5 1.5 0 013 0v4.5" />
     </svg>
   )
