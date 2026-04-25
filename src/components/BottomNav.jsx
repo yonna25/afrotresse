@@ -5,20 +5,34 @@ const ITEMS = [
   { to: '/',         label: 'Accueil',    Icon: HomeIcon },
   { to: '/results',  label: 'Styles',     Icon: ResultsIcon },
   { to: '/camera',   label: 'Selfie',     Icon: CameraIcon, center: true },
-  { to: '/partners', label: 'Salons',     Icon: HandshakeIcon }, 
+  { to: '/partners', label: 'Salons',     Icon: HandshakeIcon }, // 👈 Changement ici
   { to: '/profile',  label: 'Profil',     Icon: UserIcon },
 ]
 
 export default function BottomNav() {
   return (
-    <nav className="fixed bottom-0 z-50 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-[#1A0A00]/85 backdrop-blur-xl border-t border-white/5 pb-[env(safe-area-inset-bottom,20px)] pt-3">
+    <nav
+      className="fixed bottom-0 z-50"
+      style={{
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: '100%',
+        maxWidth: '430px',
+        background: 'rgba(26, 10, 0, 0.85)', // Plus sombre pour le minimalisme
+        backdropFilter: 'blur(20px)',
+        borderTop: '1px solid rgba(255,255,255,0.05)', // Bordure ultra-fine
+        paddingBottom: 'env(safe-area-inset-bottom, 20px)',
+        paddingTop: '12px'
+      }}
+    >
       <div className="flex items-center justify-around px-2">
         {ITEMS.map(({ to, label, Icon, center }) => (
           <NavLink key={to} to={to} className="flex-1">
             {({ isActive }) => (
-              <motion.div 
+              <motion.div
                 className="flex flex-col items-center gap-1.5"
-                animate={{ opacity: isActive ? 1 : 0.4 }}
+                initial={false}
+                animate={{ opacity: isActive ? 1 : 0.4, y: isActive ? -2 : 0 }}
               >
                 <Icon active={isActive} />
                 <span className={`text-[9px] uppercase tracking-[0.1em] font-medium ${isActive ? 'text-[#C9963A]' : 'text-white/40'}`}>
@@ -33,7 +47,7 @@ export default function BottomNav() {
   )
 }
 
-// ─── TOUTES LES ICÔNES (Nécessaires pour l'affichage) ──────────────
+// ─── ICÔNES MINIMALISTES ───────────────────────────────────────────────────
 
 function HomeIcon({ active }) {
   return (
@@ -54,20 +68,23 @@ function ResultsIcon({ active }) {
 
 function CameraIcon({ active }) {
   return (
-    <div className="w-12 h-12 rounded-2xl flex items-center justify-center -mt-10 shadow-2xl transition-all"
+    <div
+      className="w-12 h-12 rounded-2xl flex items-center justify-center -mt-10 shadow-2xl transition-all"
       style={{
         background: active ? '#C9963A' : 'linear-gradient(135deg, #3D2616, #2C1A0E)',
-        border: '1px solid rgba(255,255,255,0.1)'
-      }}>
+        border: '1px solid rgba(255,255,255,0.1)',
+        transform: active ? 'scale(1.1)' : 'scale(1)'
+      }}
+    >
       <span className="text-xl">📸</span>
     </div>
   )
 }
 
-function HandshakeIcon({ active }) {
+function HandshakeIcon({ active }) { // 👈 Nouvelle Icône Poignée de Main
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={active ? "#C9963A" : "#FAF4EC"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M11 17l-5-5 5-5M18 5v14M13 17l5-5-5-5" />
+    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke={active ? '#C9963A' : '#FAF4EC'} strokeWidth="1.5">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5a1.5 1.5 0 013 0v4.5" />
     </svg>
   )
 }
