@@ -5,7 +5,7 @@ const ITEMS = [
   { to: '/',         label: 'Accueil',    Icon: HomeIcon },
   { to: '/results',  label: 'Styles',     Icon: ResultsIcon },
   { to: '/camera',   label: 'Selfie',     Icon: CameraIcon, center: true },
-  { to: '/partners', label: 'Salons',     Icon: HandshakeIcon }, 
+  { to: '/partners', label: 'Salons',     Icon: HandshakeIcon }, // 🤝 Utilisé ici
   { to: '/profile',  label: 'Profil',     Icon: UserIcon },
 ]
 
@@ -33,7 +33,15 @@ export default function BottomNav() {
   )
 }
 
-// ─── ICÔNES (Nécessaires pour éviter l'écran blanc) ──────────────
+// ─── COMPOSANTS ICÔNES ──────────────────────────────────────────
+
+function HandshakeIcon({ active }) {
+  return (
+    <div className={`text-xl transition-all duration-300 ${active ? 'scale-110' : 'grayscale opacity-80'}`}>
+      🤝
+    </div>
+  )
+}
 
 function HomeIcon({ active }) {
   return (
@@ -61,14 +69,6 @@ function CameraIcon({ active }) {
       }}>
       <span className="text-xl">📸</span>
     </div>
-  )
-}
-
-function HandshakeIcon({ active }) {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={active ? "#C9963A" : "#FAF4EC"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M11 17l-5-5 5-5M18 5v14M13 17l5-5-5-5" />
-    </svg>
   )
 }
 
