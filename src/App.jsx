@@ -21,12 +21,12 @@ import MagicLink from './pages/MagicLink.jsx'
 import Library from './pages/Library.jsx'
 import AdminReviews from './pages/AdminReviews.jsx'
 import Partners from './pages/Partners.jsx'
+import AdminPartners from './pages/AdminPartners.jsx' // 👈 Nouvel import
 
 // Import de la navigation
 import BottomNav from './components/BottomNav.jsx'
 
 // ─── Transfert crédits en attente → Supabase ─────────────────────
-// Appelé dès qu'une utilisatrice se connecte (Magic Link ou autre)
 async function flushPendingCredits(userId) {
   try {
     const pending = parseInt(localStorage.getItem('afrotresse_pending_credits') || '0', 10)
@@ -136,7 +136,15 @@ function CreditSuccessPopup({ data, onClose }) {
 // ROUTES
 function AnimatedRoutes() {
   const location = useLocation()
-  const hideNav = ['/camera', '/analyze', '/magic-link', '/admin-reviews'].includes(location.pathname)
+  
+  // 👈 Ajout de /admin-partners dans les pages qui cachent la navigation
+  const hideNav = [
+    '/camera', 
+    '/analyze', 
+    '/magic-link', 
+    '/admin-reviews', 
+    '/admin-partners'
+  ].includes(location.pathname)
 
   return (
     <>
@@ -154,9 +162,10 @@ function AnimatedRoutes() {
           <Route path="/cookie-policy" element={<CookiePolicy />} />
           <Route path="/faq" element={<FAQ />} />
           <Route path="/magic-link" element={<MagicLink />} />
-          <Route path="/library" element={<Library />} />{/* Favoris — conservé pour éviter les 404, géré depuis Profil */}
+          <Route path="/library" element={<Library />} />
           <Route path="/partners" element={<Partners />} />
           <Route path="/admin-reviews" element={<AdminReviews />} />
+          <Route path="/admin-partners" element={<AdminPartners />} /> {/* 👈 Nouvelle Route */}
         </Routes>
       </AnimatePresence>
       {!hideNav && <BottomNav />}
@@ -173,13 +182,11 @@ export default function App() {
       if (user) {
         try {
           await ensureUserExists(user.id, user.email)
-          // Transférer les crédits en attente achetés en mode anonyme
           await flushPendingCredits(user.id)
           const balance = await getSupabaseCredits(user.id)
           if (balance > 0) setCredits(balance)
         } catch {}
       } else {
-        // Utilisatrice anonyme → sync depuis Supabase via fingerprint
         syncCreditsFromServer().catch(() => {})
       }
     })
@@ -189,7 +196,6 @@ export default function App() {
         if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user?.id) {
           try {
             await ensureUserExists(session.user.id, session.user.email)
-            // Transférer les crédits en attente achetés en mode anonyme
             await flushPendingCredits(session.user.id)
             const balance = await getSupabaseCredits(session.user.id)
             if (balance > 0) setCredits(balance)
@@ -207,7 +213,6 @@ export default function App() {
     return () => window.removeEventListener('afrotresse:credit_success', handler)
   }, [])
 
-  // Fallback : polling sessionStorage (si FedaPay onComplete s'exécute dans son iframe)
   useEffect(() => {
     const interval = setInterval(() => {
       const raw = sessionStorage.getItem('afrotresse_credit_success')
@@ -226,7 +231,6 @@ export default function App() {
     <BrowserRouter>
       <div className="min-h-screen bg-black flex justify-center">
         <div className="w-full max-w-[430px] relative bg-[#2C1A0E] min-h-screen overflow-hidden shadow-2xl">
-
           <AnimatePresence>
             {creditSuccess && (
               <CreditSuccessPopup
@@ -235,7 +239,6 @@ export default function App() {
               />
             )}
           </AnimatePresence>
-
           <AnimatedRoutes />
         </div>
       </div>
