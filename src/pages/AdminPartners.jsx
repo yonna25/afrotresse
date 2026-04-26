@@ -54,16 +54,18 @@ export default function AdminPartners() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // 1. Extraction des champs techniques pour ne pas les envoyer
+    // 1. Extraction des champs système
     const { id, created_at, ...rawExtraData } = formData; 
 
-    // 2. NETTOYAGE CRITIQUE : Transforme les "" en null pour la compatibilité SQL (Timestamp/UUID/Numeric)
-    const dataToSave = Object.fromEntries(
-      Object.entries(rawExtraData).map(([key, value]) => [
-        key, 
-        value === "" ? null : value
-      ])
-    );
+    // 2. FILTRAGE STRICT : On ne garde que les clés qui ont une vraie valeur.
+    // Si une valeur est "", on ne l'envoie pas du tout.
+    const dataToSave = {};
+    Object.keys(rawExtraData).forEach(key => {
+      const val = rawExtraData[key];
+      if (val !== "" && val !== null && val !== undefined) {
+        dataToSave[key] = val;
+      }
+    });
 
     const action = isEditing 
       ? supabase.from("partners").update(dataToSave).eq("id", isEditing)
@@ -77,8 +79,7 @@ export default function AdminPartners() {
       setFormData(initialForm);
       fetchPartners();
     } else {
-      // Affichage de l'erreur précise pour le debug
-      console.error("Supabase Error:", error);
+      console.error("Erreur SQL détaillée:", error);
       alert("Erreur base de données : " + error.message);
     }
   };
@@ -91,14 +92,9 @@ export default function AdminPartners() {
   };
 
   const resetAndOpen = () => {
-    if (showForm && isEditing) {
-        setFormData(initialForm);
-        setIsEditing(null);
-    } else {
-        setFormData(initialForm);
-        setIsEditing(null);
-        setShowForm(!showForm);
-    }
+    setFormData(initialForm);
+    setIsEditing(null);
+    setShowForm(!showForm);
   };
 
   const toggleBoolean = async (id, field, currentValue) => {
@@ -110,7 +106,7 @@ export default function AdminPartners() {
     <div className="min-h-screen bg-[#1A0A00] text-[#FAF4EC] p-6 pb-32">
       <header className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-[#C9963A] text-2xl font-black uppercase">Partners Admin</h1>
+          <h1 className="text-[#C9963A] text-2xl font-black uppercase tracking-tighter">Partners Admin</h1>
           <p className="text-white/40 text-[10px] uppercase tracking-widest">Base de données actifs</p>
         </div>
         <button 
@@ -136,7 +132,7 @@ export default function AdminPartners() {
             onSubmit={handleSubmit}
             className="bg-[#2C1A0E] border border-[#C9963A]/30 rounded-[2.5rem] p-6 mb-12 space-y-4 overflow-hidden"
           >
-            <h2 className="text-[#C9963A] font-bold uppercase text-xs tracking-widest mb-2">
+            <h2 className="text-[#C9963A] font-bold uppercase text-xs tracking-widest mb-2 text-center">
                 {isEditing ? "Modifier le partenaire" : "Nouveau partenaire"}
             </h2>
 
@@ -148,33 +144,36 @@ export default function AdminPartners() {
             </div>
 
             <div className="grid grid-cols-3 gap-4">
-              <select value={formData.category || "Salon"} className="bg-white/5 border border-white/10 p-3 rounded-xl text-sm col-span-2"
+              <select value={formData.category || "Salon"} className="bg-white/5 border border-white/10 p-3 rounded-xl text-sm col-span-2 text-white"
                 onChange={e => setFormData({...formData, category: e.target.value})}>
-                <option value="Salon">Salon</option>
-                <option value="Produits">Produits</option>
-                <option value="Formation">Formation</option>
+                <option value="Salon" className="bg-[#2C1A0E]">Salon</option>
+                <option value="Produits" className="bg-[#2C1A0E]">Produits</option>
+                <option value="Formation" className="bg-[#2C1A0E]">Formation</option>
               </select>
               <input type="text" value={formData.emoji || ""} placeholder="Emoji" className="bg-white/5 border border-white/10 p-3 rounded-xl text-sm"
                 onChange={e => setFormData({...formData, emoji: e.target.value})} />
             </div>
 
             <div className="p-4 bg-white/5 rounded-2xl border border-white/5 space-y-4">
-               <label className="text-[10px] uppercase text-white/40 font-bold">Logo du partenaire</label>
+               <label className="text-[10px] uppercase text-white/40 font-bold px-1">Logo / Bannière</label>
                <input type="file" accept="image/*" onChange={handleLogoUpload} className="text-xs text-white/40 block w-full" />
-               {formData.logo_url && <img src={formData.logo_url} className="w-16 h-16 rounded-xl object-cover border border-[#C9963A]/30" alt="Preview" />}
+               {formData.logo_url && (
+                 <div className="relative w-24 h-24">
+                   <img src={formData.logo_url} className="w-full h-full rounded-xl object-cover border border-[#C9963A]/30" alt="Preview" />
+                 </div>
+               )}
             </div>
 
-            {/* Nouveau champ : Date d'expiration (Promo Deadline) */}
-            <div className="space-y-1">
-              <label className="text-[10px] uppercase text-white/40 font-bold px-1">Expiration de la promo</label>
-              <input type="date" value={formData.promo_deadline || ""} className="w-full bg-white/5 border border-white/10 p-3 rounded-xl text-sm text-white/60"
+            <div className="p-3 bg-white/5 rounded-xl border border-white/5">
+               <label className="text-[10px] uppercase text-white/40 font-bold block mb-2 px-1">Date Expiration Promo</label>
+               <input type="date" value={formData.promo_deadline || ""} className="w-full bg-transparent text-sm text-[#FAF4EC] outline-none"
                 onChange={e => setFormData({...formData, promo_deadline: e.target.value})} />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <input type="text" value={formData.whatsapp || ""} placeholder="Lien WhatsApp" className="bg-white/5 border border-white/10 p-3 rounded-xl text-xs"
+              <input type="text" value={formData.whatsapp || ""} placeholder="WhatsApp (ex: 229...)" className="bg-white/5 border border-white/10 p-3 rounded-xl text-xs"
                 onChange={e => setFormData({...formData, whatsapp: e.target.value})} />
-              <input type="text" value={formData.instagram || ""} placeholder="Lien Instagram" className="bg-white/5 border border-white/10 p-3 rounded-xl text-xs"
+              <input type="text" value={formData.instagram || ""} placeholder="Instagram Link" className="bg-white/5 border border-white/10 p-3 rounded-xl text-xs"
                 onChange={e => setFormData({...formData, instagram: e.target.value})} />
             </div>
 
@@ -188,9 +187,9 @@ export default function AdminPartners() {
             <div className="flex gap-4">
               <div className="flex-1 flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5">
                 <span className="text-[10px] uppercase font-bold text-white/40">Sponsorisé</span>
-                <input type="checkbox" checked={formData.sponsored || false} onChange={e => setFormData({...formData, sponsored: e.target.checked})} className="accent-[#C9963A]" />
+                <input type="checkbox" checked={formData.sponsored || false} onChange={e => setFormData({...formData, sponsored: e.target.checked})} className="accent-[#C9963A] w-5 h-5" />
               </div>
-              <input type="number" value={formData.position || 0} placeholder="Position" className="w-20 bg-white/5 border border-white/10 p-3 rounded-xl text-sm"
+              <input type="number" value={formData.position || 0} placeholder="Pos." className="w-20 bg-white/5 border border-white/10 p-3 rounded-xl text-sm"
                 onChange={e => setFormData({...formData, position: parseInt(e.target.value) || 0})} />
             </div>
 
@@ -202,24 +201,27 @@ export default function AdminPartners() {
       </AnimatePresence>
 
       <div className="space-y-4">
-        {loading ? <p className="text-center opacity-40 py-10">Chargement...</p> : 
+        {loading ? <p className="text-center opacity-40 py-10 tracking-widest text-[10px] uppercase">Récupération des données...</p> : 
           filtered.map(p => (
           <div key={p.id} className="bg-[#2C1A0E] p-5 rounded-[2rem] border border-white/5 flex items-center justify-between shadow-xl">
             <div className="flex items-center gap-4">
               {p.logo_url ? 
-                <img src={p.logo_url} className="w-10 h-10 rounded-full object-cover border border-[#C9963A]/20" /> : 
-                <span className="text-3xl">{p.emoji}</span>
+                <img src={p.logo_url} className="w-12 h-12 rounded-2xl object-cover border border-[#C9963A]/20" alt="" /> : 
+                <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-2xl">{p.emoji}</div>
               }
               <div>
-                <h3 className="font-bold text-sm text-[#FAF4EC]">{p.name}</h3>
-                <p className="text-[9px] text-white/30 uppercase">{p.city} • {p.category}</p>
+                <h3 className="font-bold text-sm text-[#FAF4EC] leading-none mb-1">{p.name}</h3>
+                <p className="text-[9px] text-white/30 uppercase tracking-tighter">{p.city} • {p.category}</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <button onClick={() => toggleBoolean(p.id, 'active', p.active)} className={`px-2 py-1 rounded text-[8px] uppercase font-bold ${p.active ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500'}`}>
-                {p.active ? 'Actif' : 'Masqué'}
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => toggleBoolean(p.id, 'active', p.active)} 
+                className={`px-3 py-1 rounded-full text-[8px] uppercase font-black tracking-widest ${p.active ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}
+              >
+                {p.active ? 'On' : 'Off'}
               </button>
-              <button onClick={() => handleEdit(p)} className="p-3 bg-white/5 rounded-xl text-sm hover:bg-white/10">✏️</button>
+              <button onClick={() => handleEdit(p)} className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center text-xs hover:bg-white/10 transition-colors">✏️</button>
             </div>
           </div>
         ))}
