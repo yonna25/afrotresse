@@ -242,14 +242,15 @@ export default function PartnersMinimal() {
       </div>
 
       {/* ── FILTRES ── */}
-      <div style={{ padding: "0 28px 24px", display: "flex", gap: 6, overflowX: "auto" }}>
+      <div style={{ padding: "0 28px 24px", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 }}>
         {CATEGORIES.map(c => (
           <button key={c} onClick={() => setCat(c)} style={{
-            flexShrink: 0, padding: "8px 18px", borderRadius: 99, fontSize: 11,
-            fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em",
+            padding: "9px 4px", borderRadius: 14, fontSize: 10,
+            fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em",
             cursor: "pointer", border: "none", transition: "all 0.2s",
             background: cat === c ? "#1A0F06" : "#EDE8E2",
             color: cat === c ? "#F7F3EE" : "#8A7060",
+            whiteSpace: "nowrap", textAlign: "center",
           }}>
             {c}
           </button>
