@@ -54,8 +54,16 @@ export default function AdminPartners() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Nettoyage de l'objet pour l'insertion/update
-    const { id, created_at, ...dataToSave } = formData; 
+    // 1. Extraction des champs techniques pour ne pas les envoyer
+    const { id, created_at, ...rawExtraData } = formData; 
+
+    // 2. NETTOYAGE CRITIQUE : Transforme les "" en null pour la compatibilité SQL (Timestamp/UUID/Numeric)
+    const dataToSave = Object.fromEntries(
+      Object.entries(rawExtraData).map(([key, value]) => [
+        key, 
+        value === "" ? null : value
+      ])
+    );
 
     const action = isEditing 
       ? supabase.from("partners").update(dataToSave).eq("id", isEditing)
@@ -69,6 +77,8 @@ export default function AdminPartners() {
       setFormData(initialForm);
       fetchPartners();
     } else {
+      // Affichage de l'erreur précise pour le debug
+      console.error("Supabase Error:", error);
       alert("Erreur base de données : " + error.message);
     }
   };
@@ -131,20 +141,20 @@ export default function AdminPartners() {
             </h2>
 
             <div className="grid grid-cols-2 gap-4">
-              <input type="text" value={formData.name} placeholder="Nom du salon" required className="bg-white/5 border border-white/10 p-3 rounded-xl text-sm" 
+              <input type="text" value={formData.name || ""} placeholder="Nom du salon" required className="bg-white/5 border border-white/10 p-3 rounded-xl text-sm" 
                 onChange={e => setFormData({...formData, name: e.target.value})} />
-              <input type="text" value={formData.city} placeholder="Ville" className="bg-white/5 border border-white/10 p-3 rounded-xl text-sm"
+              <input type="text" value={formData.city || ""} placeholder="Ville" className="bg-white/5 border border-white/10 p-3 rounded-xl text-sm"
                 onChange={e => setFormData({...formData, city: e.target.value})} />
             </div>
 
             <div className="grid grid-cols-3 gap-4">
-              <select value={formData.category} className="bg-white/5 border border-white/10 p-3 rounded-xl text-sm col-span-2"
+              <select value={formData.category || "Salon"} className="bg-white/5 border border-white/10 p-3 rounded-xl text-sm col-span-2"
                 onChange={e => setFormData({...formData, category: e.target.value})}>
                 <option value="Salon">Salon</option>
                 <option value="Produits">Produits</option>
                 <option value="Formation">Formation</option>
               </select>
-              <input type="text" value={formData.emoji} placeholder="Emoji" className="bg-white/5 border border-white/10 p-3 rounded-xl text-sm"
+              <input type="text" value={formData.emoji || ""} placeholder="Emoji" className="bg-white/5 border border-white/10 p-3 rounded-xl text-sm"
                 onChange={e => setFormData({...formData, emoji: e.target.value})} />
             </div>
 
@@ -154,27 +164,34 @@ export default function AdminPartners() {
                {formData.logo_url && <img src={formData.logo_url} className="w-16 h-16 rounded-xl object-cover border border-[#C9963A]/30" alt="Preview" />}
             </div>
 
+            {/* Nouveau champ : Date d'expiration (Promo Deadline) */}
+            <div className="space-y-1">
+              <label className="text-[10px] uppercase text-white/40 font-bold px-1">Expiration de la promo</label>
+              <input type="date" value={formData.promo_deadline || ""} className="w-full bg-white/5 border border-white/10 p-3 rounded-xl text-sm text-white/60"
+                onChange={e => setFormData({...formData, promo_deadline: e.target.value})} />
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
-              <input type="text" value={formData.whatsapp} placeholder="Lien WhatsApp" className="bg-white/5 border border-white/10 p-3 rounded-xl text-xs"
+              <input type="text" value={formData.whatsapp || ""} placeholder="Lien WhatsApp" className="bg-white/5 border border-white/10 p-3 rounded-xl text-xs"
                 onChange={e => setFormData({...formData, whatsapp: e.target.value})} />
-              <input type="text" value={formData.instagram} placeholder="Lien Instagram" className="bg-white/5 border border-white/10 p-3 rounded-xl text-xs"
+              <input type="text" value={formData.instagram || ""} placeholder="Lien Instagram" className="bg-white/5 border border-white/10 p-3 rounded-xl text-xs"
                 onChange={e => setFormData({...formData, instagram: e.target.value})} />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <input type="text" value={formData.website} placeholder="Site Web" className="bg-white/5 border border-white/10 p-3 rounded-xl text-xs"
+              <input type="text" value={formData.website || ""} placeholder="Site Web" className="bg-white/5 border border-white/10 p-3 rounded-xl text-xs"
                 onChange={e => setFormData({...formData, website: e.target.value})} />
-              <input type="text" value={formData.phone} placeholder="Téléphone" className="bg-white/5 border border-white/10 p-3 rounded-xl text-xs"
+              <input type="text" value={formData.phone || ""} placeholder="Téléphone" className="bg-white/5 border border-white/10 p-3 rounded-xl text-xs"
                 onChange={e => setFormData({...formData, phone: e.target.value})} />
             </div>
 
             <div className="flex gap-4">
               <div className="flex-1 flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5">
                 <span className="text-[10px] uppercase font-bold text-white/40">Sponsorisé</span>
-                <input type="checkbox" checked={formData.sponsored} onChange={e => setFormData({...formData, sponsored: e.target.checked})} className="accent-[#C9963A]" />
+                <input type="checkbox" checked={formData.sponsored || false} onChange={e => setFormData({...formData, sponsored: e.target.checked})} className="accent-[#C9963A]" />
               </div>
-              <input type="number" value={formData.position} placeholder="Position" className="w-20 bg-white/5 border border-white/10 p-3 rounded-xl text-sm"
-                onChange={e => setFormData({...formData, position: parseInt(e.target.value)})} />
+              <input type="number" value={formData.position || 0} placeholder="Position" className="w-20 bg-white/5 border border-white/10 p-3 rounded-xl text-sm"
+                onChange={e => setFormData({...formData, position: parseInt(e.target.value) || 0})} />
             </div>
 
             <button type="submit" className="w-full py-5 bg-[#C9963A] text-[#1A0A00] font-black rounded-2xl uppercase tracking-widest shadow-xl active:scale-95 transition-transform">
