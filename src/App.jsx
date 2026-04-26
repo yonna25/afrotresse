@@ -21,7 +21,8 @@ import MagicLink from './pages/MagicLink.jsx'
 import Library from './pages/Library.jsx'
 import AdminReviews from './pages/AdminReviews.jsx'
 import Partners from './pages/Partners.jsx'
-import AdminPartners from './pages/AdminPartners.jsx' // 👈 Nouvel import
+import AdminPartners from './pages/AdminPartners.jsx'
+import Login from './pages/Login.jsx' // 👈 Import de la page Login
 
 // Import de la navigation
 import BottomNav from './components/BottomNav.jsx'
@@ -39,7 +40,7 @@ async function flushPendingCredits(userId) {
   }
 }
 
-// CREDIT SUCCESS POPUP
+// CREDIT SUCCESS POPUP (Code inchangé)
 function CreditSuccessPopup({ data, onClose }) {
   useEffect(() => {
     const timer = setTimeout(onClose, 4000)
@@ -81,7 +82,6 @@ function CreditSuccessPopup({ data, onClose }) {
             </motion.div>
           ))}
         </div>
-
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: [0, 1.2, 1] }}
@@ -90,11 +90,9 @@ function CreditSuccessPopup({ data, onClose }) {
         >
           💎
         </motion.div>
-
         <h2 className="text-2xl font-black text-[#C9963A] mb-1">
           Félicitations {data.userName} ! 🎉
         </h2>
-
         <motion.p
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -103,15 +101,12 @@ function CreditSuccessPopup({ data, onClose }) {
         >
           +{data.credits} crédits
         </motion.p>
-
         <p className="text-sm text-white/60 mb-2">
           Pack <span className="text-[#C9963A] font-bold">{data.label}</span> activé
         </p>
-
         <p className="text-xs text-white/40 mb-6">
           Solde : <span className="text-white font-bold">{getCredits()} crédits</span>
         </p>
-
         <motion.div className="h-1 rounded-full bg-[#C9963A]/30 overflow-hidden mb-5">
           <motion.div
             className="h-full bg-[#C9963A]"
@@ -120,7 +115,6 @@ function CreditSuccessPopup({ data, onClose }) {
             transition={{ duration: 4 }}
           />
         </motion.div>
-
         <button
           onClick={onClose}
           className="w-full py-4 rounded-2xl font-black text-[#1A0A00]"
@@ -137,13 +131,14 @@ function CreditSuccessPopup({ data, onClose }) {
 function AnimatedRoutes() {
   const location = useLocation()
   
-  // 👈 Ajout de /admin-partners dans les pages qui cachent la navigation
+  // Masquer BottomNav sur camera, analyze, magic-link, admin, et LOGIN
   const hideNav = [
     '/camera', 
     '/analyze', 
     '/magic-link', 
     '/admin-reviews', 
-    '/admin-partners'
+    '/admin-partners',
+    '/login' // 👈 Navigation cachée pour le login
   ].includes(location.pathname)
 
   return (
@@ -165,7 +160,8 @@ function AnimatedRoutes() {
           <Route path="/library" element={<Library />} />
           <Route path="/partners" element={<Partners />} />
           <Route path="/admin-reviews" element={<AdminReviews />} />
-          <Route path="/admin-partners" element={<AdminPartners />} /> {/* 👈 Nouvelle Route */}
+          <Route path="/admin-partners" element={<AdminPartners />} />
+          <Route path="/login" element={<Login />} /> {/* 👈 Nouvelle Route */}
         </Routes>
       </AnimatePresence>
       {!hideNav && <BottomNav />}
@@ -173,7 +169,7 @@ function AnimatedRoutes() {
   )
 }
 
-// APP
+// APP (Code principal inchangé)
 export default function App() {
   const [creditSuccess, setCreditSuccess] = useState(null)
 
