@@ -19,6 +19,7 @@ export default function Partners() {
   const [selectedPartner, setSelectedPartner] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [cat, setCat] = useState("Tous");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     checkUser();
@@ -27,39 +28,58 @@ export default function Partners() {
 
   const checkUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    // Remplace par ton email admin réel
+    // REMPLACE ICI PAR TON EMAIL RÉEL
     if (user && user.email === "ton-email@exemple.com") setIsAdmin(true);
   };
 
   const fetchPartners = async () => {
-    const { data } = await supabase
+    setLoading(true);
+    // Requête simplifiée : On récupère tout ce qui est actif
+    const { data, error } = await supabase
       .from("partners")
       .select("*")
-      .eq("active", true)
-      .order("pinned", { ascending: false }) // Les épinglés en premier
-      .order("position", { ascending: true });
-    setPartners(data || []);
+      .eq("active", true);
+
+    if (error) {
+      console.error("Erreur de chargement:", error.message);
+      setPartners([]);
+    } else {
+      // Tri manuel en JS pour éviter les erreurs de colonnes manquantes
+      const sorted = data ? data.sort((a, b) => {
+        if (a.pinned && !b.pinned) return -1;
+        if (!a.pinned && b.pinned) return 1;
+        return 0;
+      }) : [];
+      setPartners(sorted);
+    }
+    setLoading(false);
   };
 
   // Actions Admin
   const handleDelete = async (id) => {
     if (window.confirm("🗑️ Supprimer définitivement ce partenaire ?")) {
-      await supabase.from('partners').delete().eq('id', id);
-      fetchPartners();
-      setSelectedPartner(null);
+      const { error } = await supabase.from('partners').delete().eq('id', id);
+      if (!error) {
+        fetchPartners();
+        setSelectedPartner(null);
+      }
     }
   };
 
   const handlePin = async (id, currentStatus) => {
-    await supabase.from('partners').update({ pinned: !currentStatus }).eq('id', id);
-    fetchPartners();
-    setSelectedPartner(prev => ({ ...prev, pinned: !currentStatus }));
+    const { error } = await supabase.from('partners').update({ pinned: !currentStatus }).eq('id', id);
+    if (!error) {
+      fetchPartners();
+      setSelectedPartner(prev => ({ ...prev, pinned: !currentStatus }));
+    } else {
+      alert("Erreur: La colonne 'pinned' n'existe peut-être pas dans ta base.");
+    }
   };
 
   // Filtrage intelligent
   const filtered = partners.filter(p => 
     (cat === "Tous" || p.category === cat) &&
-    p.name.toLowerCase().includes(search.toLowerCase())
+    (p.name?.toLowerCase().includes(search.toLowerCase()) || p.city?.toLowerCase().includes(search.toLowerCase()))
   );
 
   return (
@@ -76,27 +96,24 @@ export default function Partners() {
           "L'excellence capillaire, sélectionnée pour vous."
         </p>
         
-        {/* Moteur de recherche avec Reset */}
         <div className="relative flex items-center bg-white/10 rounded-2xl border border-white/5 overflow-hidden focus-within:ring-2 ring-[#C9963A]/50 transition-all">
           <input 
-            type="text" placeholder="Rechercher un salon..." 
+            type="text" placeholder="Rechercher un salon ou une ville..." 
             value={search} onChange={e => setSearch(e.target.value)}
             className="flex-1 bg-transparent p-5 text-sm outline-none placeholder:text-white/20 text-white"
           />
-          
           {search && (
-            <button onClick={() => setSearch("")} className="p-2 text-white/40 hover:text-[#C9963A] transition-colors">
+            <button onClick={() => setSearch("")} className="p-2 text-white/40 hover:text-[#C9963A]">
               {Icons.clear}
             </button>
           )}
-
           <button className="bg-[#C9963A] p-4 m-1.5 rounded-xl text-[#2C1A0E] shadow-lg active:scale-90 transition-transform">
             {Icons.search}
           </button>
         </div>
       </div>
 
-      {/* ─── NAVIGATION CATÉGORIES ─── */}
+      {/* ─── FILTRES CATÉGORIES ─── */}
       <div className="px-6 -mt-7 mb-10 relative z-20">
         <div className="bg-white p-1.5 rounded-[2rem] shadow-xl border border-black/5 grid grid-cols-4 gap-1 text-center">
           {["Tous", "Salon", "Formation", "Produits"].map(c => (
@@ -112,26 +129,42 @@ export default function Partners() {
 
       {/* ─── LISTE DES PARTENAIRES ─── */}
       <div className="px-6 space-y-6">
-        {filtered.map(p => (
-          <div 
-            key={p.id} onClick={() => setSelectedPartner(p)} 
-            className="bg-white rounded-[2.5rem] p-5 shadow-sm border border-black/[0.03] flex gap-5 items-center relative overflow-hidden active:scale-95 transition-transform"
-          >
-            {p.pinned && <div className="absolute top-0 right-8 bg-[#C9963A] px-3 py-1 rounded-b-xl text-[8px] font-black uppercase text-[#2C1A0E]">Favori</div>}
-            
-            <div className="w-20 h-20 rounded-3xl bg-[#FAF4EC] flex items-center justify-center overflow-hidden border border-black/5 shadow-inner">
-                {p.logo_url ? <img src={p.logo_url} className="w-full h-full object-cover" /> : <span className="text-3xl opacity-20">✨</span>}
+        {loading ? (
+          <p className="text-center py-10 opacity-30 text-sm italic">Chargement des experts...</p>
+        ) : filtered.length > 0 ? (
+          filtered.map(p => (
+            <div 
+              key={p.id} onClick={() => setSelectedPartner(p)} 
+              className="bg-white rounded-[2.5rem] p-5 shadow-sm border border-black/[0.03] flex gap-5 items-center relative overflow-hidden active:scale-95 transition-transform"
+            >
+              {p.pinned && <div className="absolute top-0 right-8 bg-[#C9963A] px-3 py-1 rounded-b-xl text-[8px] font-black uppercase text-[#2C1A0E]">Favori</div>}
+              
+              <div className="w-20 h-20 rounded-3xl bg-[#FAF4EC] flex items-center justify-center overflow-hidden border border-black/5">
+                  {p.logo_url ? <img src={p.logo_url} className="w-full h-full object-cover" /> : <span className="text-3xl opacity-20">✨</span>}
+              </div>
+              <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                      <h3 className="text-xl font-serif text-[#2C1A0E]">{p.name}</h3>
+                      {p.verified && <span className="text-blue-500 text-xs">✔️</span>}
+                  </div>
+                  <p className="text-[10px] text-black/30 font-bold uppercase tracking-widest">{p.city}</p>
+              </div>
             </div>
-            <div className="flex-1">
-                <div className="flex items-center gap-2">
-                    <h3 className="text-xl font-serif text-[#2C1A0E]">{p.name}</h3>
-                    {p.verified && <span className="text-blue-500 text-xs">✔️</span>}
-                </div>
-                <p className="text-[10px] text-black/30 font-bold uppercase tracking-widest">{p.city}</p>
-            </div>
+          ))
+        ) : (
+          <div className="text-center py-20 px-10">
+            <div className="text-4xl mb-4 opacity-20">🔍</div>
+            <p className="text-sm text-[#2C1A0E]/50 font-medium italic mb-6">
+              Aucun partenaire trouvé...
+            </p>
+            <button 
+              onClick={() => { setSearch(""); setCat("Tous"); }}
+              className="text-[10px] font-black uppercase tracking-widest text-[#C9963A] border-b border-[#C9963A] pb-1"
+            >
+              Réinitialiser les filtres
+            </button>
           </div>
-        ))}
-        {filtered.length === 0 && <p className="text-center py-10 opacity-30 text-sm italic font-medium">Aucun partenaire ne correspond...</p>}
+        )}
       </div>
 
       {/* ─── FICHE DÉTAIL (DRAWER) ─── */}
@@ -156,7 +189,6 @@ export default function Partners() {
                 <button onClick={() => setSelectedPartner(null)} className="p-3 bg-white rounded-full shadow-sm text-[#2C1A0E]/20">{Icons.close}</button>
               </div>
 
-              {/* À PROPOS & RÉSEAUX */}
               <div className="bg-white rounded-[2.5rem] p-8 mb-6 shadow-sm border border-black/[0.02]">
                 <h4 className="text-[10px] font-black text-[#C9963A] uppercase tracking-widest mb-6">L'histoire du partenaire</h4>
                 <p className="text-sm text-[#2C1A0E]/70 font-medium leading-relaxed mb-8">
@@ -169,9 +201,7 @@ export default function Partners() {
                 </div>
               </div>
 
-              {/* FLASH PROMO */}
               <div className="bg-[#2C1A0E] text-[#FAF4EC] p-8 rounded-[2.5rem] mb-10 relative overflow-hidden shadow-2xl">
-                <div className="absolute -right-4 -top-4 w-24 h-24 bg-[#C9963A] opacity-20 rounded-full blur-2xl"></div>
                 <span className="text-[10px] font-black text-[#C9963A] uppercase tracking-[0.3em]">Flash Promo ✨</span>
                 <p className="text-xl font-serif mt-4 mb-6 italic leading-relaxed">{selectedPartner.promo || "Bénéficiez de soins offerts"}</p>
                 <div className="bg-white/5 border border-white/10 p-5 rounded-2xl flex justify-between items-center group active:scale-95 transition-all cursor-pointer">
@@ -180,24 +210,19 @@ export default function Partners() {
                 </div>
               </div>
 
-              {/* BOUTON WHATSAPP */}
               <button className="w-full bg-[#25D366] text-white py-6 rounded-[2.5rem] flex items-center justify-center gap-4 text-sm font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">
                 {Icons.whatsapp} Prendre rendez-vous
               </button>
 
-              {/* ZONE ADMIN MANAGEMENT */}
               {isAdmin && (
                 <div className="mt-12 pt-8 border-t-2 border-dashed border-black/5">
                    <p className="text-[9px] font-black text-[#C9963A] text-center uppercase tracking-[0.3em] mb-6">Management Partner</p>
                    <div className="grid grid-cols-2 gap-3">
                         <button onClick={() => handlePin(selectedPartner.id, selectedPartner.pinned)} className={`py-4 border rounded-2xl text-[10px] font-bold uppercase tracking-widest transition-all ${selectedPartner.pinned ? 'bg-[#C9963A] text-[#2C1A0E] border-[#C9963A]' : 'bg-white border-black/5'}`}>
-                            {selectedPartner.pinned ? "Épinglé 📍" : "Épingler 📍"}
+                            {selectedPartner.pinned ? "Favori 📍" : "Épingler 📍"}
                         </button>
                         <button onClick={() => handleDelete(selectedPartner.id)} className="py-4 bg-red-50 text-red-500 border border-red-100 rounded-2xl text-[10px] font-bold uppercase tracking-widest">
                             Supprimer 🗑️
-                        </button>
-                        <button className="col-span-2 py-4 bg-white border border-black/5 rounded-2xl text-[10px] font-bold uppercase tracking-widest opacity-50">
-                            Programmer Flash Promo ⚡ (Bientôt)
                         </button>
                    </div>
                 </div>
