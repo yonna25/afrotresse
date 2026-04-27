@@ -30,6 +30,17 @@ export default function AdminPartners() {
     setFiltered(res);
   }, [search, partners]);
 
+  // ─── FONCTION DE DÉCONNEXION ────────────────────────────────────────
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (!error) {
+      // Redirection vers la page d'accueil après déconnexion
+      window.location.href = "/";
+    } else {
+      alert("Erreur lors de la déconnexion : " + error.message);
+    }
+  };
+
   const fetchPartners = async () => {
     setLoading(true);
     const { data } = await supabase.from("partners").select("*").order("position", { ascending: true });
@@ -53,12 +64,8 @@ export default function AdminPartners() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // 1. Extraction des champs système
     const { id, created_at, ...rawExtraData } = formData; 
 
-    // 2. FILTRAGE STRICT : On ne garde que les clés qui ont une vraie valeur.
-    // Si une valeur est "", on ne l'envoie pas du tout.
     const dataToSave = {};
     Object.keys(rawExtraData).forEach(key => {
       const val = rawExtraData[key];
@@ -79,7 +86,6 @@ export default function AdminPartners() {
       setFormData(initialForm);
       fetchPartners();
     } else {
-      console.error("Erreur SQL détaillée:", error);
       alert("Erreur base de données : " + error.message);
     }
   };
@@ -104,11 +110,21 @@ export default function AdminPartners() {
 
   return (
     <div className="min-h-screen bg-[#1A0A00] text-[#FAF4EC] p-6 pb-32">
-      <header className="flex justify-between items-center mb-8">
+      {/* HEADER AVEC BOUTON LOGOUT */}
+      <header className="flex justify-between items-start mb-8">
         <div>
           <h1 className="text-[#C9963A] text-2xl font-black uppercase tracking-tighter">Partners Admin</h1>
           <p className="text-white/40 text-[10px] uppercase tracking-widest">Base de données actifs</p>
+          
+          {/* Nouveau Bouton Déconnexion */}
+          <button 
+            onClick={handleLogout}
+            className="mt-2 text-[9px] font-black uppercase tracking-widest text-red-400 bg-red-400/10 px-3 py-1.5 rounded-lg border border-red-400/20 active:scale-95 transition-all"
+          >
+            Déconnexion
+          </button>
         </div>
+
         <button 
           onClick={resetAndOpen}
           className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-lg transition-all ${showForm && !isEditing ? 'bg-white/10 text-white rotate-45' : 'bg-[#C9963A] text-[#2C1A0E]'}`}
@@ -117,6 +133,7 @@ export default function AdminPartners() {
         </button>
       </header>
 
+      {/* RECHERCHE */}
       <div className="mb-8">
         <input 
           type="text" placeholder="Rechercher un partenaire..."
