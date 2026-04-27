@@ -17,6 +17,7 @@ function mapPartner(row) {
     socials: {
       instagram: row.instagram_url || row.instagram || null,
       tiktok:    row.tiktok_url    || null,
+      facebook:  row.facebook_url  || row.facebook || null,
     },
   };
 }
@@ -58,7 +59,12 @@ const WAIcon = () => (
   </svg>
 );
 
-// ── Modal détail partenaire ───────────────────────────────────────────────────
+const FBIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+  </svg>
+);
+
 function Modal({ partner, onClose }) {
   const cd = useCountdown(partner.promo_deadline);
   const hasPromo = partner.promo && !cd.expired;
@@ -66,7 +72,7 @@ function Modal({ partner, onClose }) {
   useEffect(() => { requestAnimationFrame(() => setVis(true)); }, []);
   const close = () => { setVis(false); setTimeout(onClose, 380); };
   const wa = () => window.open(
-    `https://wa.me/${(partner.whatsapp || "").replace(/\D/g,"")}?text=${encodeURIComponent("Bonjour, je vous contacte via AfroTresse 👑")}`,
+    `https://wa.me/${((partner.whatsapp || partner.phone) || "").replace(/\D/g,"")}?text=${encodeURIComponent("Bonjour, je vous contacte via AfroTresse 👑")}`,
     "_blank"
   );
 
@@ -180,14 +186,14 @@ function Modal({ partner, onClose }) {
 
           {/* Contacts */}
           <div style={{ display:"flex", flexDirection:"column", gap:10, marginBottom:28 }}>
-            {partner.whatsapp && (
+            {(partner.whatsapp || partner.phone) && (
               <button onClick={wa} style={{
                 display:"flex", alignItems:"center", gap:12, padding:"16px 22px",
                 borderRadius:18, background:"rgba(37,211,102,0.08)", border:"1px solid rgba(37,211,102,0.2)",
                 cursor:"pointer", width:"100%", textAlign:"left",
               }}>
                 <span style={{ color:"#25D366", flexShrink:0 }}><WAIcon /></span>
-                <span style={{ fontSize:11, fontWeight:800, color:"#1a7a3a", fontFamily:"sans-serif", letterSpacing:"0.1em", textTransform:"uppercase" }}>Contacter sur WhatsApp</span>
+                <span style={{ fontSize:11, fontWeight:800, color:"#1a7a3a", fontFamily:"sans-serif", letterSpacing:"0.1em", textTransform:"uppercase" }}>Nous contacter sur WhatsApp</span>
               </button>
             )}
             {partner.socials?.instagram && (
@@ -202,6 +208,13 @@ function Modal({ partner, onClose }) {
                 style={{ display:"flex", alignItems:"center", gap:12, padding:"14px 22px", borderRadius:18, background:"rgba(0,0,0,0.04)", border:"1px solid rgba(0,0,0,0.1)", textDecoration:"none" }}>
                 <span style={{ color:"#1A0E04", flexShrink:0 }}><TKIcon /></span>
                 <span style={{ fontSize:11, fontWeight:800, color:"rgba(30,15,2,0.6)", fontFamily:"sans-serif", letterSpacing:"0.1em", textTransform:"uppercase" }}>@{partner.socials.tiktok}</span>
+              </a>
+            )}
+            {partner.socials?.facebook && (
+              <a href={partner.socials.facebook.startsWith("http") ? partner.socials.facebook : `https://facebook.com/${partner.socials.facebook}`} target="_blank" rel="noreferrer"
+                style={{ display:"flex", alignItems:"center", gap:12, padding:"14px 22px", borderRadius:18, background:"rgba(24,119,242,0.07)", border:"1px solid rgba(24,119,242,0.2)", textDecoration:"none" }}>
+                <span style={{ color:"#1877F2", flexShrink:0 }}><FBIcon /></span>
+                <span style={{ fontSize:11, fontWeight:800, color:"#0a4a9e", fontFamily:"sans-serif", letterSpacing:"0.1em", textTransform:"uppercase" }}>{partner.socials.facebook.replace(/^https?:\/\/(www\.)?facebook\.com\//,"")}</span>
               </a>
             )}
           </div>
@@ -354,17 +367,33 @@ export default function Partners() {
 
       <div style={{ width:"100%", maxWidth:430, paddingBottom:80 }}>
 
-        {/* Hero Header */}
-        <div style={{ padding:"44px 24px 28px", position:"relative", overflow:"hidden" }}>
+        {/* Hero Header — fond sombre contrasté */}
+        <div style={{
+          padding:"48px 24px 32px", position:"relative", overflow:"hidden",
+          background:"linear-gradient(160deg, #1A0A00 0%, #2C1A0E 60%, #3D2414 100%)",
+          borderRadius:"0 0 32px 32px",
+          boxShadow:"0 12px 48px rgba(0,0,0,0.18)",
+        }}>
           {/* Déco fond */}
-          <div style={{ position:"absolute", top:-40, right:-40, width:200, height:200, borderRadius:"50%", background:"radial-gradient(circle,rgba(201,150,58,0.12),transparent 70%)", pointerEvents:"none" }}/>
-          <div style={{ position:"absolute", bottom:0, left:0, right:0, height:1, background:"linear-gradient(90deg,transparent,rgba(201,150,58,0.3),transparent)" }}/>
+          <div style={{ position:"absolute", top:-60, right:-60, width:240, height:240, borderRadius:"50%", background:"radial-gradient(circle,rgba(201,150,58,0.18),transparent 65%)", pointerEvents:"none" }}/>
+          <div style={{ position:"absolute", bottom:-30, left:-30, width:160, height:160, borderRadius:"50%", background:"radial-gradient(circle,rgba(201,150,58,0.09),transparent 70%)", pointerEvents:"none" }}/>
+          {/* Ligne dorée bas */}
+          <div style={{ position:"absolute", bottom:0, left:0, right:0, height:1, background:"linear-gradient(90deg,transparent,rgba(201,150,58,0.6),transparent)" }}/>
 
-          <div style={{ fontSize:8, fontWeight:800, letterSpacing:"0.5em", textTransform:"uppercase", color:"rgba(140,90,20,0.5)", marginBottom:12, fontFamily:"sans-serif" }}>AfroTresse · Partenaires</div>
-          <div style={{ fontFamily:"'Cormorant Garamond','Georgia',serif", fontSize:34, fontWeight:700, color:"#1A0E04", lineHeight:1.1, marginBottom:10 }}>
+          {/* Eyebrow */}
+          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:16 }}>
+            <div style={{ width:24, height:1, background:"rgba(201,150,58,0.5)" }}/>
+            <span style={{ fontSize:8, fontWeight:800, letterSpacing:"0.5em", textTransform:"uppercase", color:"rgba(201,150,58,0.7)", fontFamily:"sans-serif" }}>AfroTresse · Partenaires</span>
+            <div style={{ width:24, height:1, background:"rgba(201,150,58,0.5)" }}/>
+          </div>
+
+          {/* Titre */}
+          <div style={{ fontFamily:"'Cormorant Garamond','Georgia',serif", fontSize:36, fontWeight:700, color:"#FAF4EC", lineHeight:1.1, marginBottom:12 }}>
             Nos partenaires<br/><span style={{ color:"#C9963A" }}>de confiance</span>
           </div>
-          <p style={{ fontSize:13, color:"rgba(30,15,2,0.45)", fontFamily:"sans-serif", lineHeight:1.65 }}>
+
+          {/* Sous-titre */}
+          <p style={{ fontSize:13, color:"rgba(250,244,236,0.5)", fontFamily:"sans-serif", lineHeight:1.65, maxWidth:300 }}>
             Des professionnelles sélectionnées par AfroTresse pour vous accompagner.
           </p>
         </div>
@@ -429,19 +458,20 @@ export default function Partners() {
 
         {/* Filtres catégorie */}
         <div style={{ padding:"18px 16px 16px" }}>
-          <div style={{ display:"flex", gap:8, overflowX:"auto", paddingBottom:4 }}>
+          <div style={{ display:"flex", gap:8, overflowX:"auto", paddingBottom:4, scrollbarWidth:"none", msOverflowStyle:"none", WebkitOverflowScrolling:"touch" }}>
             {CATEGORIES.map(cat => {
               const isActive = activeFilter === cat.id;
               return (
                 <button key={cat.id} className="filter-btn" onClick={() => setActiveFilter(cat.id)} style={{
-                  flexShrink:0, display:"flex", alignItems:"center", gap:6,
-                  padding:"9px 16px", borderRadius:99, cursor:"pointer",
-                  fontFamily:"sans-serif", fontSize:11, fontWeight:800, letterSpacing:"0.04em",
+                  flex:"1 1 0", minWidth:0, display:"flex", alignItems:"center", justifyContent:"center", gap:4,
+                  padding:"9px 10px", borderRadius:99, cursor:"pointer",
+                  fontFamily:"sans-serif", fontSize:11, fontWeight:800, letterSpacing:"0.02em",
                   transition:"all 0.2s",
                   background: isActive ? "#C9963A" : "#FFFFFF",
                   border: isActive ? "1.5px solid #C9963A" : "1.5px solid rgba(201,150,58,0.25)",
                   color: isActive ? "#FFFFFF" : "rgba(140,90,20,0.7)",
                   boxShadow: isActive ? "0 4px 16px rgba(201,150,58,0.35)" : "0 2px 8px rgba(0,0,0,0.04)",
+                  whiteSpace:"nowrap",
                 }}>
                   <span>{cat.emoji}</span>
                   <span>{cat.label}</span>
