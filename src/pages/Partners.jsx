@@ -1,15 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "../services/supabase";
 
 const CATEGORIES = [
-  { id: "all",       label: "Tous",      emoji: "\u271a" },
-  { id: "salon",     label: "Salon",     emoji: "\ud83d\udc87\ud83c\udffe\u200d\u2640\ufe0f" },
-  { id: "produits",  label: "Produits",  emoji: "\ud83e\uddf4" },
-  { id: "formation", label: "Formation", emoji: "\ud83c\udf93" },
+  { id: "all",       label: "Tous",      emoji: "✦" },
+  { id: "salon",     label: "Salon",     emoji: "💇🏾‍♀️" },
+  { id: "produits",  label: "Produits",  emoji: "🧴" },
+  { id: "formation", label: "Formation", emoji: "🎓" },
 ];
 
-// Mappe un enregistrement Supabase vers la structure attendue par les composants
-// Gère les anciennes colonnes (promo, promo_deadline, instagram) ET les nouvelles (promo_text, promo_end_date, instagram_url)
 function mapPartner(row) {
   return {
     ...row,
@@ -29,7 +27,7 @@ function useCountdown(deadline) {
     if (!deadline) return;
     const tick = () => {
       const diff = new Date(deadline) - Date.now();
-      if (diff <= 0) { setT({ h:"00",m:"00",s:"00",expired:true }); return; }
+      if (diff <= 0) { setT({ h:"00", m:"00", s:"00", expired:true }); return; }
       setT({
         h: String(Math.floor(diff/3600000)).padStart(2,"0"),
         m: String(Math.floor((diff%3600000)/60000)).padStart(2,"0"),
@@ -60,6 +58,7 @@ const WAIcon = () => (
   </svg>
 );
 
+// ── Modal détail partenaire ───────────────────────────────────────────────────
 function Modal({ partner, onClose }) {
   const cd = useCountdown(partner.promo_deadline);
   const hasPromo = partner.promo && !cd.expired;
@@ -67,36 +66,68 @@ function Modal({ partner, onClose }) {
   useEffect(() => { requestAnimationFrame(() => setVis(true)); }, []);
   const close = () => { setVis(false); setTimeout(onClose, 380); };
   const wa = () => window.open(
-    `https://wa.me/${(partner.whatsapp || "").replace(/\D/g,"")}?text=${encodeURIComponent("Bonjour, je vous contacte via AfroTresse \ud83d\udc51")}`,
+    `https://wa.me/${(partner.whatsapp || "").replace(/\D/g,"")}?text=${encodeURIComponent("Bonjour, je vous contacte via AfroTresse 👑")}`,
     "_blank"
   );
 
   return (
-    <div onClick={close} style={{ position:"fixed", inset:0, zIndex:100, display:"flex", alignItems:"flex-end", justifyContent:"center", background:vis?"rgba(4,2,0,0.85)":"transparent", backdropFilter:vis?"blur(24px)":"none", transition:"all 0.4s ease" }}>
-      <div onClick={e=>e.stopPropagation()} style={{ width:"100%", maxWidth:430, maxHeight:"92vh", overflowY:"auto", background:"#0A0602", borderRadius:"32px 32px 0 0", transform:vis?"translateY(0)":"translateY(100%)", transition:"transform 0.42s cubic-bezier(0.22,1,0.36,1)", position:"relative", overflow:"hidden", border:"1px solid rgba(201,150,58,0.2)", borderBottom:"none" }}>
-        <div style={{ position:"absolute", inset:0, zIndex:0, pointerEvents:"none", backgroundImage:"repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(255,255,255,0.012) 2px,rgba(255,255,255,0.012) 4px)" }}/>
-        <div style={{ position:"absolute", top:0, left:"50%", transform:"translateX(-50%)", width:"60%", height:1, background:"linear-gradient(90deg,transparent,rgba(201,150,58,0.6),transparent)", zIndex:1 }}/>
+    <div onClick={close} style={{
+      position:"fixed", inset:0, zIndex:100,
+      display:"flex", alignItems:"flex-end", justifyContent:"center",
+      background: vis ? "rgba(10,6,2,0.75)" : "transparent",
+      backdropFilter: vis ? "blur(20px)" : "none",
+      transition: "all 0.35s ease",
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        width:"100%", maxWidth:430, maxHeight:"92vh", overflowY:"auto",
+        background: "linear-gradient(160deg, #FDFAF5 0%, #F5EDD8 100%)",
+        borderRadius:"32px 32px 0 0",
+        transform: vis ? "translateY(0)" : "translateY(100%)",
+        transition: "transform 0.42s cubic-bezier(0.22,1,0.36,1)",
+        position:"relative", overflow:"hidden",
+        border: "1px solid rgba(201,150,58,0.35)",
+        borderBottom: "none",
+        boxShadow: "0 -20px 60px rgba(201,150,58,0.15)",
+      }}>
+        {/* Ligne d'accroche top */}
+        <div style={{ position:"absolute", top:0, left:"50%", transform:"translateX(-50%)", width:"50%", height:1, background:"linear-gradient(90deg,transparent,rgba(201,150,58,0.7),transparent)", zIndex:1 }}/>
+        {/* Poignée */}
         <div style={{ display:"flex", justifyContent:"center", padding:"16px 0 8px", position:"relative", zIndex:2 }}>
-          <div style={{ width:36, height:3, borderRadius:99, background:"rgba(201,150,58,0.25)" }}/>
+          <div style={{ width:36, height:3, borderRadius:99, background:"rgba(201,150,58,0.3)" }}/>
         </div>
-        <button onClick={close} style={{ position:"absolute", top:14, right:18, zIndex:10, width:34, height:34, borderRadius:99, background:"rgba(201,150,58,0.08)", border:"1px solid rgba(201,150,58,0.15)", cursor:"pointer", color:"rgba(201,150,58,0.6)", fontSize:13, fontWeight:700, display:"flex", alignItems:"center", justifyContent:"center" }}>\u2715</button>
+        {/* Bouton fermer */}
+        <button onClick={close} style={{
+          position:"absolute", top:14, right:18, zIndex:10,
+          width:34, height:34, borderRadius:99,
+          background:"rgba(201,150,58,0.1)", border:"1px solid rgba(201,150,58,0.25)",
+          cursor:"pointer", color:"rgba(140,90,20,0.7)", fontSize:13, fontWeight:700,
+          display:"flex", alignItems:"center", justifyContent:"center",
+        }}>✕</button>
 
         <div style={{ padding:"4px 26px 56px", position:"relative", zIndex:2 }}>
-          {/* Identit\u00e9 */}
+
+          {/* Identité */}
           <div style={{ marginBottom:28, paddingTop:4 }}>
             <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:18 }}>
-              <div style={{ width:72, height:72, borderRadius:20, flexShrink:0, background:"linear-gradient(145deg,#1C1008,#120A04)", border:"1px solid rgba(201,150,58,0.3)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:32 }}>{partner.emoji}</div>
+              <div style={{
+                width:72, height:72, borderRadius:20, flexShrink:0,
+                background:"linear-gradient(145deg,#FFF8EC,#F5EDD8)",
+                border:"1.5px solid rgba(201,150,58,0.3)",
+                display:"flex", alignItems:"center", justifyContent:"center", fontSize:32,
+                boxShadow:"0 4px 20px rgba(201,150,58,0.15)",
+              }}>{partner.emoji}</div>
               <div>
-                <div style={{ fontSize:8, fontWeight:800, letterSpacing:"0.35em", textTransform:"uppercase", color:"rgba(201,150,58,0.55)", marginBottom:6, fontFamily:"sans-serif" }}>{partner.categoryLabel}</div>
-                <div style={{ fontFamily:"'Cormorant Garamond','Georgia',serif", fontSize:26, fontWeight:700, color:"#F7F0E6", lineHeight:1.0 }}>{partner.name}</div>
+                <div style={{ fontSize:8, fontWeight:800, letterSpacing:"0.35em", textTransform:"uppercase", color:"rgba(140,90,20,0.6)", marginBottom:6, fontFamily:"sans-serif" }}>{partner.categoryLabel}</div>
+                <div style={{ fontFamily:"'Cormorant Garamond','Georgia',serif", fontSize:26, fontWeight:700, color:"#1A0E04", lineHeight:1.0 }}>{partner.name}</div>
                 <div style={{ fontSize:9, fontWeight:800, letterSpacing:"0.35em", textTransform:"uppercase", color:"#C9963A", marginTop:7, fontFamily:"sans-serif" }}>{partner.city}</div>
               </div>
             </div>
+
             {(partner.rating || partner.reviews) && (
-              <div style={{ display:"flex", alignItems:"center", gap:10, paddingTop:14, borderTop:"1px solid rgba(255,255,255,0.06)" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:10, paddingTop:14, borderTop:"1px solid rgba(201,150,58,0.15)" }}>
                 {partner.rating && (
                   <div style={{ display:"flex", gap:3 }}>
-                    {[1,2,3,4,5].map(i=>(
+                    {[1,2,3,4,5].map(i => (
                       <svg key={i} width="11" height="11" viewBox="0 0 24 24"
                         fill={i<=Math.round(partner.rating)?"#C9963A":"none"}
                         stroke={i<=Math.round(partner.rating)?"#C9963A":"rgba(201,150,58,0.3)"}
@@ -106,11 +137,9 @@ function Modal({ partner, onClose }) {
                     ))}
                   </div>
                 )}
-                {(partner.rating || partner.reviews) && (
-                  <span style={{ fontSize:12, color:"rgba(247,240,230,0.5)", fontFamily:"sans-serif" }}>
-                    {partner.rating ? `${partner.rating}` : ""}{partner.reviews ? ` \u00b7 ${partner.reviews} avis` : ""}
-                  </span>
-                )}
+                <span style={{ fontSize:12, color:"rgba(30,15,2,0.45)", fontFamily:"sans-serif" }}>
+                  {partner.rating ? `${partner.rating}` : ""}{partner.reviews ? ` · ${partner.reviews} avis` : ""}
+                </span>
               </div>
             )}
           </div>
@@ -119,18 +148,22 @@ function Modal({ partner, onClose }) {
           {partner.badge && (
             <div style={{ display:"inline-flex", alignItems:"center", gap:7, padding:"8px 16px", borderRadius:99, background:"rgba(201,150,58,0.1)", border:"1px solid rgba(201,150,58,0.25)", marginBottom:24 }}>
               <span style={{ width:5, height:5, borderRadius:99, background:"#C9963A", display:"inline-block" }}/>
-              <span style={{ fontSize:9, fontWeight:800, letterSpacing:"0.25em", textTransform:"uppercase", color:"#C9963A", fontFamily:"sans-serif" }}>{partner.badge}</span>
+              <span style={{ fontSize:9, fontWeight:800, letterSpacing:"0.25em", textTransform:"uppercase", color:"#A07020", fontFamily:"sans-serif" }}>{partner.badge}</span>
             </div>
           )}
 
           {/* Offre flash */}
           {hasPromo && (
-            <div style={{ background:"linear-gradient(135deg,rgba(201,150,58,0.15),rgba(201,150,58,0.05))", border:"1px solid rgba(201,150,58,0.3)", borderRadius:20, padding:"18px 20px", marginBottom:24, position:"relative", overflow:"hidden" }}>
-              <div style={{ position:"absolute", top:0, right:0, width:80, height:80, borderRadius:"0 0 0 80px", background:"rgba(201,150,58,0.08)", pointerEvents:"none" }}/>
-              <div style={{ fontSize:8, fontWeight:800, letterSpacing:"0.4em", textTransform:"uppercase", color:"rgba(201,150,58,0.7)", marginBottom:8, fontFamily:"sans-serif" }}>Offre flash</div>
-              <div style={{ fontSize:16, fontWeight:700, color:"#F7F0E6", fontFamily:"sans-serif", marginBottom:14 }}>{partner.promo}</div>
+            <div style={{
+              background:"linear-gradient(135deg,rgba(201,150,58,0.12),rgba(201,150,58,0.04))",
+              border:"1px solid rgba(201,150,58,0.3)", borderRadius:20,
+              padding:"18px 20px", marginBottom:24, position:"relative", overflow:"hidden",
+            }}>
+              <div style={{ position:"absolute", top:0, right:0, width:80, height:80, borderRadius:"0 0 0 80px", background:"rgba(201,150,58,0.07)", pointerEvents:"none" }}/>
+              <div style={{ fontSize:8, fontWeight:800, letterSpacing:"0.4em", textTransform:"uppercase", color:"rgba(140,90,20,0.6)", marginBottom:8, fontFamily:"sans-serif" }}>Offre flash</div>
+              <div style={{ fontSize:16, fontWeight:700, color:"#1A0E04", fontFamily:"sans-serif", marginBottom:14 }}>{partner.promo}</div>
               <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                <div style={{ fontSize:8, fontWeight:800, letterSpacing:"0.2em", textTransform:"uppercase", color:"rgba(201,150,58,0.6)", fontFamily:"sans-serif" }}>Expire dans</div>
+                <div style={{ fontSize:8, fontWeight:800, letterSpacing:"0.2em", textTransform:"uppercase", color:"rgba(140,90,20,0.5)", fontFamily:"sans-serif" }}>Expire dans</div>
                 {[cd.h, cd.m, cd.s].map((v, i) => (
                   <span key={i} style={{ fontFamily:"monospace", fontSize:13, fontWeight:700, color:"#C9963A", background:"rgba(201,150,58,0.12)", padding:"3px 7px", borderRadius:7, letterSpacing:2 }}>
                     {v}{i<2?"h":"s"}
@@ -142,29 +175,33 @@ function Modal({ partner, onClose }) {
 
           {/* Description */}
           {partner.description && (
-            <p style={{ fontSize:13, color:"rgba(247,240,230,0.55)", fontFamily:"sans-serif", lineHeight:1.75, marginBottom:28 }}>{partner.description}</p>
+            <p style={{ fontSize:13, color:"rgba(30,15,2,0.55)", fontFamily:"sans-serif", lineHeight:1.75, marginBottom:28 }}>{partner.description}</p>
           )}
 
           {/* Contacts */}
           <div style={{ display:"flex", flexDirection:"column", gap:10, marginBottom:28 }}>
             {partner.whatsapp && (
-              <button onClick={wa} style={{ display:"flex", alignItems:"center", gap:12, padding:"16px 22px", borderRadius:18, background:"rgba(37,211,102,0.1)", border:"1px solid rgba(37,211,102,0.2)", cursor:"pointer", width:"100%", textAlign:"left" }}>
+              <button onClick={wa} style={{
+                display:"flex", alignItems:"center", gap:12, padding:"16px 22px",
+                borderRadius:18, background:"rgba(37,211,102,0.08)", border:"1px solid rgba(37,211,102,0.2)",
+                cursor:"pointer", width:"100%", textAlign:"left",
+              }}>
                 <span style={{ color:"#25D366", flexShrink:0 }}><WAIcon /></span>
-                <span style={{ fontSize:11, fontWeight:800, color:"#25D366", fontFamily:"sans-serif", letterSpacing:"0.1em", textTransform:"uppercase" }}>Contacter sur WhatsApp</span>
+                <span style={{ fontSize:11, fontWeight:800, color:"#1a7a3a", fontFamily:"sans-serif", letterSpacing:"0.1em", textTransform:"uppercase" }}>Contacter sur WhatsApp</span>
               </button>
             )}
             {partner.socials?.instagram && (
               <a href={`https://instagram.com/${partner.socials.instagram}`} target="_blank" rel="noreferrer"
-                style={{ display:"flex", alignItems:"center", gap:12, padding:"14px 22px", borderRadius:18, background:"rgba(225,48,108,0.1)", border:"1px solid rgba(225,48,108,0.2)", textDecoration:"none" }}>
+                style={{ display:"flex", alignItems:"center", gap:12, padding:"14px 22px", borderRadius:18, background:"rgba(225,48,108,0.07)", border:"1px solid rgba(225,48,108,0.2)", textDecoration:"none" }}>
                 <span style={{ color:"#E1306C", flexShrink:0 }}><IGIcon /></span>
-                <span style={{ fontSize:11, fontWeight:800, color:"#E1306C", fontFamily:"sans-serif", letterSpacing:"0.1em", textTransform:"uppercase" }}>@{partner.socials.instagram}</span>
+                <span style={{ fontSize:11, fontWeight:800, color:"#a02050", fontFamily:"sans-serif", letterSpacing:"0.1em", textTransform:"uppercase" }}>@{partner.socials.instagram}</span>
               </a>
             )}
             {partner.socials?.tiktok && (
               <a href={`https://tiktok.com/@${partner.socials.tiktok}`} target="_blank" rel="noreferrer"
-                style={{ display:"flex", alignItems:"center", gap:12, padding:"14px 22px", borderRadius:18, background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.1)", textDecoration:"none" }}>
-                <span style={{ color:"#fff", flexShrink:0 }}><TKIcon /></span>
-                <span style={{ fontSize:11, fontWeight:800, color:"rgba(255,255,255,0.7)", fontFamily:"sans-serif", letterSpacing:"0.1em", textTransform:"uppercase" }}>@{partner.socials.tiktok}</span>
+                style={{ display:"flex", alignItems:"center", gap:12, padding:"14px 22px", borderRadius:18, background:"rgba(0,0,0,0.04)", border:"1px solid rgba(0,0,0,0.1)", textDecoration:"none" }}>
+                <span style={{ color:"#1A0E04", flexShrink:0 }}><TKIcon /></span>
+                <span style={{ fontSize:11, fontWeight:800, color:"rgba(30,15,2,0.6)", fontFamily:"sans-serif", letterSpacing:"0.1em", textTransform:"uppercase" }}>@{partner.socials.tiktok}</span>
               </a>
             )}
           </div>
@@ -174,48 +211,75 @@ function Modal({ partner, onClose }) {
   );
 }
 
+// ── Carte partenaire ──────────────────────────────────────────────────────────
 function PartnerCard({ partner, onClick }) {
   const cd = useCountdown(partner.promo_deadline);
   const hasPromo = partner.promo && !cd.expired;
 
   return (
-    <div onClick={onClick} style={{ background:"linear-gradient(145deg,#0E0904,#0A0602)", border:`1px solid ${partner.is_featured ? "rgba(201,150,58,0.35)" : "rgba(255,255,255,0.06)"}`, borderRadius:24, padding:"20px 18px", cursor:"pointer", position:"relative", overflow:"hidden", transition:"all 0.25s", boxShadow:partner.is_featured?"0 8px 32px rgba(201,150,58,0.12)":"none" }}>
+    <div onClick={onClick} style={{
+      background: "linear-gradient(145deg, #FFFFFF, #FAF5EB)",
+      border: `1px solid ${partner.is_featured ? "rgba(201,150,58,0.5)" : "rgba(201,150,58,0.15)"}`,
+      borderRadius:24, padding:"20px 18px", cursor:"pointer",
+      position:"relative", overflow:"hidden",
+      transition:"all 0.25s",
+      boxShadow: partner.is_featured
+        ? "0 8px 40px rgba(201,150,58,0.18), 0 2px 8px rgba(0,0,0,0.04)"
+        : "0 2px 16px rgba(0,0,0,0.05)",
+    }}>
       {partner.is_featured && (
-        <div style={{ position:"absolute", top:0, left:0, right:0, height:2, background:"linear-gradient(90deg,transparent,rgba(201,150,58,0.7),transparent)" }}/>
+        <div style={{ position:"absolute", top:0, left:0, right:0, height:2, background:"linear-gradient(90deg,transparent,rgba(201,150,58,0.8),transparent)" }}/>
       )}
       <div style={{ display:"flex", alignItems:"flex-start", gap:14 }}>
-        <div style={{ width:56, height:56, borderRadius:16, flexShrink:0, background:"linear-gradient(145deg,#1C1008,#120A04)", border:"1px solid rgba(201,150,58,0.2)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:26 }}>{partner.emoji}</div>
+        <div style={{
+          width:56, height:56, borderRadius:16, flexShrink:0,
+          background:"linear-gradient(145deg,#FFF8EC,#F5EDD8)",
+          border:"1px solid rgba(201,150,58,0.25)",
+          display:"flex", alignItems:"center", justifyContent:"center", fontSize:26,
+          boxShadow:"0 2px 12px rgba(201,150,58,0.1)",
+        }}>{partner.emoji}</div>
         <div style={{ flex:1, minWidth:0 }}>
           <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:4 }}>
-            <span style={{ fontFamily:"'Cormorant Garamond','Georgia',serif", fontSize:18, fontWeight:700, color:"#F7F0E6", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{partner.name}</span>
-            {partner.is_featured && <span style={{ fontSize:9 }}>\ud83d\udccc</span>}
+            <span style={{ fontFamily:"'Cormorant Garamond','Georgia',serif", fontSize:18, fontWeight:700, color:"#1A0E04", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{partner.name}</span>
+            {partner.is_featured && <span style={{ fontSize:9 }}>📌</span>}
           </div>
-          <div style={{ fontSize:9, fontWeight:800, letterSpacing:"0.3em", textTransform:"uppercase", color:"rgba(201,150,58,0.6)", marginBottom:8, fontFamily:"sans-serif" }}>{partner.city}</div>
+          <div style={{ fontSize:9, fontWeight:800, letterSpacing:"0.3em", textTransform:"uppercase", color:"rgba(140,90,20,0.6)", marginBottom:8, fontFamily:"sans-serif" }}>{partner.city}</div>
           <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}>
+            {partner.categoryLabel && (
+              <span style={{ fontSize:8, fontWeight:800, letterSpacing:"0.2em", textTransform:"uppercase", color:"rgba(140,90,20,0.7)", background:"rgba(201,150,58,0.1)", border:"1px solid rgba(201,150,58,0.2)", borderRadius:99, padding:"2px 8px", fontFamily:"sans-serif" }}>{partner.categoryLabel}</span>
+            )}
             {partner.badge && (
-              <span style={{ fontSize:8, fontWeight:800, letterSpacing:"0.2em", textTransform:"uppercase", color:"rgba(201,150,58,0.8)", background:"rgba(201,150,58,0.1)", border:"1px solid rgba(201,150,58,0.2)", borderRadius:99, padding:"3px 10px", fontFamily:"sans-serif" }}>{partner.badge}</span>
+              <span style={{ fontSize:8, fontWeight:800, letterSpacing:"0.2em", textTransform:"uppercase", color:"rgba(140,90,20,0.8)", background:"rgba(201,150,58,0.08)", border:"1px solid rgba(201,150,58,0.2)", borderRadius:99, padding:"2px 8px", fontFamily:"sans-serif" }}>{partner.badge}</span>
             )}
             {partner.rating && (
-              <span style={{ fontSize:9, color:"rgba(201,150,58,0.7)", fontFamily:"sans-serif", fontWeight:700 }}>\u2605 {partner.rating}{partner.reviews ? ` (${partner.reviews})` : ""}</span>
+              <span style={{ fontSize:9, color:"#B8821E", fontFamily:"sans-serif", fontWeight:700 }}>★ {partner.rating}{partner.reviews ? ` (${partner.reviews})` : ""}</span>
             )}
           </div>
         </div>
       </div>
       {hasPromo && (
         <div style={{ marginTop:14, padding:"10px 14px", borderRadius:14, background:"rgba(201,150,58,0.08)", border:"1px solid rgba(201,150,58,0.2)", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-          <span style={{ fontSize:11, color:"#C9963A", fontWeight:700, fontFamily:"sans-serif" }}>{partner.promo}</span>
-          <span style={{ fontSize:10, color:"rgba(201,150,58,0.6)", fontFamily:"monospace", letterSpacing:1 }}>{cd.h}h{cd.m}m</span>
+          <span style={{ fontSize:11, color:"#A07020", fontWeight:700, fontFamily:"sans-serif" }}>{partner.promo}</span>
+          <span style={{ fontSize:10, color:"rgba(160,112,32,0.6)", fontFamily:"monospace", letterSpacing:1 }}>{cd.h}h{cd.m}m</span>
         </div>
       )}
     </div>
   );
 }
 
+// ── Page principale Partners ──────────────────────────────────────────────────
 export default function Partners() {
   const [partners, setPartners]         = useState([]);
   const [loading, setLoading]           = useState(true);
   const [selected, setSelected]         = useState(null);
   const [activeFilter, setActiveFilter] = useState("all");
+  const [search, setSearch]             = useState("");
+  const [searchHistory, setSearchHistory] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("partners_search_history") || "[]"); }
+    catch { return []; }
+  });
+  const [showHistory, setShowHistory]   = useState(false);
+  const searchRef = useRef(null);
 
   useEffect(() => {
     const fetchPartners = async () => {
@@ -239,64 +303,182 @@ export default function Partners() {
     formation: partners.filter(p => p.category === "formation").length,
   };
 
-  const filtered = activeFilter === "all"
-    ? partners
-    : partners.filter(p => p.category === activeFilter);
+  const filtered = partners.filter(p => {
+    const matchCat = activeFilter === "all" || p.category === activeFilter;
+    const q = search.trim().toLowerCase();
+    const matchSearch = !q ||
+      (p.name?.toLowerCase() || "").includes(q) ||
+      (p.city?.toLowerCase() || "").includes(q) ||
+      (p.categoryLabel?.toLowerCase() || "").includes(q);
+    return matchCat && matchSearch;
+  });
+
+  const handleSearchSubmit = (val) => {
+    const q = val.trim();
+    if (!q) return;
+    const updated = [q, ...searchHistory.filter(h => h !== q)].slice(0, 8);
+    setSearchHistory(updated);
+    localStorage.setItem("partners_search_history", JSON.stringify(updated));
+    setSearch(q);
+    setShowHistory(false);
+  };
+
+  const removeHistoryItem = (item, e) => {
+    e.stopPropagation();
+    const updated = searchHistory.filter(h => h !== item);
+    setSearchHistory(updated);
+    localStorage.setItem("partners_search_history", JSON.stringify(updated));
+  };
+
+  const clearHistory = () => {
+    setSearchHistory([]);
+    localStorage.removeItem("partners_search_history");
+  };
+
+  const clearSearch = () => {
+    setSearch("");
+    setShowHistory(false);
+    searchRef.current?.focus();
+  };
 
   return (
-    <div style={{ minHeight:"100vh", background:"#0A0602", display:"flex", justifyContent:"center" }}>
+    <div style={{ minHeight:"100vh", background:"linear-gradient(160deg, #FDFAF5 0%, #F5EDD8 100%)", display:"flex", justifyContent:"center" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap');
         * { box-sizing:border-box; margin:0; padding:0; }
         ::-webkit-scrollbar { display:none; }
+        .partner-search-input::placeholder { color: rgba(140,90,20,0.4); }
+        .partner-search-input:focus { outline: none; }
+        .filter-btn:hover { opacity: 0.85; transform: translateY(-1px); }
       `}</style>
 
       <div style={{ width:"100%", maxWidth:430, paddingBottom:80 }}>
 
-        {/* Header */}
-        <div style={{ padding:"32px 22px 20px", position:"relative" }}>
-          <div style={{ position:"absolute", top:0, left:0, right:0, height:"40%", background:"radial-gradient(ellipse at top,rgba(201,150,58,0.07),transparent)", pointerEvents:"none" }}/>
-          <div style={{ fontSize:8, fontWeight:800, letterSpacing:"0.4em", textTransform:"uppercase", color:"rgba(201,150,58,0.5)", marginBottom:10, fontFamily:"sans-serif" }}>AfroTresse \u00b7 Partenaires</div>
-          <div style={{ fontFamily:"'Cormorant Garamond','Georgia',serif", fontSize:30, fontWeight:700, color:"#F7F0E6", lineHeight:1.1, marginBottom:8 }}>
+        {/* Hero Header */}
+        <div style={{ padding:"44px 24px 28px", position:"relative", overflow:"hidden" }}>
+          {/* Déco fond */}
+          <div style={{ position:"absolute", top:-40, right:-40, width:200, height:200, borderRadius:"50%", background:"radial-gradient(circle,rgba(201,150,58,0.12),transparent 70%)", pointerEvents:"none" }}/>
+          <div style={{ position:"absolute", bottom:0, left:0, right:0, height:1, background:"linear-gradient(90deg,transparent,rgba(201,150,58,0.3),transparent)" }}/>
+
+          <div style={{ fontSize:8, fontWeight:800, letterSpacing:"0.5em", textTransform:"uppercase", color:"rgba(140,90,20,0.5)", marginBottom:12, fontFamily:"sans-serif" }}>AfroTresse · Partenaires</div>
+          <div style={{ fontFamily:"'Cormorant Garamond','Georgia',serif", fontSize:34, fontWeight:700, color:"#1A0E04", lineHeight:1.1, marginBottom:10 }}>
             Nos partenaires<br/><span style={{ color:"#C9963A" }}>de confiance</span>
           </div>
-          <p style={{ fontSize:12, color:"rgba(247,240,230,0.4)", fontFamily:"sans-serif", lineHeight:1.6 }}>
-            Des professionnelles s\u00e9lectionn\u00e9es par AfroTresse pour vous accompagner.
+          <p style={{ fontSize:13, color:"rgba(30,15,2,0.45)", fontFamily:"sans-serif", lineHeight:1.65 }}>
+            Des professionnelles sélectionnées par AfroTresse pour vous accompagner.
           </p>
         </div>
 
-        {/* Filtres */}
-        <div style={{ padding:"0 16px 20px" }}>
+        {/* Barre de recherche */}
+        <div style={{ padding:"16px 20px 0", position:"relative" }}>
+          <div style={{
+            display:"flex", alignItems:"center", gap:10,
+            background:"#FFFFFF",
+            border:"1.5px solid rgba(201,150,58,0.3)",
+            borderRadius:18, padding:"12px 16px",
+            boxShadow:"0 4px 24px rgba(201,150,58,0.1)",
+          }}>
+            <span style={{ color:"rgba(140,90,20,0.5)", fontSize:14, flexShrink:0 }}>🔍</span>
+            <input
+              ref={searchRef}
+              type="text"
+              placeholder="Rechercher un salon, une ville..."
+              value={search}
+              className="partner-search-input"
+              style={{ flex:1, background:"transparent", border:"none", fontSize:13, color:"#1A0E04", fontFamily:"sans-serif" }}
+              onChange={e => { setSearch(e.target.value); setShowHistory(false); }}
+              onFocus={() => setShowHistory(true)}
+              onBlur={() => setTimeout(() => setShowHistory(false), 200)}
+              onKeyDown={e => { if (e.key === "Enter") handleSearchSubmit(search); }}
+            />
+            {search ? (
+              <button onClick={clearSearch} style={{ flexShrink:0, color:"rgba(140,90,20,0.5)", fontSize:14, cursor:"pointer", background:"none", border:"none", padding:"0 2px" }}>✕</button>
+            ) : (
+              <span style={{ color:"rgba(140,90,20,0.3)", fontSize:11 }}>↵</span>
+            )}
+          </div>
+
+          {/* Dropdown historique */}
+          {showHistory && searchHistory.length > 0 && !search && (
+            <div style={{
+              position:"absolute", top:"100%", left:20, right:20, zIndex:50,
+              background:"#FFFFFF", border:"1.5px solid rgba(201,150,58,0.2)",
+              borderRadius:16, boxShadow:"0 12px 40px rgba(0,0,0,0.1)",
+              overflow:"hidden", marginTop:4,
+            }}>
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 14px 6px" }}>
+                <span style={{ fontSize:9, fontWeight:800, letterSpacing:"0.3em", textTransform:"uppercase", color:"rgba(140,90,20,0.4)", fontFamily:"sans-serif" }}>Recherches récentes</span>
+                <button onClick={clearHistory} style={{ fontSize:9, color:"rgba(201,150,58,0.7)", fontWeight:700, cursor:"pointer", background:"none", border:"none", fontFamily:"sans-serif" }}>Tout effacer</button>
+              </div>
+              {searchHistory.map(item => (
+                <div key={item}
+                  onMouseDown={() => { setSearch(item); handleSearchSubmit(item); }}
+                  style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 14px", cursor:"pointer", borderTop:"1px solid rgba(201,150,58,0.07)" }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                    <span style={{ color:"rgba(140,90,20,0.4)", fontSize:11 }}>🕐</span>
+                    <span style={{ fontSize:13, color:"#1A0E04", fontFamily:"sans-serif" }}>{item}</span>
+                  </div>
+                  <button
+                    onMouseDown={e => removeHistoryItem(item, e)}
+                    style={{ fontSize:11, color:"rgba(140,90,20,0.4)", cursor:"pointer", background:"none", border:"none", padding:"0 4px", fontWeight:700 }}>✕</button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Filtres catégorie */}
+        <div style={{ padding:"18px 16px 16px" }}>
           <div style={{ display:"flex", gap:8, overflowX:"auto", paddingBottom:4 }}>
             {CATEGORIES.map(cat => {
               const isActive = activeFilter === cat.id;
               return (
-                <button key={cat.id} onClick={() => setActiveFilter(cat.id)} style={{ flexShrink:0, display:"flex", alignItems:"center", gap:6, padding:"8px 14px", borderRadius:99, cursor:"pointer", fontFamily:"sans-serif", fontSize:11, fontWeight:800, letterSpacing:"0.05em", transition:"all 0.2s", background:isActive?"#C9963A":"rgba(201,150,58,0.08)", border:isActive?"1px solid #C9963A":"1px solid rgba(201,150,58,0.2)", color:isActive?"#0A0602":"rgba(201,150,58,0.7)", boxShadow:isActive?"0 4px 16px rgba(201,150,58,0.3)":"none" }}>
+                <button key={cat.id} className="filter-btn" onClick={() => setActiveFilter(cat.id)} style={{
+                  flexShrink:0, display:"flex", alignItems:"center", gap:6,
+                  padding:"9px 16px", borderRadius:99, cursor:"pointer",
+                  fontFamily:"sans-serif", fontSize:11, fontWeight:800, letterSpacing:"0.04em",
+                  transition:"all 0.2s",
+                  background: isActive ? "#C9963A" : "#FFFFFF",
+                  border: isActive ? "1.5px solid #C9963A" : "1.5px solid rgba(201,150,58,0.25)",
+                  color: isActive ? "#FFFFFF" : "rgba(140,90,20,0.7)",
+                  boxShadow: isActive ? "0 4px 16px rgba(201,150,58,0.35)" : "0 2px 8px rgba(0,0,0,0.04)",
+                }}>
                   <span>{cat.emoji}</span>
                   <span>{cat.label}</span>
-                  <span style={{ fontSize:9, fontWeight:900, background:isActive?"rgba(0,0,0,0.2)":"rgba(201,150,58,0.15)", color:isActive?"#0A0602":"#C9963A", borderRadius:99, padding:"1px 6px", marginLeft:2 }}>{counts[cat.id]}</span>
+                  <span style={{
+                    fontSize:9, fontWeight:900,
+                    background: isActive ? "rgba(255,255,255,0.25)" : "rgba(201,150,58,0.12)",
+                    color: isActive ? "#FFF" : "#C9963A",
+                    borderRadius:99, padding:"1px 6px", marginLeft:2,
+                  }}>{counts[cat.id]}</span>
                 </button>
               );
             })}
-            {activeFilter !== "all" && (
-              <button onClick={() => setActiveFilter("all")} style={{ flexShrink:0, display:"flex", alignItems:"center", gap:5, padding:"8px 12px", borderRadius:99, cursor:"pointer", fontFamily:"sans-serif", fontSize:10, fontWeight:800, background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)", color:"rgba(247,240,230,0.35)", transition:"all 0.2s" }}>
-                \u2715 Reset
-              </button>
-            )}
           </div>
-          <div style={{ marginTop:14, fontSize:10, color:"rgba(247,240,230,0.25)", fontFamily:"sans-serif", letterSpacing:"0.1em" }}>
-            {loading ? "Chargement..." : `${filtered.length} partenaire${filtered.length > 1 ? "s" : ""}${activeFilter !== "all" ? ` \u00b7 ${CATEGORIES.find(c=>c.id===activeFilter)?.label}` : ""}`}
+          <div style={{ marginTop:12, fontSize:10, color:"rgba(30,15,2,0.3)", fontFamily:"sans-serif", letterSpacing:"0.1em" }}>
+            {loading
+              ? "Chargement..."
+              : `${filtered.length} partenaire${filtered.length > 1 ? "s" : ""}${activeFilter !== "all" ? ` · ${CATEGORIES.find(c=>c.id===activeFilter)?.label}` : ""}${search ? ` · "${search}"` : ""}`
+            }
           </div>
         </div>
 
         {/* Liste */}
         <div style={{ padding:"0 16px", display:"flex", flexDirection:"column", gap:14 }}>
           {loading ? (
-            <div style={{ textAlign:"center", color:"rgba(201,150,58,0.3)", fontSize:10, fontFamily:"sans-serif", letterSpacing:"0.3em", textTransform:"uppercase", paddingTop:40 }}>Chargement...</div>
+            <div style={{ textAlign:"center", color:"rgba(201,150,58,0.4)", fontSize:10, fontFamily:"sans-serif", letterSpacing:"0.3em", textTransform:"uppercase", paddingTop:40 }}>Chargement...</div>
           ) : filtered.length === 0 ? (
-            <div style={{ textAlign:"center", color:"rgba(247,240,230,0.2)", fontSize:10, fontFamily:"sans-serif", letterSpacing:"0.3em", textTransform:"uppercase", paddingTop:40 }}>Aucun partenaire</div>
+            <div style={{ textAlign:"center", paddingTop:40 }}>
+              <div style={{ fontSize:32, marginBottom:12 }}>🔍</div>
+              <div style={{ color:"rgba(30,15,2,0.3)", fontSize:12, fontFamily:"sans-serif" }}>Aucun partenaire trouvé</div>
+              {search && (
+                <button onClick={clearSearch} style={{ marginTop:12, fontSize:11, color:"#C9963A", fontWeight:700, cursor:"pointer", background:"none", border:"none", fontFamily:"sans-serif" }}>
+                  Effacer la recherche
+                </button>
+              )}
+            </div>
           ) : (
-            filtered.map(p => <PartnerCard key={p.id} partner={p} onClick={() => setSelected(p)} />)
+            filtered.map(p => <PartnerCard key={p.id} partner={p} onClick={() => { handleSearchSubmit(p.name); setSelected(p); }} />)
           )}
         </div>
       </div>
