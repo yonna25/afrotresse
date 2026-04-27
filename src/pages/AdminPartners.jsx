@@ -68,23 +68,36 @@ export default function AdminPartners() {
 
   return (
     <div className="min-h-screen bg-[#0F0500] text-white p-4 pb-40">
+      {/* Barre de déconnexion fixe */}
       <div className="fixed top-0 left-0 w-full z-[1000] bg-red-600 text-white p-4 flex justify-between items-center shadow-2xl">
-        <span className="text-[10px] font-black uppercase tracking-widest">Admin : Reine</span>
+        <span className="text-[10px] font-black uppercase tracking-widest">Admin Mode</span>
         <button onClick={() => supabase.auth.signOut().then(() => window.location.href="/login")} className="bg-white text-red-600 px-4 py-2 rounded-xl font-black text-[10px] uppercase">Déconnexion</button>
       </div>
 
       <div className="mt-20">
         <header className="flex justify-between items-center mb-8 px-2">
           <h1 className="text-[#C9963A] text-2xl font-black uppercase tracking-tighter">Partenaires</h1>
-          <button onClick={() => { setFormData(initialForm); setIsEditing(null); setShowForm(!showForm); }} className="w-12 h-12 rounded-2xl bg-[#C9963A] text-black text-2xl font-light">
+          <button onClick={() => { setFormData(initialForm); setIsEditing(null); setShowForm(!showForm); }} className="w-12 h-12 rounded-2xl bg-[#C9963A] text-black text-2xl">
             {showForm ? "✕" : "+"}
           </button>
         </header>
 
+        {/* Barre de recherche avec option "Effacer" */}
         <div className="relative mb-8">
-          <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher un partenaire..." className="w-full bg-white/5 border border-white/10 p-5 rounded-2xl outline-none focus:border-[#C9963A]/50 transition-all text-sm" />
+          <input 
+            type="text" 
+            value={search} 
+            onChange={e => setSearch(e.target.value)} 
+            placeholder="Rechercher..." 
+            className="w-full bg-white/5 border border-white/10 p-5 rounded-2xl outline-none text-sm" 
+          />
           {search && (
-            <button onClick={() => setSearch("")} className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black uppercase text-[#C9963A] bg-black/40 px-2 py-1 rounded-md">Effacer</button>
+            <button 
+              onClick={() => setSearch("")} 
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black uppercase text-[#C9963A]"
+            >
+              Effacer
+            </button>
           )}
         </div>
 
@@ -92,7 +105,7 @@ export default function AdminPartners() {
           {filtered.map(p => (
             <div key={p.id} className="bg-zinc-900/40 p-4 rounded-[2.5rem] border border-white/5 flex items-center justify-between shadow-xl">
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 overflow-hidden shadow-inner">
+                <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 overflow-hidden">
                   {p.logo_url ? <img src={p.logo_url} className="w-full h-full object-cover" alt="" /> : p.emoji || "👑"}
                 </div>
                 <div>
@@ -103,11 +116,16 @@ export default function AdminPartners() {
                   </div>
                 </div>
               </div>
+              
               <div className="flex items-center gap-2">
-                <button onClick={() => toggleStatus(p.id, p.active)} className={`px-3 py-2 rounded-xl text-[9px] font-black uppercase transition-all ${p.active ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
+                {/* Bouton de bascule ON/OFF */}
+                <button 
+                  onClick={() => toggleStatus(p.id, p.active)} 
+                  className={`px-3 py-2 rounded-xl text-[9px] font-black uppercase transition-all ${p.active ? 'bg-green-500/10 text-green-500 border border-green-500/20' : 'bg-red-500/10 text-red-500 border border-red-500/20'}`}
+                >
                   {p.active ? 'ON' : 'OFF'}
                 </button>
-                <button onClick={() => handleEdit(p)} className="p-3 bg-white/5 rounded-xl text-xs hover:bg-white/10">✏️</button>
+                <button onClick={() => handleEdit(p)} className="p-3 bg-white/5 rounded-xl text-xs">✏️</button>
               </div>
             </div>
           ))}
