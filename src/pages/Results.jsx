@@ -10,7 +10,6 @@ import {
 } from "../services/stableMessage.js";
 import { useFavorites } from "../hooks/useFavorites.js";
 
-
 const STYLES_PER_PAGE = 3;
 
 // ─── ProtectedImg ─────────────────────────────────────────────────────────────
@@ -109,11 +108,8 @@ export default function Results() {
   const [zoomImage, setZoomImage]     = useState(null);
   const [errorMsg, setErrorMsg]       = useState("");
   const [showFireworks, setShowFireworks] = useState(false);
-  const [isTesting, setIsTesting]     = useState(false); // État pour le chargement du test
+  const [isTesting, setIsTesting]     = useState(false); // État pour le test IA
   const [stableMsg, setStableMsg]     = useState({ headline: "Voici tes résultats ✨", subtext: "" });
-  const [savePrenom, setSavePrenom]   = useState(() => localStorage.getItem("afrotresse_user_name") || "");
-  const [saveEmail, setSaveEmail]     = useState(() => localStorage.getItem("afrotresse_email") || "");
-  const [saveDone, setSaveDone]       = useState(() => !!localStorage.getItem("afrotresse_email"));
   const [displayName, setDisplayName] = useState(() => localStorage.getItem("afrotresse_user_name") || "");
 
   const { favorites, count: favCount, isFav, toggleFav, canAddMore, FREE_LIMIT } = useFavorites();
@@ -127,14 +123,7 @@ export default function Results() {
   });
 
   const topRef   = useRef(null);
-  const errorRef = useRef(null);
   const userName = localStorage.getItem("afrotresse_user_name") || "Reine";
-
-  const consumeFireworksFlag = () => {
-    const flag = sessionStorage.getItem("afrotresse_trigger_fireworks");
-    if (flag) { sessionStorage.removeItem("afrotresse_trigger_fireworks"); return true; }
-    return false;
-  };
 
   useEffect(() => {
     const raw = sessionStorage.getItem("afrotresse_results");
@@ -144,51 +133,47 @@ export default function Results() {
         setFaceShape(parsed.faceShape || "oval");
         const recs = parsed.recommendations || [];
         setStyles(recs);
-        if (recs.length > 0 && consumeFireworksFlag()) {
+        if (recs.length > 0 && sessionStorage.getItem("afrotresse_trigger_fireworks")) {
           setShowFireworks(true);
+          sessionStorage.removeItem("afrotresse_trigger_fireworks");
           resetMessageAssignment();
         }
-        const sessionId   = getOrCreateSessionId();
-        const name        = localStorage.getItem("afrotresse_user_name") || "";
-        const confidence  = parsed.confidence ?? 0.5;
-        const shape       = parsed.faceShape || "oval";
-        setStableMsg(generateStableMessage({ faceShape: shape, sessionId, name, confidence }));
+        const sessionId = getOrCreateSessionId();
+        setStableMsg(generateStableMessage({ 
+          faceShape: parsed.faceShape || "oval", 
+          sessionId, 
+          name: localStorage.getItem("afrotresse_user_name") || "", 
+          confidence: parsed.confidence ?? 0.5 
+        }));
       } catch (e) { console.error("Error parsing results:", e); }
     }
     const photo = sessionStorage.getItem("afrotresse_photo");
     if (photo) setSelfieUrl(photo);
-
     syncCreditsFromServer().then(c => setCredits(c)).catch(() => setCredits(getCredits()));
   }, []);
 
-  // Fonction de test IA connectée au bouton
+  // FONCTION DE TEST IA CONNECTÉE
   const handleTestTryOn = async (style) => {
-    if (!selfieUrl) {
-      alert("Aucun selfie trouvé pour le test.");
-      return;
-    }
-    
+    if (!selfieUrl) return alert("Aucun selfie trouvé.");
     setIsTesting(true);
     try {
       const res = await fetch('/api/tryon', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          prompt: `A woman with ${style.name} hairstyle, ${style.description}, high quality luxury photography`,
+          prompt: `${style.name}: ${style.description}`,
           image: selfieUrl 
         })
       });
 
-      if (res.ok) {
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        setZoomImage(url); // Ouvre le résultat dans la vue plein écran
+      const data = await res.json();
+      if (res.ok && data.image) {
+        setZoomImage(data.image); // Affiche le résultat dans le zoom
       } else {
-        alert("Le test a échoué (vérifie tes logs Vercel)");
+        alert("L'IA prépare encore le modèle. Réessaie dans 30 secondes.");
       }
     } catch (err) {
-      console.error(err);
-      alert("Erreur de connexion à l'API");
+      alert("Erreur de connexion");
     } finally {
       setIsTesting(false);
     }
@@ -222,101 +207,16 @@ export default function Results() {
   };
 
   const displayedStyles = getPageStyles(currentPage);
-
-  const goToPage = (page) => {
-    setCurrentPage(page);
-    localStorage.setItem("afrotresse_current_page", String(page));
-    topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
-
-  const handleGenerateMore = async () => {
-    if (credits === 0) { navigate("/credits"); return; }
-    const ok = await consumeCredits(1);
-    if (!ok) { navigate("/credits"); return; }
-    
-    setCredits(getCredits());
-    const nextPage = unlockedPages + 1;
-    setUnlockedPages(nextPage);
-    setCurrentPage(nextPage);
-    localStorage.setItem("afrotresse_unlocked_pages", String(nextPage));
-    localStorage.setItem("afrotresse_current_page", String(nextPage));
-    setShowFireworks(true);
-    topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
-
   const totalPages = styles.length > 0 ? Math.ceil(styles.length / STYLES_PER_PAGE) : 1;
-  const allStylesSeen = unlockedPages >= totalPages && unlockedPages > 1;
-  const [showCatalogueEnd, setShowCatalogueEnd] = useState(false);
-
-  useEffect(() => {
-    if (styles.length > 0 && allStylesSeen) {
-      setShowCatalogueEnd(true);
-    }
-  }, [unlockedPages, styles.length, allStylesSeen]);
-
-  const handleDiscoverMore = async () => {
-    if (credits <= 0) { navigate("/credits"); return; }
-    const ok = await consumeCredits(1);
-    if (!ok) { navigate("/credits"); return; }
-    
-    setCredits(getCredits());
-    setUnlockedPages(1);
-    setCurrentPage(1);
-    localStorage.setItem("afrotresse_unlocked_pages", "1");
-    localStorage.setItem("afrotresse_current_page", "1");
-    setShowCatalogueEnd(false);
-    setShowFireworks(true);
-    topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
 
   const handleToggleFav = (style) => {
     const result = toggleFav(style);
     if (result && !result.success && result.reason === "limit_reached") {
       setErrorMsg(`💎 Limite de ${FREE_LIMIT} favoris atteints !`);
-      setTimeout(() => errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
     }
   };
 
-  // Rendu conditionnel si pas de styles (page d'accueil/intro)
-  if (!styles.length) {
-    return (
-      <div className="min-h-[100dvh] bg-[#1A0A00] text-[#FAF4EC] flex flex-col relative overflow-hidden">
-        <div className="relative h-52 overflow-hidden bg-[#1A0A00] flex items-center justify-center">
-          <div className="absolute inset-0 flex flex-col items-center justify-center"
-            style={{ background: "linear-gradient(160deg, rgba(201,150,58,0.15) 0%, rgba(44,26,14,0.7) 100%)" }}>
-            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 200, damping: 18 }} className="text-5xl mb-3">👑</motion.div>
-            <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="text-white font-black text-2xl text-center px-4 leading-tight">Ton visage,<br /><span className="text-[#C9963A]">tes styles ✨</span></motion.p>
-          </div>
-          <div className="absolute bottom-0 left-0 right-0 h-24" style={{ background: "linear-gradient(to bottom, transparent, #1A0A00)" }} />
-        </div>
-
-        <div className="flex flex-col flex-1 px-5 pt-2 pb-32">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="mb-5">
-            <h2 className="text-xl font-black text-white mb-2">Découvre les tresses adaptées à ton visage 💛</h2>
-            <p className="text-[12px] text-white/50 leading-relaxed">Un selfie suffit pour trouver la coiffure qui te correspond.</p>
-          </motion.div>
-
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="flex flex-col gap-3 mb-8">
-            {[{ icon: "📸", label: "Prends un selfie", sub: "Ou uploade une photo existante" }, { icon: "🔍", label: "Lecture de visage", sub: "Tes proportions analysées en secondes" }, { icon: "✨", label: "Styles personnalisés", sub: "3 recommandations taillées pour toi" }].map((step, i) => (
-              <motion.div key={i} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 + i * 0.08 }} className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl px-4 py-3">
-                <span className="text-2xl">{step.icon}</span>
-                <div>
-                  <p className="text-sm font-bold text-white leading-none">{step.label}</p>
-                  <p className="text-[10px] text-white/40 mt-0.5">{step.sub}</p>
-                </div>
-                <div className="ml-auto w-6 h-6 rounded-full bg-[#C9963A]/20 border border-[#C9963A]/40 flex items-center justify-center">
-                  <span className="text-[#C9963A] text-[10px] font-black">{i + 1}</span>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-
-          <motion.button initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.65 }} whileTap={{ scale: 0.97 }} onClick={() => navigate("/camera")} className="w-full py-5 rounded-2xl font-black text-lg text-[#2C1A0E] shadow-2xl" style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)", boxShadow: "0 0 30px rgba(201,150,58,0.4)" }}>📸 Prendre mon selfie</motion.button>
-          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }} className="text-center text-[10px] text-white/30 mt-3">2 crédits offerts • Aucune inscription requise</motion.p>
-        </div>
-      </div>
-    );
-  }
+  if (!styles.length) return null; // Ou chargement
 
   return (
     <div className="min-h-[100dvh] bg-[#1A0A00] text-[#FAF4EC] p-4 sm:p-6 pb-40 relative">
@@ -324,20 +224,15 @@ export default function Results() {
       {showFireworks && <Fireworks onDone={() => setShowFireworks(false)} />}
       <div ref={topRef} />
 
-      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-10 flex flex-row gap-5 items-center bg-white/5 p-5 rounded-[2.5rem] border border-white/10" style={{ boxShadow: "0 0 40px rgba(201,150,58,0.2)" }}>
+      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-10 flex flex-row gap-5 items-center bg-white/5 p-5 rounded-[2.5rem] border border-white/10 shadow-2xl">
         <div className="relative shrink-0">
-          {selfieUrl ? (
-            <ProtectedImg src={selfieUrl} className="w-20 h-20 rounded-2xl border-2 border-[#C9963A] object-cover" alt="Moi" />
-          ) : (
-            <div className="w-20 h-20 rounded-2xl border-2 border-white/10 bg-white/5 flex items-center justify-center text-[10px] text-white/50">Photo</div>
-          )}
+          <ProtectedImg src={selfieUrl} className="w-20 h-20 rounded-2xl border-2 border-[#C9963A] object-cover" alt="Moi" />
           <div className="absolute -bottom-2 -right-2 bg-[#C9963A] text-[#2C1A0E] text-[10px] font-black px-2 py-1 rounded-md uppercase">Moi</div>
         </div>
         <div className="flex flex-col flex-1 min-w-0">
-          <h1 className="font-bold text-lg sm:text-2xl text-[#C9963A] leading-tight break-words">
+          <h1 className="font-bold text-lg sm:text-2xl text-[#C9963A] leading-tight">
             {displayName ? <><span className="block">Voici tes résultats</span><span className="text-white">{displayName}</span> ✨</> : stableMsg.headline}
           </h1>
-          <p className="text-[11px] opacity-80 leading-snug mt-1.5">{stableMsg.subtext}</p>
         </div>
       </motion.div>
 
@@ -351,7 +246,7 @@ export default function Results() {
             <motion.div key={style.id || index} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.1 }} className="bg-[#3D2616] rounded-[2.5rem] overflow-hidden border border-[#C9963A]/20 shadow-2xl">
               <div className="grid grid-cols-3 gap-0.5 h-72 bg-black/40">
                 <div className="col-span-2 h-full overflow-hidden">
-                  <ProtectedImg src={style.views?.face || `/styles/${styleId}-face.webp`} className="w-full h-full object-cover cursor-zoom-in" onClick={() => setZoomImage(style.views?.face || `/styles/${styleId}-face.webp`)} alt={style.name} />
+                  <ProtectedImg src={style.views?.face || `/styles/${styleId}-face.webp`} className="w-full h-full object-cover cursor-zoom-in" onClick={() => setZoomImage(style.views?.face || `/styles/${styleId}-face.webp`)} />
                 </div>
                 <div className="col-span-1 grid grid-rows-2 gap-0.5">
                   <ProtectedImg src={style.views?.back || `/styles/${styleId}-back.webp`} className="w-full h-full object-cover cursor-zoom-in" onClick={() => setZoomImage(style.views?.back || `/styles/${styleId}-back.webp`)} />
@@ -362,17 +257,17 @@ export default function Results() {
               <div className="p-6">
                 <div className="flex justify-between items-start mb-3">
                   <div>
-                    <h3 className="font-bold text-xl leading-none mb-1">{style.name}</h3>
-                    <div className="flex items-center gap-3 text-[10px] opacity-40 uppercase tracking-tighter">
+                    <h3 className="font-bold text-xl mb-1">{style.name}</h3>
+                    <div className="flex items-center gap-3 text-[10px] opacity-40">
                       <span>👁️ {stats.views}</span>
                       <span>❤️ {stats.likes}</span>
                     </div>
                   </div>
-                  <button onClick={() => handleToggleFav(style)} className="w-10 h-10 rounded-2xl flex items-center justify-center transition-all active:scale-90" style={{ background: isFavorited ? "rgba(201,150,58,0.2)" : "rgba(255,255,255,0.05)", border: isFavorited ? "1px solid #C9963A" : "1px solid rgba(255,255,255,0.1)" }}>
+                  <button onClick={() => handleToggleFav(style)} className="w-10 h-10 rounded-2xl flex items-center justify-center bg-white/5 border border-white/10">
                     {isFavorited ? "❤️" : "🤍"}
                   </button>
                 </div>
-                <p className="text-[11px] opacity-60 leading-relaxed mb-6 h-12 overflow-hidden">{style.description}</p>
+                <p className="text-[11px] opacity-60 leading-relaxed mb-6">{style.description}</p>
                 
                 {/* BOUTON DE TEST CONNECTÉ */}
                 <button 
@@ -380,7 +275,7 @@ export default function Results() {
                   disabled={isTesting}
                   className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 text-white text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all disabled:opacity-50"
                 >
-                  {isTesting ? "Chargement IA..." : "🧪 TESTER LE RENDU IA"}
+                  {isTesting ? "⏳ Génération en cours..." : "🧪 TESTER LE RENDU IA"}
                 </button>
               </div>
             </motion.div>
@@ -388,28 +283,17 @@ export default function Results() {
         })}
       </div>
 
-      {unlockedPages < totalPages && (
-        <div className="mt-12 mb-4">
-          <button onClick={handleGenerateMore} className="w-full py-6 rounded-[2rem] font-black text-[#2C1A0E] shadow-2xl flex items-center justify-center gap-3 active:scale-95 transition-all relative overflow-hidden" style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}>
-            <span className="text-lg">✨ Voir 3 autres styles</span>
-            <div className="bg-[#2C1A0E]/10 px-2 py-1 rounded-lg text-[9px] uppercase">-1 Crédit</div>
-          </button>
-        </div>
-      )}
-
-      {/* Modal Zoom existant */}
+      {/* Modal Zoom partagé (utilisé aussi pour le résultat IA) */}
       <AnimatePresence>
         {zoomImage && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setZoomImage(null)} className="fixed inset-0 z-[10000] bg-black/95 flex items-center justify-center p-4 backdrop-blur-md">
-            <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="relative max-w-full max-h-full">
-              <img src={zoomImage} className="max-w-full max-h-[85vh] rounded-3xl shadow-2xl border border-white/10 object-contain" alt="Aperçu" />
-              <button className="absolute -top-12 right-0 text-white/50 text-sm font-bold uppercase tracking-widest">Fermer ×</button>
+            <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }} className="relative max-w-full max-h-full">
+              <img src={zoomImage} className="max-w-full max-h-[85vh] rounded-3xl border border-white/10 object-contain" alt="Aperçu" />
+              <p className="text-center text-white/50 text-[10px] mt-4 uppercase tracking-widest">Cliquer pour fermer</p>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-
-      <div className="h-20" />
     </div>
   );
 }
