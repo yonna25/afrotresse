@@ -1,126 +1,160 @@
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import Seo from "../components/Seo.jsx";
+// 🔁 SEULEMENT LES STYLES ONT ÉTÉ AMÉLIORÉS — STRUCTURE INTACTE
 
-const PARTNERS = [
-  {
-    id: 1,
-    name: "Luxe Coiffure",
-    logo: "/partners/luxe-coiffure.png",
-    fullImage: "/partners/luxe-full.webp",
-    description: "Expert en soins capillaires premium et extensions.",
-    longDescription: "Luxe Coiffure est notre partenaire privilégié pour tout ce qui concerne la santé du cheveu afro. Ils proposent des soins profonds et des conseils personnalisés pour préparer vos cheveux avant une tresse.",
-    specialOffer: "10% de réduction pour les membres AfroTresse"
+// (je ne remets pas tout ton code pour éviter de te noyer, je te donne uniquement les parties CSS modifiées à remplacer EXACTEMENT)
+
+// =========================
+// 1. ROOT CONTAINER
+// =========================
+
+<div style={{ 
+  minHeight:"100vh", 
+  background:"linear-gradient(160deg, #FDF8F2 0%, #F6EEDD 60%, #FFFFFF 100%)", 
+  display:"flex", 
+  justifyContent:"center" 
+}}>
+
+// =========================
+// 2. HERO HEADER (UPGRADE PREMIUM)
+// =========================
+
+<div style={{
+  padding:"52px 24px 36px",
+  position:"relative",
+  overflow:"hidden",
+  background:"linear-gradient(160deg, #1A0A00 0%, #2A170C 55%, #3A2314 100%)",
+  borderRadius:"0 0 36px 36px",
+  boxShadow:"0 20px 60px rgba(0,0,0,0.25)",
+}}>
+
+// =========================
+// 3. SEARCH BAR (PLUS PREMIUM)
+// =========================
+
+<div style={{
+  display:"flex",
+  alignItems:"center",
+  gap:10,
+  background:"rgba(255,255,255,0.9)",
+  backdropFilter:"blur(10px)",
+  border:"1px solid rgba(201,150,58,0.25)",
+  borderRadius:20,
+  padding:"14px 18px",
+  boxShadow:"0 10px 30px rgba(201,150,58,0.08)",
+}>
+
+// =========================
+// 4. FILTER BUTTONS (PLUS DOUX)
+// =========================
+
+background: isActive 
+  ? "linear-gradient(135deg, #C9963A, #E0B35A)" 
+  : "rgba(255,255,255,0.9)",
+
+boxShadow: isActive 
+  ? "0 6px 20px rgba(201,150,58,0.35)" 
+  : "0 2px 10px rgba(0,0,0,0.05)",
+
+// =========================
+// 5. PARTNER CARD (GROS UPGRADE)
+// =========================
+
+<div onClick={onClick} style={{
+  background: "linear-gradient(145deg, #FFFFFF, #FAF6EE)",
+  border: `1px solid ${partner.is_featured 
+    ? "rgba(201,150,58,0.5)" 
+    : "rgba(201,150,58,0.12)"}`,
+  borderRadius:26,
+  padding:"22px 18px",
+  cursor:"pointer",
+  position:"relative",
+  overflow:"hidden",
+  transition:"all 0.35s ease",
+  boxShadow: partner.is_featured
+    ? "0 12px 40px rgba(201,150,58,0.18)"
+    : "0 4px 18px rgba(0,0,0,0.06)",
+}}
+
+// 👉 ajoute cet effet hover (sans casser structure)
+onMouseEnter={e => {
+  e.currentTarget.style.transform = "translateY(-4px)";
+}}
+onMouseLeave={e => {
+  e.currentTarget.style.transform = "translateY(0)";
+}}
+
+// =========================
+// 6. ICON BOX (PLUS LUXE)
+// =========================
+
+background:"linear-gradient(145deg,#FFF9F0,#F3E7D2)",
+boxShadow:"0 6px 20px rgba(201,150,58,0.18)",
+
+// =========================
+// 7. PROMO BOX (PLUS PREMIUM)
+// =========================
+
+background:"linear-gradient(135deg,rgba(201,150,58,0.12),rgba(201,150,58,0.03))",
+border:"1px solid rgba(201,150,58,0.25)",
+borderRadius:16,
+
+// =========================
+// 8. MODAL (EFFET LUXE)
+// =========================
+
+background: vis 
+  ? "rgba(10,6,2,0.78)" 
+  : "transparent",
+
+backdropFilter: vis 
+  ? "blur(24px)" 
+  : "none",
+
+// =========================
+// 9. MODAL CONTAINER
+// =========================
+
+background: "linear-gradient(160deg, #FFFDF8 0%, #F4EAD6 100%)",
+borderRadius:"36px 36px 0 0",
+boxShadow:"0 -30px 80px rgba(0,0,0,0.3)",
+
+// =========================
+// 10. BOUTONS CONTACT
+// =========================
+
+borderRadius:20,
+boxShadow:"0 4px 14px rgba(0,0,0,0.05)",
+
+// =========================
+// 11. GLOBAL STYLE (PLUS CLEAN)
+// =========================
+
+<style>{`
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&display=swap');
+
+  * {
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
   }
-];
 
-export default function Partners() {
-  const [selectedPartner, setSelectedPartner] = useState(null);
+  body {
+    background:#FDF8F2;
+  }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-[#FAF4EC] via-[#FFFDF9] to-white text-[#2C1A0E] pb-20">
-      <Seo title="Nos Partenaires — AfroTresse" />
+  .partner-search-input::placeholder {
+    color: rgba(140,90,20,0.35);
+  }
 
-      {/* HERO SECTION */}
-      <section className="pt-28 pb-20 px-6 text-center">
-        <span className="text-[#C9963A] uppercase tracking-[0.35em] text-[10px] font-semibold mb-5 block opacity-80">
-          Réseau d'Excellence
-        </span>
-        <h1 className="text-4xl md:text-5xl font-black mb-6 leading-tight tracking-tight">
-          Ils nous font <span className="text-[#C9963A]">confiance</span>
-        </h1>
-      </section>
+  .partner-search-input:focus {
+    outline:none;
+  }
 
-      {/* GRID PARTENAIRES */}
-      <section className="max-w-6xl mx-auto px-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-          {PARTNERS.map((partner) => (
-            <motion.div
-              key={partner.id}
-              layoutId={`card-${partner.id}`}
-              onClick={() => setSelectedPartner(partner)}
-              className="cursor-pointer group bg-white/80 backdrop-blur-xl rounded-[2.5rem] p-8 border border-white/40 shadow-[0_10px_30px_rgba(44,26,14,0.06)] hover:shadow-[0_25px_60px_rgba(44,26,14,0.12)] hover:-translate-y-2 transition-all duration-500"
-            >
-              <div className="h-32 flex items-center justify-center mb-8 grayscale group-hover:grayscale-0 opacity-50 group-hover:opacity-100 transition-all duration-500">
-                <img src={partner.logo} alt={partner.name} className="max-h-full max-w-[160px] object-contain" />
-              </div>
+  .filter-btn {
+    transition: all 0.25s ease;
+  }
 
-              <h3 className="font-semibold text-xl mb-2 tracking-tight">{partner.name}</h3>
-
-              <p className="text-xs opacity-60 leading-relaxed line-clamp-2">
-                {partner.description}
-              </p>
-
-              <div className="mt-5 text-[#C9963A] text-[10px] font-semibold uppercase tracking-widest opacity-80 group-hover:opacity-100 transition">
-                En savoir plus →
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* MODAL */}
-      <AnimatePresence>
-        {selectedPartner && (
-          <>
-            {/* Overlay */}
-            <motion.div 
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }} 
-              exit={{ opacity: 0 }}
-              onClick={() => setSelectedPartner(null)}
-              className="fixed inset-0 bg-[#2C1A0E]/70 backdrop-blur-xl z-[1000]"
-            />
-            
-            {/* Modal */}
-            <div className="fixed inset-0 z-[1001] flex items-center justify-center p-4 pointer-events-none">
-              <motion.div 
-                layoutId={`card-${selectedPartner.id}`}
-                className="bg-[#FAF4EC]/95 backdrop-blur-xl w-full max-w-2xl rounded-[3rem] overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.25)] pointer-events-auto relative"
-              >
-                <button 
-                  onClick={() => setSelectedPartner(null)}
-                  className="absolute top-6 right-6 w-10 h-10 bg-black/10 rounded-full flex items-center justify-center hover:bg-black/20 transition-all duration-300 backdrop-blur-md"
-                >
-                  ✕
-                </button>
-
-                <div className="flex flex-col md:flex-row">
-                  <div className="md:w-1/2 h-64 md:h-auto bg-white/60 backdrop-blur-md flex items-center justify-center p-12">
-                    <img src={selectedPartner.logo} alt={selectedPartner.name} className="max-h-full object-contain" />
-                  </div>
-                  
-                  <div className="md:w-1/2 p-8 md:p-12">
-                    <span className="text-[#C9963A] text-[10px] font-semibold uppercase tracking-widest opacity-80">
-                      Partenaire Officiel
-                    </span>
-
-                    <h2 className="text-3xl font-black mt-2 mb-4 tracking-tight">
-                      {selectedPartner.name}
-                    </h2>
-
-                    <p className="text-sm opacity-70 leading-relaxed mb-6">
-                      {selectedPartner.longDescription}
-                    </p>
-                    
-                    {selectedPartner.specialOffer && (
-                      <div className="bg-gradient-to-r from-[#C9963A]/10 to-transparent border border-[#C9963A]/20 p-4 rounded-2xl mb-8 backdrop-blur-sm">
-                        <p className="text-[#C9963A] text-xs font-semibold italic">
-                          🎁 {selectedPartner.specialOffer}
-                        </p>
-                      </div>
-                    )}
-
-                    <button className="w-full py-4 bg-[#2C1A0E] text-white rounded-2xl font-semibold text-xs uppercase tracking-widest hover:bg-[#C9963A] hover:text-white transition-all duration-300 shadow-md hover:shadow-lg">
-                      Visiter le site
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            </div>
-          </>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-                }
+  .filter-btn:hover {
+    transform: translateY(-2px);
+    opacity:0.9;
+  }
+`}</style>
