@@ -53,16 +53,6 @@ const TKIcon = () => (
     <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/>
   </svg>
 );
-const WAIcon = () => (
-  <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/>
-  </svg>
-);
-const FBIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-  </svg>
-);
 
 function Modal({ partner, onClose }) {
   const cd = useCountdown(partner.promo_deadline);
@@ -93,11 +83,9 @@ function Modal({ partner, onClose }) {
         border: "1px solid rgba(201,150,58,0.15)",
         boxShadow: "0 -25px 60px rgba(0,0,0,0.25)",
       }}>
-        {/* Barre décorative tactile */}
         <div style={{ display:"flex", justifyContent:"center", padding:"12px 0 4px" }}>
           <div style={{ width:40, height:4, borderRadius:99, background:"rgba(201,150,58,0.2)" }}/>
         </div>
-
         <button onClick={close} style={{
           position:"absolute", top:16, right:16, zIndex:10,
           width:36, height:36, borderRadius:99,
@@ -108,12 +96,10 @@ function Modal({ partner, onClose }) {
         }}>✕</button>
 
         <div style={{ padding:"16px 24px 60px" }}>
-          {/* Header Modal */}
           <div style={{ marginBottom:32, textAlign:"center" }}>
              <div style={{
                 width:96, height:96, borderRadius:28, margin:"0 auto 18px",
-                background:"#FFF",
-                border:"1px solid rgba(201,150,58,0.2)",
+                background:"#FFF", border:"1px solid rgba(201,150,58,0.2)",
                 display:"flex", alignItems:"center", justifyContent:"center", fontSize:44,
                 boxShadow:"0 12px 32px rgba(201,150,58,0.12)",
               }}>{partner.emoji}</div>
@@ -122,7 +108,6 @@ function Modal({ partner, onClose }) {
               <div style={{ fontSize:11, fontWeight:600, color:"rgba(44,26,14,0.5)", marginTop:4 }}>{partner.city}</div>
           </div>
 
-          {/* Note */}
           {(partner.rating || partner.reviews) && (
             <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:8, marginBottom:24 }}>
                 <div style={{ display:"flex", gap:2 }}>
@@ -137,7 +122,6 @@ function Modal({ partner, onClose }) {
             </div>
           )}
 
-          {/* Offre Flash */}
           {hasPromo && (
             <div style={{
               background:"#2C1A0E", borderRadius:24, padding:"24px", marginBottom:32, position:"relative", overflow:"hidden", color:"#FAF4EC"
@@ -154,10 +138,8 @@ function Modal({ partner, onClose }) {
             </div>
           )}
 
-          {/* Description */}
           <p style={{ fontSize:14, color:"rgba(44,26,14,0.7)", lineHeight:1.7, marginBottom:32, textAlign:"center", padding:"0 10px" }}>{partner.description}</p>
 
-          {/* CTAs */}
           <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
             <button onClick={wa} style={{
               background:"#C9963A", color:"#FFF", padding:"18px", borderRadius:20, border:"none",
@@ -206,14 +188,12 @@ function PartnerCard({ partner, onClick }) {
       {partner.is_featured && (
         <div style={{ position:"absolute", top:0, left:0, background:"#C9963A", color:"#FFF", padding:"4px 12px", borderRadius:"0 0 12px 0", fontSize:8, fontWeight:900, letterSpacing:1 }}>ÉLITE</div>
       )}
-      
       <div style={{ display:"flex", alignItems:"center", gap:16 }}>
         <div style={{
           width:64, height:64, borderRadius:18, flexShrink:0,
           background:"#FAF4EC", border:"1px solid rgba(201,150,58,0.15)",
           display:"flex", alignItems:"center", justifyContent:"center", fontSize:28,
         }}>{partner.emoji}</div>
-        
         <div style={{ flex:1, minWidth:0 }}>
           <div style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:20, fontWeight:700, color:"#2C1A0E", marginBottom:2 }}>{partner.name}</div>
           <div style={{ display:"flex", alignItems:"center", gap:6 }}>
@@ -222,10 +202,8 @@ function PartnerCard({ partner, onClick }) {
             <span style={{ fontSize:10, color:"rgba(44,26,14,0.4)" }}>{partner.categoryLabel}</span>
           </div>
         </div>
-        
         <div style={{ color:"rgba(201,150,58,0.4)", fontSize:18 }}>›</div>
       </div>
-
       {hasPromo && (
         <div style={{ 
           marginTop:16, padding:"12px 16px", borderRadius:16, 
@@ -278,10 +256,7 @@ export default function Partners() {
   const filtered = partners.filter(p => {
     const matchCat = activeFilter === "all" || p.category === activeFilter;
     const q = search.trim().toLowerCase();
-    const matchSearch = !q ||
-      (p.name?.toLowerCase() || "").includes(q) ||
-      (p.city?.toLowerCase() || "").includes(q) ||
-      (p.categoryLabel?.toLowerCase() || "").includes(q);
+    const matchSearch = !q || (p.name?.toLowerCase() || "").includes(q) || (p.city?.toLowerCase() || "").includes(q) || (p.categoryLabel?.toLowerCase() || "").includes(q);
     return matchCat && matchSearch;
   });
 
@@ -295,24 +270,6 @@ export default function Partners() {
     setShowHistory(false);
   };
 
-  const removeHistoryItem = (item, e) => {
-    e.stopPropagation();
-    const updated = searchHistory.filter(h => h !== item);
-    setSearchHistory(updated);
-    localStorage.setItem("partners_search_history", JSON.stringify(updated));
-  };
-
-  const clearHistory = () => {
-    setSearchHistory([]);
-    localStorage.removeItem("partners_search_history");
-  };
-
-  const clearSearch = () => {
-    setSearch("");
-    setShowHistory(false);
-    searchRef.current?.focus();
-  };
-
   return (
     <div style={{ minHeight:"100vh", background:"#FAF4EC", display:"flex", justifyContent:"center", color:"#2C1A0E" }}>
       <style>{`
@@ -324,17 +281,12 @@ export default function Partners() {
       `}</style>
 
       <div style={{ width:"100%", maxWidth:440, paddingBottom:100 }}>
-        
-        {/* Header Premium */}
         <div style={{ padding:"60px 24px 40px", textAlign:"center", background:"#FFF", borderRadius:"0 0 40px 40px", boxShadow:"0 10px 40px rgba(44,26,14,0.04)" }}>
           <div style={{ fontSize:10, fontWeight:800, letterSpacing:"0.4em", textTransform:"uppercase", color:"#C9963A", marginBottom:12 }}>Expertise & Excellence</div>
-          <h1 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:42, fontWeight:700, lineHeight:1, marginBottom:16 }}>
-            Nos Partenaires <br/> <span style={{ color:"#C9963A", fontStyle:"italic" }}>de confiance</span>
-          </h1>
+          <h1 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:42, fontWeight:700, lineHeight:1, marginBottom:16 }}>Nos Partenaires <br/> <span style={{ color:"#C9963A", fontStyle:"italic" }}>de confiance</span></h1>
           <p style={{ fontSize:14, color:"rgba(44,26,14,0.5)", lineHeight:1.6, maxWidth:280, margin:"0 auto" }}>Une sélection rigoureuse pour sublimer votre beauté afro.</p>
         </div>
 
-        {/* Search Block */}
         <div style={{ padding:"24px 20px 0", position:"relative", zIndex:10 }}>
           <div style={{
             display:"flex", alignItems:"center", gap:12, background:"#FFF",
@@ -353,69 +305,40 @@ export default function Partners() {
               onBlur={() => setTimeout(() => setShowHistory(false), 200)}
               onKeyDown={e => { if (e.key === "Enter") handleSearchSubmit(search); }}
             />
-            {search && <button onClick={clearSearch} style={{ border:"none", background:"none", fontSize:14, color:"#C9963A", fontWeight:700 }}>✕</button>}
           </div>
-
-          {/* Search History Dropdown */}
-          {showHistory && searchHistory.length > 0 && !search && (
-            <div style={{
-              position:"absolute", top:"100%", left:20, right:20, background:"#FFF", borderRadius:20,
-              boxShadow:"0 20px 50px rgba(0,0,0,0.12)", border:"1px solid rgba(201,150,58,0.1)",
-              marginTop:8, overflow:"hidden", zIndex:50
-            }}>
-              <div style={{ padding:"12px 16px", display:"flex", justifyContent:"space-between", background:"#FAF4EC" }}>
-                <span style={{ fontSize:9, fontWeight:800, color:"rgba(44,26,14,0.4)", letterSpacing:1 }}>RÉCENT</span>
-                <button onClick={clearHistory} style={{ border:"none", background:"none", fontSize:9, fontWeight:800, color:"#C9963A" }}>EFFACER</button>
-              </div>
-              {searchHistory.map(item => (
-                <div key={item} onMouseDown={() => { setSearch(item); handleSearchSubmit(item); }}
-                  style={{ padding:"14px 16px", fontSize:14, borderTop:"1px solid #FAF4EC", display:"flex", justifyContent:"space-between", cursor:"pointer" }}>
-                  <span>{item}</span>
-                  <button onMouseDown={e => removeHistoryItem(item, e)} style={{ border:"none", background:"none", opacity:0.3 }}>✕</button>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
 
-        {/* Filters Slider */}
-        <div style={{ padding:"24px 0 16px" }}>
-          <div style={{ display:"flex", gap:10, overflowX:"auto", padding:"0 20px 10px", scrollbarWidth:"none" }}>
+        {/* FILTERS WRAP - NO SCROLL */}
+        <div style={{ padding: "24px 20px 16px" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "10px", width: "100%" }}>
             {CATEGORIES.map(cat => {
               const isActive = activeFilter === cat.id;
               return (
                 <button key={cat.id} onClick={() => setActiveFilter(cat.id)} className={isActive ? "active-filter" : ""}
                   style={{
-                    flexShrink:0, display:"flex", alignItems:"center", gap:8, padding:"12px 18px",
-                    borderRadius:99, border:"1px solid rgba(201,150,58,0.2)", background:"#FFF",
-                    fontSize:12, fontWeight:700, color:"#2C1A0E", transition:"0.2s"
+                    display: "flex", alignItems: "center", gap: "8px", padding: "10px 16px",
+                    borderRadius: "99px", border: "1px solid rgba(201,150,58,0.2)", background: "#FFF",
+                    fontSize: "12px", fontWeight: "700", color: "#2C1A0E", transition: "0.2s", whiteSpace: "nowrap"
                   }}>
                   <span>{cat.emoji}</span> {cat.label}
-                  <span style={{ opacity:0.4, fontSize:10 }}>{counts[cat.id]}</span>
+                  <span style={{ opacity: 0.4, fontSize: "10px", marginLeft: "4px" }}>{counts[cat.id]}</span>
                 </button>
               );
             })}
           </div>
-          <div style={{ padding:"0 24px", fontSize:10, fontWeight:700, color:"rgba(44,26,14,0.3)", letterSpacing:0.5 }}>
-            {loading ? "ANALYSE DE LA BASE..." : `${filtered.length} RÉSULTATS DISPONIBLES`}
+          <div style={{ textAlign: "center", marginTop: "16px", fontSize: "10px", fontWeight: "700", color: "rgba(44,26,14,0.3)", letterSpacing: "0.5px", textTransform: "uppercase" }}>
+            {loading ? "Analyse de la base..." : `${filtered.length} résultats disponibles`}
           </div>
         </div>
 
-        {/* Partners List */}
         <div style={{ padding:"0 20px", display:"flex", flexDirection:"column", gap:16 }}>
           {loading ? (
              <div style={{ padding:"60px 0", textAlign:"center", opacity:0.3, fontWeight:800, fontSize:10, letterSpacing:2 }}>CHARGEMENT...</div>
-          ) : filtered.length === 0 ? (
-            <div style={{ textAlign:"center", padding:"60px 20px" }}>
-              <div style={{ fontSize:40, marginBottom:16 }}>✨</div>
-              <p style={{ color:"rgba(44,26,14,0.4)", fontSize:14 }}>Aucun résultat pour cette recherche.</p>
-            </div>
           ) : (
             filtered.map(p => <PartnerCard key={p.id} partner={p} onClick={() => { handleSearchSubmit(p.name); setSelected(p); }} />)
           )}
         </div>
       </div>
-
       {selected && <Modal partner={selected} onClose={() => setSelected(null)} />}
     </div>
   );
