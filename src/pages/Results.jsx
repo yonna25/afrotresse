@@ -168,7 +168,9 @@ export default function Results() {
   // Annulation de l'appel API en cours si le composant se démonte
   useEffect(() => {
     return () => { tryOnAbortRef.current?.abort(); };
-  }, []); = (shuffleSeed) => {
+  }, []);
+
+  const getShuffledStyles = (shuffleSeed) => {
     const seeded = (seed) => {
       let s = seed;
       return () => { s = (s * 1664525 + 1013904223) & 0xffffffff; return (s >>> 0) / 0xffffffff; };
