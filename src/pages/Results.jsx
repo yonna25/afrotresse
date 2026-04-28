@@ -101,8 +101,6 @@ function Fireworks({ onDone }) {
 // ─── Popup Miroir Virtuel (Exclusivité AfroTresse) ──────────────────────────
 const VirtualTryOnPopup = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
-
-  // Remplacez par votre lien réel de groupe WhatsApp
   const whatsappGroupLink = "https://chat.whatsapp.com/VOTRE_LIEN_GROUPE_WHATSAPP";
 
   return (
@@ -113,14 +111,11 @@ const VirtualTryOnPopup = ({ isOpen, onClose }) => {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
-
-        <div className="text-center">
-          <span className="text-[#C9963A] text-[11px] tracking-[0.4em] uppercase font-bold mb-6 block">
-            Exclusivité AfroTresse
-          </span>
-          <h2 className="text-[#2C1A0E] text-3xl font-serif mb-2 italic">Votre Miroir Virtuel</h2>
+        <div className="text-center text-[#2C1A0E]">
+          <span className="text-[#C9963A] text-[11px] tracking-[0.4em] uppercase font-bold mb-6 block">Exclusivité AfroTresse</span>
+          <h2 className="text-3xl font-serif mb-2 italic">Votre Miroir Virtuel</h2>
           <p className="text-[#C9963A] font-semibold text-lg mb-8 tracking-wide">Bientôt disponible.</p>
-          <div className="space-y-6 mb-10 text-[#2C1A0E]">
+          <div className="space-y-6 mb-10">
             <p className="text-base leading-relaxed">Essayez vos tresses en un instant avant de passer au salon.</p>
             <p className="text-sm italic font-medium">Rejoignez notre liste d'attente exclusive pour être informée les premiers.</p>
           </div>
@@ -144,26 +139,19 @@ export default function Results() {
   const [zoomImage, setZoomImage]     = useState(null);
   const [errorMsg, setErrorMsg]       = useState("");
   const [showFireworks, setShowFireworks] = useState(false);
-  
-  [span_4](start_span)// Utilisation de l'état existant pour la nouvelle popup[span_4](end_span)
   const [showVirtualTryOnModal, setShowVirtualTryOnModal] = useState(false);
   
-  const [isTesting, setIsTesting]         = useState(false);
-  const [tryOnStyleId, setTryOnStyleId]   = useState(null);
-  const tryOnAbortRef                     = useRef(null);
   const [stableMsg, setStableMsg]     = useState({ headline: "Voici tes résultats ✨", subtext: "" });
-  const [savePrenom, setSavePrenom]   = useState(() => localStorage.getItem("afrotresse_user_name") || "");
-  const [saveEmail, setSaveEmail]     = useState(() => localStorage.getItem("afrotresse_email") || "");
-  const [saveDone, setSaveDone]       = useState(() => !!localStorage.getItem("afrotresse_email"));
   const [displayName, setDisplayName] = useState(() => localStorage.getItem("afrotresse_user_name") || "");
-  const [saveOpen, setSaveOpen]       = useState(false);
-  const { favorites, isFav, toggleFav, FREE_LIMIT } = useFavorites();
+  const { isFav, toggleFav, FREE_LIMIT } = useFavorites();
   const [currentPage, setCurrentPage]     = useState(() => parseInt(localStorage.getItem("afrotresse_current_page") || "1", 10));
   const [unlockedPages, setUnlockedPages] = useState(() => parseInt(localStorage.getItem("afrotresse_unlocked_pages") || "1", 10));
+  
   const [styleStats] = useState(() => {
     try { return JSON.parse(localStorage.getItem("afrotresse_style_stats") || "{}"); }
     catch { return {}; }
   });
+  
   const topRef   = useRef(null);
   const errorRef = useRef(null);
   const userName = localStorage.getItem("afrotresse_user_name") || "Reine";
@@ -187,19 +175,14 @@ export default function Results() {
           resetMessageAssignment();
         }
         const sessionId   = getOrCreateSessionId();
-        const name        = localStorage.getItem("afrotresse_user_name") || "";
-        const confidence  = parsed.confidence ?? 0.5;
         const shape       = parsed.faceShape || "oval";
-        setStableMsg(generateStableMessage({ faceShape: shape, sessionId, name, confidence }));
+        const name        = localStorage.getItem("afrotresse_user_name") || "";
+        setStableMsg(generateStableMessage({ faceShape: shape, sessionId, name, confidence: parsed.confidence ?? 0.5 }));
       } catch (e) { console.error("Error parsing results:", e); }
     }
     const photo = sessionStorage.getItem("afrotresse_photo");
     if (photo) setSelfieUrl(photo);
     syncCreditsFromServer().then(c => setCredits(c)).catch(() => setCredits(getCredits()));
-  }, []);
-
-  useEffect(() => {
-    return () => { tryOnAbortRef.current?.abort(); };
   }, []);
 
   const getShuffledStyles = (shuffleSeed) => {
@@ -231,12 +214,6 @@ export default function Results() {
 
   const displayedStyles = getPageStyles(currentPage);
 
-  const goToPage = (page) => {
-    setCurrentPage(page);
-    localStorage.setItem("afrotresse_current_page", String(page));
-    topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
-
   const handleGenerateMore = async () => {
     if (credits === 0) { navigate("/credits"); return; }
     const ok = await consumeCredits(1);
@@ -266,8 +243,6 @@ export default function Results() {
     setCredits(getCredits());
     setUnlockedPages(1);
     setCurrentPage(1);
-    localStorage.setItem("afrotresse_unlocked_pages", "1");
-    localStorage.setItem("afrotresse_current_page", "1");
     setShowCatalogueEnd(false);
     setShowFireworks(true);
     topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -281,11 +256,6 @@ export default function Results() {
     }
   };
 
-  [span_5](start_span)[span_6](start_span)// MISE À JOUR : Redirection vers la popup de liste d'attente[span_5](end_span)[span_6](end_span)
-  const handleTestTryOn = (style) => {
-    setShowVirtualTryOnModal(true);
-  };
-
   if (!styles.length) {
     return (
       <div className="min-h-[100dvh] bg-[#1A0A00] text-[#FAF4EC] flex flex-col relative overflow-hidden">
@@ -297,14 +267,16 @@ export default function Results() {
           </div>
           <div className="absolute bottom-0 left-0 right-0 h-24" style={{ background: "linear-gradient(to bottom, transparent, #1A0A00)" }} />
         </div>
+
         <div className="flex flex-col flex-1 px-5 pt-2 pb-32">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="mb-5">
             <h2 className="text-xl font-black text-white mb-2">Découvre les tresses adaptées à ton visage 💛</h2>
             <p className="text-[12px] text-white/50 leading-relaxed">Un selfie suffit pour trouver la coiffure qui te correspond.</p>
           </motion.div>
+
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="flex flex-col gap-3 mb-8">
             {[{ icon: "📸", label: "Prends un selfie", sub: "Ou uploade une photo existante" }, { icon: "🔍", label: "Lecture de visage", sub: "Tes proportions analysées en secondes" }, { icon: "✨", label: "Styles personnalisés", sub: "3 recommandations taillées pour toi" }].map((step, i) => (
-              <motion.div key={i} className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl px-4 py-3">
+              <motion.div key={i} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 + i * 0.08 }} className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl px-4 py-3">
                 <span className="text-2xl">{step.icon}</span>
                 <div>
                   <p className="text-sm font-bold text-white leading-none">{step.label}</p>
@@ -316,7 +288,9 @@ export default function Results() {
               </motion.div>
             ))}
           </motion.div>
-          <motion.button onClick={() => navigate("/camera")} className="w-full py-5 rounded-2xl font-black text-lg text-[#2C1A0E] shadow-2xl" style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)", boxShadow: "0 0 30px rgba(201,150,58,0.4)" }}>📸 Prendre mon selfie</motion.button>
+
+          <motion.button initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.65 }} onClick={() => navigate("/camera")} className="w-full py-5 rounded-2xl font-black text-lg text-[#2C1A0E] shadow-2xl" style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)", boxShadow: "0 0 30px rgba(201,150,58,0.4)" }}>📸 Prendre mon selfie</motion.button>
+          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }} className="text-center text-[10px] text-white/30 mt-3">2 crédits offerts • Aucune inscription requise</motion.p>
         </div>
       </div>
     );
@@ -383,10 +357,8 @@ export default function Results() {
                   </button>
                 </div>
                 <p className="text-[11px] opacity-60 leading-relaxed mb-6 h-12 overflow-hidden">{style.description}</p>
-                
-                [span_7](start_span)[span_8](start_span){/* BOUTON ESSAI VIRTUEL MODIFIÉ[span_7](end_span)[span_8](end_span) */}
                 <button
-                  onClick={() => handleTestTryOn(style)}
+                  onClick={() => setShowVirtualTryOnModal(true)}
                   className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 text-white/40 text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all"
                 >
                   "✨ Essayer virtuellement"
@@ -406,27 +378,7 @@ export default function Results() {
         </div>
       )}
 
-      {unlockedPages > 1 && (
-        <div className="mt-4 mb-10 flex flex-col items-center gap-4">
-          <p className="text-[10px] text-white/30 uppercase tracking-widest font-bold">Pages débloquées</p>
-          <div className="flex flex-wrap justify-center gap-2">
-            {Array.from({ length: unlockedPages }, (_, i) => i + 1).map((p) => (
-              <button key={p} onClick={() => goToPage(p)} className={`w-12 h-12 rounded-2xl font-black text-sm transition-all ${p === currentPage ? "bg-[#C9963A] text-[#2C1A0E] scale-110 shadow-lg" : "bg-white/5 text-white/40 border border-white/10"}`}>{p}</button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {showCatalogueEnd && (
-        <motion.div className="mt-10 p-8 rounded-[3rem] bg-gradient-to-br from-[#2C1A0E] to-[#1A0A00] border border-[#C9963A]/30 text-center shadow-2xl">
-          <div className="text-4xl mb-4">✨</div>
-          <h3 className="text-xl font-black mb-2 text-[#C9963A]">Fin du catalogue !</h3>
-          <p className="text-[11px] text-white/50 mb-8 leading-relaxed px-4 text-balance">Tu as vu toutes les recommandations actuelles pour ton profil.</p>
-          <button onClick={handleDiscoverMore} className="w-full py-4 rounded-2xl border-2 border-[#C9963A] text-[#C9963A] text-xs font-black uppercase tracking-widest active:scale-95 transition-all">Mélanger & Découvrir</button>
-        </motion.div>
-      )}
-
-      <div className="fixed bottom-24 right-4 z-40 flex flex-col items-center gap-2">
+      <div className="fixed bottom-24 right-4 z-40">
         <div onClick={() => navigate("/credits")} className="w-12 h-12 bg-[#C9963A] text-[#2C1A0E] rounded-lg flex flex-col items-center justify-center shadow-lg border border-[#2C1A0E]/20 cursor-pointer">
           <div className="text-[5px] font-black uppercase opacity-60 leading-tight">Solde</div>
           <div className="text-xl font-black leading-none">{credits}</div>
@@ -443,11 +395,7 @@ export default function Results() {
         )}
       </AnimatePresence>
 
-      [span_9](start_span)[span_10](start_span){/* POPUP MIROIR VIRTUEL[span_9](end_span)[span_10](end_span) */}
-      <VirtualTryOnPopup 
-        isOpen={showVirtualTryOnModal} 
-        onClose={() => setShowVirtualTryOnModal(false)} 
-      />
+      <VirtualTryOnPopup isOpen={showVirtualTryOnModal} onClose={() => setShowVirtualTryOnModal(false)} />
     </div>
   );
 }
