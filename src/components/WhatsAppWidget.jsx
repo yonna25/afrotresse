@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // ── Configuration ─────────────────────────────────────────────────
-const WHATSAPP_NUMBER = '22900000000'; // 👈 Remplace par ton numéro WhatsApp
+const WHATSAPP_NUMBER = '2290151360355'; // 👈 Remplace par ton numéro WhatsApp
 
 const MESSAGES = {
   '/credits': "Bonjour, je suis sur la page des tarifs AfroTresse et j'aimerais avoir plus d'informations sur les packs.",
