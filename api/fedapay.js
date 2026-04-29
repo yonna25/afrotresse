@@ -62,7 +62,7 @@ export default async function handler(req, res) {
         description:  selectedPack.description,
         amount:       selectedPack.amount,
         currency:     { iso: 'XOF' },
-        callback_url: `${process.env.NEXT_PUBLIC_APP_URL}/credits?payment=success&pack=${pack}`,
+        callback_url: `https://afrotresse.com/credits?payment=success&pack=${pack}`,
         customer: {
           email: email || 'client@afrotresse.com',
           ...(phone && { phone_number: { number: phone, country: 'BJ' } }),
