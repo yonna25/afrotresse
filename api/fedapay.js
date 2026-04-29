@@ -1,4 +1,4 @@
-export const config = { api: { bodyParser: true } };
+export const config = { maxDuration: 30 };
 
 const PACKS = {
   decouverte: { amount: 300,  credits: 3,  description: 'AfroTresse - Pack Découverte' },
@@ -32,6 +32,13 @@ export default async function handler(req, res) {
     });
 
     const data = await fedaRes.json();
+
+    // Log pour diagnostiquer en cas d'échec silencieux
+    if (!fedaRes.ok) {
+      console.error("FedaPay error response:", JSON.stringify(data));
+      return res.status(500).json({ error: `FedaPay refusé (${fedaRes.status}): ${data?.message || JSON.stringify(data)}` });
+    }
+
     const transaction = data['v1/transaction'] || data?.transaction;
     
     if (!transaction?.payment_url) {
