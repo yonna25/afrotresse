@@ -28,7 +28,6 @@ const PACKS_CONFIG = {
   },
 };
 
-// ── Mapping erreurs FedaPay ───────────────────────────────────────
 function matchFedaError(msg = '') {
   if (!msg) return 'Une erreur est survenue. Veuillez réessayer.';
   const lower = msg.toLowerCase();
@@ -39,7 +38,9 @@ function matchFedaError(msg = '') {
   return msg;
 }
 
-// ── Overlay chargement — rendu dans document.body via Portal ─────
+// ── Portals — z-index SOUS la BottomNav (z-50 = 50) ─────────────
+// On utilise z-40 pour les overlays afin de ne jamais passer au-dessus de la nav
+
 function LoadingOverlay() {
   return createPortal(
     <motion.div
@@ -47,23 +48,25 @@ function LoadingOverlay() {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       style={{
-        position: 'fixed', inset: 0, zIndex: 9000,
+        position: 'fixed', inset: 0, zIndex: 40,
         display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center', gap: 20,
-        background: 'rgba(20,8,0,0.92)', backdropFilter: 'blur(6px)',
+        background: 'rgba(20,8,0,0.88)', backdropFilter: 'blur(6px)',
+        // Laisser les événements passer sur la zone BottomNav (80px en bas)
+        paddingBottom: 80,
       }}
     >
       <motion.div
         animate={{ rotate: 360 }}
         transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
         style={{
-          width: 56, height: 56, borderRadius: '50%',
-          border: '4px solid rgba(194,144,54,0.2)',
+          width: 52, height: 52, borderRadius: '50%',
+          border: '3px solid rgba(194,144,54,0.2)',
           borderTopColor: '#C29036',
         }}
       />
       <div style={{ textAlign: 'center' }}>
-        <p style={{ fontWeight: 900, fontSize: 18, color: '#fff', marginBottom: 4 }}>
+        <p style={{ fontWeight: 600, fontSize: 16, color: '#fff', marginBottom: 4 }}>
           Préparation du paiement…
         </p>
         <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)' }}>
@@ -75,11 +78,9 @@ function LoadingOverlay() {
   );
 }
 
-// ── Modal FedaPay — rendu dans document.body via Portal ───────────
 function FedaPayModal({ url, onClose }) {
   const [iframeLoaded, setIframeLoaded] = useState(false);
 
-  // Fermer avec la touche Escape
   useEffect(() => {
     const handler = (e) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', handler);
@@ -92,26 +93,28 @@ function FedaPayModal({ url, onClose }) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       style={{
-        position: 'fixed', inset: 0, zIndex: 9100,
+        position: 'fixed', inset: 0, zIndex: 40,
         display: 'flex', flexDirection: 'column',
         background: 'rgba(0,0,0,0.96)', backdropFilter: 'blur(8px)',
+        // Laisser la BottomNav accessible
+        paddingBottom: 80,
       }}
     >
       {/* Header */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '16px 20px', flexShrink: 0,
-        borderBottom: '1px solid rgba(194,144,54,0.2)',
+        padding: '14px 18px', flexShrink: 0,
+        borderBottom: '1px solid rgba(194,144,54,0.18)',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{
-            width: 32, height: 32, borderRadius: '50%',
+            width: 30, height: 30, borderRadius: '50%',
             backgroundColor: '#C29036',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 16,
+            fontSize: 14,
           }}>💳</div>
           <div>
-            <p style={{ fontWeight: 700, color: '#fff', fontSize: 14, lineHeight: 1.2 }}>
+            <p style={{ fontWeight: 600, color: '#fff', fontSize: 13, lineHeight: 1.2 }}>
               Paiement sécurisé
             </p>
             <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>
@@ -122,27 +125,26 @@ function FedaPayModal({ url, onClose }) {
         <button
           onClick={onClose}
           style={{
-            width: 32, height: 32, borderRadius: '50%',
+            width: 30, height: 30, borderRadius: '50%',
             background: 'rgba(255,255,255,0.1)',
-            border: 'none', color: '#fff', fontSize: 16,
-            fontWeight: 700, cursor: 'pointer',
+            border: 'none', color: '#fff', fontSize: 15,
+            cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}
         >✕</button>
       </div>
 
-      {/* Loader iframe */}
       {!iframeLoaded && (
         <div style={{
           flex: 1, display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center', gap: 16,
+          alignItems: 'center', justifyContent: 'center', gap: 14,
         }}>
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
             style={{
-              width: 40, height: 40, borderRadius: '50%',
-              border: '4px solid rgba(194,144,54,0.2)',
+              width: 36, height: 36, borderRadius: '50%',
+              border: '3px solid rgba(194,144,54,0.2)',
               borderTopColor: '#C29036',
             }}
           />
@@ -152,7 +154,6 @@ function FedaPayModal({ url, onClose }) {
         </div>
       )}
 
-      {/* iFrame */}
       <iframe
         src={url}
         title="Paiement FedaPay"
@@ -164,12 +165,11 @@ function FedaPayModal({ url, onClose }) {
         allow="payment"
       />
 
-      {/* Footer */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        gap: 8, padding: '10px 0', flexShrink: 0,
-        fontSize: 11, color: 'rgba(255,255,255,0.3)',
-        borderTop: '1px solid rgba(255,255,255,0.06)',
+        gap: 6, padding: '8px 0', flexShrink: 0,
+        fontSize: 10, color: 'rgba(255,255,255,0.3)',
+        borderTop: '1px solid rgba(255,255,255,0.05)',
       }}>
         🔒 Paiement 100 % sécurisé · Ne jamais partager vos codes
       </div>
@@ -178,9 +178,7 @@ function FedaPayModal({ url, onClose }) {
   );
 }
 
-// ── Toast erreur — rendu dans document.body via Portal ────────────
 function ErrorToast({ message, onClose }) {
-  // Auto-dismiss après 6s
   useEffect(() => {
     const t = setTimeout(onClose, 6000);
     return () => clearTimeout(t);
@@ -188,33 +186,34 @@ function ErrorToast({ message, onClose }) {
 
   return createPortal(
     <motion.div
-      initial={{ opacity: 0, y: 60, scale: 0.95 }}
+      initial={{ opacity: 0, y: 50, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: 40, scale: 0.95 }}
+      exit={{ opacity: 0, y: 30, scale: 0.95 }}
       transition={{ type: 'spring', stiffness: 280, damping: 24 }}
       style={{
-        position: 'fixed', bottom: 110, left: 16, right: 16,
-        zIndex: 9200, maxWidth: 400, margin: '0 auto',
-        borderRadius: 20, padding: '16px 20px',
+        position: 'fixed', bottom: 100, left: 16, right: 16,
+        zIndex: 45,  // juste en dessous de la nav (z-50)
+        maxWidth: 400, margin: '0 auto',
+        borderRadius: 18, padding: '14px 18px',
         display: 'flex', alignItems: 'flex-start', gap: 12,
         background: 'linear-gradient(135deg, #3D0E0E, #2A0808)',
-        border: '1.5px solid rgba(255,80,80,0.35)',
-        boxShadow: '0 4px 30px rgba(255,60,60,0.2)',
+        border: '1px solid rgba(255,80,80,0.3)',
+        boxShadow: '0 4px 24px rgba(255,60,60,0.18)',
       }}
     >
-      <span style={{ fontSize: 20, flexShrink: 0, marginTop: 2 }}>⚠️</span>
+      <span style={{ fontSize: 18, flexShrink: 0, marginTop: 2 }}>⚠️</span>
       <div style={{ flex: 1 }}>
-        <p style={{ fontWeight: 700, fontSize: 13, color: '#ff9090', marginBottom: 3 }}>
+        <p style={{ fontWeight: 600, fontSize: 13, color: '#ff9090', marginBottom: 3 }}>
           Paiement non abouti
         </p>
-        <p style={{ fontSize: 12, lineHeight: 1.5, color: 'rgba(255,200,200,0.75)' }}>
+        <p style={{ fontSize: 12, lineHeight: 1.5, color: 'rgba(255,200,200,0.7)' }}>
           {message}
         </p>
       </div>
       <button
         onClick={onClose}
         style={{
-          fontSize: 18, color: 'rgba(255,150,150,0.7)',
+          fontSize: 16, color: 'rgba(255,150,150,0.6)',
           background: 'none', border: 'none', cursor: 'pointer',
           flexShrink: 0, marginTop: 2, lineHeight: 1,
         }}
@@ -224,7 +223,7 @@ function ErrorToast({ message, onClose }) {
   );
 }
 
-// ── Page principale ───────────────────────────────────────────────
+// ── Page ─────────────────────────────────────────────────────────
 export default function Credits() {
   const [selected, setSelected] = useState('allie');
   const [loading, setLoading] = useState(false);
@@ -232,7 +231,7 @@ export default function Credits() {
   const [errorMsg, setErrorMsg] = useState(null);
   const payButtonRef = useRef(null);
 
-  // Nettoyage complet à la navigation (démontage du composant)
+  // Nettoyage à la navigation
   useEffect(() => {
     return () => {
       setLoading(false);
@@ -286,12 +285,11 @@ export default function Credits() {
 
   return (
     <div
-      className="min-h-screen text-white font-sans pb-32"
-      style={{ backgroundColor: '#1E1008' }}
+      className="text-white font-sans pb-32"
+      style={{ backgroundColor: '#1E1008', minHeight: '100%' }}
     >
       <Seo title="Acheter des crédits - AfroTresse" />
 
-      {/* ── Portals (montés sur document.body, jamais bloquants) ── */}
       <AnimatePresence>
         {loading && <LoadingOverlay key="loader" />}
         {paymentUrl && (
@@ -304,15 +302,15 @@ export default function Credits() {
 
       <div className="max-w-lg mx-auto px-4 pt-10">
 
-        {/* ── Titre ── */}
+        {/* Titre */}
         <h1
-          className="text-4xl font-extrabold text-center mb-10"
+          className="text-3xl font-bold text-center mb-10"
           style={{ color: '#C29036' }}
         >
           Choisis ton pack
         </h1>
 
-        {/* ── Packs ── */}
+        {/* Packs */}
         <div className="flex flex-col gap-5 mb-10">
           {Object.entries(PACKS_CONFIG).map(([key, pack]) => {
             const isSelected = selected === key;
@@ -321,7 +319,7 @@ export default function Credits() {
                 {pack.popular && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
                     <span
-                      className="text-[10px] font-bold tracking-widest uppercase px-4 py-1 rounded-full"
+                      className="text-[10px] font-semibold tracking-widest uppercase px-4 py-1 rounded-full"
                       style={{ backgroundColor: '#C29036', color: '#1E1008' }}
                     >
                       ★ Conseillé
@@ -331,18 +329,19 @@ export default function Credits() {
                 <motion.div
                   whileTap={{ scale: 0.98 }}
                   onClick={() => handleSelect(key)}
-                  className="cursor-pointer rounded-3xl px-6 py-6 flex items-center justify-between transition-all"
+                  className="cursor-pointer rounded-3xl px-6 py-5 flex items-center justify-between"
                   style={{
                     backgroundColor: '#2C1A0E',
-                    border: isSelected ? '2px solid #C29036' : '2px solid rgba(255,255,255,0.08)',
-                    boxShadow: isSelected ? '0 0 18px rgba(194,144,54,0.18)' : 'none',
+                    border: isSelected ? '2px solid #C29036' : '2px solid rgba(255,255,255,0.07)',
+                    boxShadow: isSelected ? '0 0 16px rgba(194,144,54,0.15)' : 'none',
                   }}
                 >
                   <div className="flex items-center gap-4">
+                    {/* Radio */}
                     <div
                       className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
                       style={{
-                        border: isSelected ? '2px solid #C29036' : '2px solid rgba(255,255,255,0.3)',
+                        border: isSelected ? '2px solid #C29036' : '2px solid rgba(255,255,255,0.25)',
                       }}
                     >
                       {isSelected && (
@@ -354,18 +353,27 @@ export default function Credits() {
                       )}
                     </div>
                     <div>
-                      <p className="font-bold text-base text-white leading-tight">{pack.label}</p>
-                      <p className="text-xs mt-0.5 italic" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                      <p className="font-semibold text-sm text-white leading-tight">
+                        {pack.label}
+                      </p>
+                      <p
+                        className="text-xs mt-0.5"
+                        style={{ color: 'rgba(255,255,255,0.5)' }}
+                      >
                         {pack.description}
                       </p>
                     </div>
                   </div>
+                  {/* Prix */}
                   <div className="text-right flex-shrink-0 ml-4">
-                    <span className="text-3xl font-black leading-none" style={{ color: '#C29036' }}>
+                    <span
+                      className="text-2xl font-bold leading-none"
+                      style={{ color: '#C29036' }}
+                    >
                       {pack.price}
                     </span>
                     <span
-                      className="text-xs font-semibold ml-1"
+                      className="text-[10px] font-medium ml-1"
                       style={{ color: '#C29036', verticalAlign: 'super' }}
                     >
                       FCFA
@@ -377,71 +385,68 @@ export default function Credits() {
           })}
         </div>
 
-        {/* ── Bouton paiement ── */}
+        {/* Bouton paiement */}
         <button
           ref={payButtonRef}
           onClick={handleBuy}
           disabled={loading}
-          className="w-full font-extrabold py-5 rounded-2xl text-base tracking-wide transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+          className="w-full font-semibold py-4 rounded-2xl text-sm tracking-wide transition-all disabled:opacity-50 flex items-center justify-center gap-2"
           style={{ backgroundColor: '#C29036', color: '#1E1008' }}
         >
           <span>💳</span>
           <span>Payer avec FedaPay</span>
         </button>
 
-        {/* ── Section bas ── */}
+        {/* Section bas */}
         <div className="mt-8 space-y-3 mb-4">
 
-          {/* Crédits offerts */}
           <div
             className="rounded-2xl px-5 py-4 flex items-center gap-4"
             style={{
               background: 'linear-gradient(135deg, #2C1A0E, #3a2010)',
-              border: '1px solid rgba(194,144,54,0.2)',
+              border: '1px solid rgba(194,144,54,0.18)',
             }}
           >
-            <span className="text-2xl flex-shrink-0">🎁</span>
+            <span className="text-xl flex-shrink-0">🎁</span>
             <div>
-              <p className="font-bold text-white text-sm">Crédits offerts à l'inscription</p>
-              <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.45)' }}>
+              <p className="font-medium text-white text-sm">Crédits offerts à l'inscription</p>
+              <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
                 Commence gratuitement dès ton arrivée
               </p>
             </div>
           </div>
 
-          {/* Parrainage */}
           <div
             className="rounded-2xl px-5 py-4 flex items-center gap-4"
             style={{
               background: 'linear-gradient(135deg, #2C1A0E, #3a2010)',
-              border: '1px solid rgba(194,144,54,0.2)',
+              border: '1px solid rgba(194,144,54,0.18)',
             }}
           >
-            <span className="text-2xl flex-shrink-0">👥</span>
+            <span className="text-xl flex-shrink-0">👥</span>
             <div className="flex-1">
-              <p className="font-bold text-white text-sm">Parrainage</p>
-              <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.45)' }}>
+              <p className="font-medium text-white text-sm">Parrainage</p>
+              <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
                 Invite une amie et gagne des crédits
               </p>
             </div>
             <span
-              className="font-black text-sm px-3 py-1 rounded-full flex-shrink-0"
-              style={{ backgroundColor: 'rgba(194,144,54,0.18)', color: '#C29036' }}
+              className="font-semibold text-xs px-3 py-1 rounded-full flex-shrink-0"
+              style={{ backgroundColor: 'rgba(194,144,54,0.15)', color: '#C29036' }}
             >
               +2 crédits
             </span>
           </div>
 
-          {/* Paiements acceptés */}
           <div
             className="rounded-2xl px-5 py-4"
             style={{
               backgroundColor: '#2C1A0E',
-              border: '1px solid rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.05)',
             }}
           >
             <p
-              className="text-[10px] uppercase tracking-widest font-bold mb-3"
+              className="text-[10px] uppercase tracking-widest font-medium mb-3"
               style={{ color: 'rgba(255,255,255,0.3)' }}
             >
               Paiements acceptés
@@ -454,11 +459,11 @@ export default function Credits() {
               ].map(({ icon, label }) => (
                 <div
                   key={label}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs"
                   style={{
-                    background: 'rgba(255,255,255,0.05)',
-                    color: 'rgba(255,255,255,0.65)',
-                    border: '1px solid rgba(255,255,255,0.08)',
+                    background: 'rgba(255,255,255,0.04)',
+                    color: 'rgba(255,255,255,0.55)',
+                    border: '1px solid rgba(255,255,255,0.07)',
                   }}
                 >
                   <span>{icon}</span>
