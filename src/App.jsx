@@ -226,7 +226,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <div className="min-h-screen bg-black flex justify-center">
-        <div className="w-full max-w-[430px] relative bg-[#2C1A0E] min-h-screen overflow-hidden shadow-2xl">
+        <div className="w-full max-w-[430px] relative bg-[#2C1A0E] min-h-screen shadow-2xl">
           <AnimatePresence>
             {creditSuccess && (
               <CreditSuccessPopup
