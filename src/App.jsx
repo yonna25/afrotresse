@@ -26,6 +26,7 @@ import Login from './pages/Login.jsx' // 👈 Import de la page Login
 
 // Import de la navigation
 import BottomNav from './components/BottomNav.jsx'
+import WhatsAppWidget from './components/WhatsAppWidget.jsx'
 
 // ─── Transfert crédits en attente → Supabase ─────────────────────
 async function flushPendingCredits(userId) {
@@ -165,6 +166,7 @@ function AnimatedRoutes() {
         </Routes>
       </AnimatePresence>
       {!hideNav && <BottomNav />}
+      <WhatsAppWidget />
     </>
   )
 }
@@ -226,7 +228,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <div className="min-h-screen bg-black flex justify-center">
-        <div className="w-full max-w-[430px] relative bg-[#2C1A0E] min-h-screen shadow-2xl">
+        <div className="w-full max-w-[430px] relative bg-[#2C1A0E] min-h-screen overflow-hidden shadow-2xl">
           <AnimatePresence>
             {creditSuccess && (
               <CreditSuccessPopup
