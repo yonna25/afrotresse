@@ -1,4 +1,5 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Seo from "../components/Seo.jsx";
 
@@ -38,80 +39,114 @@ function matchFedaError(msg = '') {
   return msg;
 }
 
-// ── Overlay chargement ────────────────────────────────────────────
+// ── Overlay chargement — rendu dans document.body via Portal ─────
 function LoadingOverlay() {
-  return (
+  return createPortal(
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[250] flex flex-col items-center justify-center gap-5 px-8"
-      style={{ background: 'rgba(20,8,0,0.92)', backdropFilter: 'blur(6px)' }}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 9000,
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center', gap: 20,
+        background: 'rgba(20,8,0,0.92)', backdropFilter: 'blur(6px)',
+      }}
     >
       <motion.div
         animate={{ rotate: 360 }}
         transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-        className="w-14 h-14 rounded-full border-4"
-        style={{ borderColor: 'rgba(194,144,54,0.2)', borderTopColor: '#C29036' }}
+        style={{
+          width: 56, height: 56, borderRadius: '50%',
+          border: '4px solid rgba(194,144,54,0.2)',
+          borderTopColor: '#C29036',
+        }}
       />
-      <div className="text-center">
-        <p className="font-black text-lg text-white mb-1">Préparation du paiement…</p>
-        <p className="text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>
+      <div style={{ textAlign: 'center' }}>
+        <p style={{ fontWeight: 900, fontSize: 18, color: '#fff', marginBottom: 4 }}>
+          Préparation du paiement…
+        </p>
+        <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)' }}>
           Connexion sécurisée FedaPay en cours
         </p>
       </div>
-    </motion.div>
+    </motion.div>,
+    document.body
   );
 }
 
-// ── Modal FedaPay (iframe intégré) ────────────────────────────────
+// ── Modal FedaPay — rendu dans document.body via Portal ───────────
 function FedaPayModal({ url, onClose }) {
   const [iframeLoaded, setIframeLoaded] = useState(false);
 
-  return (
+  // Fermer avec la touche Escape
+  useEffect(() => {
+    const handler = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  return createPortal(
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[300] flex flex-col"
-      style={{ background: 'rgba(0,0,0,0.95)', backdropFilter: 'blur(8px)' }}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 9100,
+        display: 'flex', flexDirection: 'column',
+        background: 'rgba(0,0,0,0.96)', backdropFilter: 'blur(8px)',
+      }}
     >
       {/* Header */}
-      <div
-        className="flex items-center justify-between px-5 py-4 flex-shrink-0"
-        style={{ borderBottom: '1px solid rgba(194,144,54,0.2)' }}
-      >
-        <div className="flex items-center gap-3">
-          <div
-            className="w-8 h-8 rounded-full flex items-center justify-center text-base"
-            style={{ backgroundColor: '#C29036' }}
-          >
-            💳
-          </div>
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '16px 20px', flexShrink: 0,
+        borderBottom: '1px solid rgba(194,144,54,0.2)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{
+            width: 32, height: 32, borderRadius: '50%',
+            backgroundColor: '#C29036',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 16,
+          }}>💳</div>
           <div>
-            <p className="font-bold text-white text-sm leading-tight">Paiement sécurisé</p>
-            <p className="text-[10px]" style={{ color: 'rgba(255,255,255,0.4)' }}>FedaPay · Crypté SSL</p>
+            <p style={{ fontWeight: 700, color: '#fff', fontSize: 14, lineHeight: 1.2 }}>
+              Paiement sécurisé
+            </p>
+            <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>
+              FedaPay · Crypté SSL
+            </p>
           </div>
         </div>
         <button
           onClick={onClose}
-          className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold"
-          style={{ background: 'rgba(255,255,255,0.1)' }}
-        >
-          ✕
-        </button>
+          style={{
+            width: 32, height: 32, borderRadius: '50%',
+            background: 'rgba(255,255,255,0.1)',
+            border: 'none', color: '#fff', fontSize: 16,
+            fontWeight: 700, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+        >✕</button>
       </div>
 
       {/* Loader iframe */}
       {!iframeLoaded && (
-        <div className="flex-1 flex flex-col items-center justify-center gap-4">
+        <div style={{
+          flex: 1, display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center', gap: 16,
+        }}>
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-            className="w-10 h-10 rounded-full border-4"
-            style={{ borderColor: 'rgba(194,144,54,0.2)', borderTopColor: '#C29036' }}
+            style={{
+              width: 40, height: 40, borderRadius: '50%',
+              border: '4px solid rgba(194,144,54,0.2)',
+              borderTopColor: '#C29036',
+            }}
           />
-          <p className="text-sm font-medium" style={{ color: 'rgba(255,255,255,0.5)' }}>
+          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>
             Chargement du paiement…
           </p>
         </div>
@@ -121,55 +156,71 @@ function FedaPayModal({ url, onClose }) {
       <iframe
         src={url}
         title="Paiement FedaPay"
-        className="flex-1 w-full border-0"
-        style={{ display: iframeLoaded ? 'block' : 'none' }}
+        style={{
+          flex: 1, width: '100%', border: 'none',
+          display: iframeLoaded ? 'block' : 'none',
+        }}
         onLoad={() => setIframeLoaded(true)}
         allow="payment"
       />
 
-      {/* Footer sécurité */}
-      <div
-        className="flex items-center justify-center gap-2 py-3 flex-shrink-0 text-xs"
-        style={{ color: 'rgba(255,255,255,0.3)', borderTop: '1px solid rgba(255,255,255,0.06)' }}
-      >
+      {/* Footer */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        gap: 8, padding: '10px 0', flexShrink: 0,
+        fontSize: 11, color: 'rgba(255,255,255,0.3)',
+        borderTop: '1px solid rgba(255,255,255,0.06)',
+      }}>
         🔒 Paiement 100 % sécurisé · Ne jamais partager vos codes
       </div>
-    </motion.div>
+    </motion.div>,
+    document.body
   );
 }
 
-// ── Toast erreur stylisé ──────────────────────────────────────────
+// ── Toast erreur — rendu dans document.body via Portal ────────────
 function ErrorToast({ message, onClose }) {
-  return (
+  // Auto-dismiss après 6s
+  useEffect(() => {
+    const t = setTimeout(onClose, 6000);
+    return () => clearTimeout(t);
+  }, [onClose]);
+
+  return createPortal(
     <motion.div
       initial={{ opacity: 0, y: 60, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 40, scale: 0.95 }}
       transition={{ type: 'spring', stiffness: 280, damping: 24 }}
-      className="fixed bottom-28 left-4 right-4 z-[400] max-w-sm mx-auto rounded-2xl px-5 py-4 flex items-start gap-3"
       style={{
+        position: 'fixed', bottom: 110, left: 16, right: 16,
+        zIndex: 9200, maxWidth: 400, margin: '0 auto',
+        borderRadius: 20, padding: '16px 20px',
+        display: 'flex', alignItems: 'flex-start', gap: 12,
         background: 'linear-gradient(135deg, #3D0E0E, #2A0808)',
         border: '1.5px solid rgba(255,80,80,0.35)',
         boxShadow: '0 4px 30px rgba(255,60,60,0.2)',
       }}
     >
-      <span className="text-xl flex-shrink-0 mt-0.5">⚠️</span>
-      <div className="flex-1">
-        <p className="font-bold text-sm mb-0.5" style={{ color: '#ff9090' }}>
+      <span style={{ fontSize: 20, flexShrink: 0, marginTop: 2 }}>⚠️</span>
+      <div style={{ flex: 1 }}>
+        <p style={{ fontWeight: 700, fontSize: 13, color: '#ff9090', marginBottom: 3 }}>
           Paiement non abouti
         </p>
-        <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,200,200,0.75)' }}>
+        <p style={{ fontSize: 12, lineHeight: 1.5, color: 'rgba(255,200,200,0.75)' }}>
           {message}
         </p>
       </div>
       <button
         onClick={onClose}
-        className="text-lg leading-none flex-shrink-0 mt-0.5"
-        style={{ color: 'rgba(255,150,150,0.7)' }}
-      >
-        ✕
-      </button>
-    </motion.div>
+        style={{
+          fontSize: 18, color: 'rgba(255,150,150,0.7)',
+          background: 'none', border: 'none', cursor: 'pointer',
+          flexShrink: 0, marginTop: 2, lineHeight: 1,
+        }}
+      >✕</button>
+    </motion.div>,
+    document.body
   );
 }
 
@@ -180,6 +231,15 @@ export default function Credits() {
   const [paymentUrl, setPaymentUrl] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
   const payButtonRef = useRef(null);
+
+  // Nettoyage complet à la navigation (démontage du composant)
+  useEffect(() => {
+    return () => {
+      setLoading(false);
+      setPaymentUrl(null);
+      setErrorMsg(null);
+    };
+  }, []);
 
   const handleSelect = (key) => {
     setSelected(key);
@@ -225,10 +285,13 @@ export default function Credits() {
   };
 
   return (
-    <div className="min-h-screen text-white font-sans pb-32" style={{ backgroundColor: '#1E1008' }}>
+    <div
+      className="min-h-screen text-white font-sans pb-32"
+      style={{ backgroundColor: '#1E1008' }}
+    >
       <Seo title="Acheter des crédits - AfroTresse" />
 
-      {/* ── Overlays ── */}
+      {/* ── Portals (montés sur document.body, jamais bloquants) ── */}
       <AnimatePresence>
         {loading && <LoadingOverlay key="loader" />}
         {paymentUrl && (
@@ -242,7 +305,10 @@ export default function Credits() {
       <div className="max-w-lg mx-auto px-4 pt-10">
 
         {/* ── Titre ── */}
-        <h1 className="text-4xl font-extrabold text-center mb-10" style={{ color: '#C29036' }}>
+        <h1
+          className="text-4xl font-extrabold text-center mb-10"
+          style={{ color: '#C29036' }}
+        >
           Choisis ton pack
         </h1>
 
