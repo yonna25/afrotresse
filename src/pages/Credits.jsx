@@ -61,12 +61,11 @@ export default function Credits() {
       if (result.paymentUrl) {
         window.location.href = result.paymentUrl;
       } else {
-        // Notification en cas d'échec
-        alert("Désolé, impossible de lancer le paiement : " + (result.error || "Erreur inconnue"));
+        alert("Erreur de paiement : " + (result.error || "Problème de configuration"));
         setLoading(false);
       }
     } catch (err) {
-      alert("Erreur de connexion au service de paiement.");
+      alert("Impossible de contacter le serveur de paiement.");
       setLoading(false);
     }
   };
@@ -75,7 +74,7 @@ export default function Credits() {
     <div className="min-h-screen bg-[#2C1A0E] text-white py-12 px-4 font-sans text-center">
       <Seo title="Crédits - AfroTresse" />
       
-      <h1 className="text-[#C29036] text-3xl font-bold mb-10">Choisis ton pack</h1>
+      <h1 className="text-[#C29036] text-3xl font-bold mb-10 italic">Choisis ton pack</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-10">
         {Object.entries(PACKS_CONFIG).map(([key, pack]) => (
@@ -103,24 +102,11 @@ export default function Credits() {
         onClick={handleBuy}
         disabled={loading}
         className={`w-full max-w-sm mx-auto py-5 rounded-2xl font-black text-lg transition-all ${
-          loading ? 'bg-gray-500 opacity-50 cursor-not-allowed' : 'bg-[#C29036] text-[#2C1A0E] active:scale-95'
+          loading ? 'bg-gray-600 opacity-50 cursor-not-allowed' : 'bg-[#C29036] text-[#2C1A0E] active:scale-95'
         }`}
       >
-        {loading ? (
-          <span className="flex items-center justify-center gap-2">
-            <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            Lancement...
-          </span>
-        ) : (
-          'Payer avec FedaPay 💳'
-        )}
+        {loading ? 'Lancement en cours...' : 'Payer avec FedaPay 💳'}
       </button>
-
-      {/* Message discret si échec précédent */}
-      <p className="mt-4 text-[10px] opacity-40">Sécurisé par FedaPay. En cas de problème, contactez le support.</p>
     </div>
   );
 }
