@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Seo from "../components/Seo.jsx";
 
@@ -37,6 +37,7 @@ export default function Credits() {
   const handleBuy = async () => {
     setLoading(true);
     try {
+      // Récupération sécurisée du sessionId (Priorité Supabase)
       const supabaseAuth = localStorage.getItem('sb-fowatshrtuzyyqsvvpxu-auth-token'); 
       let userId = null;
       if (supabaseAuth) {
@@ -59,56 +60,50 @@ export default function Credits() {
       });
 
       const result = await response.json();
-
       if (result.paymentUrl) {
         window.location.href = result.paymentUrl;
       } else {
-        alert(result.error || "Erreur lors de la création du paiement");
-        setLoading(false);
+        alert(result.error || "Erreur de connexion");
       }
     } catch (err) {
-      alert("Connexion impossible au service.");
+      console.error(err);
+    } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#2C1A0E] text-white py-12 px-4 font-sans text-center">
+    <div className="min-h-screen bg-[#2C1A0E] text-white py-12 px-4 font-sans">
       <Seo title="Acheter des crédits - AfroTresse" />
-      
-      <h1 className="text-[#C29036] text-3xl font-bold mb-10 italic uppercase tracking-widest">Choisis ton pack</h1>
+      <div className="max-w-4xl mx-auto text-center">
+        <h1 className="text-4xl font-bold mb-10 text-[#C29036]">Choisis ton pack</h1>
+        
+        <div className="grid md:grid-cols-3 gap-6 mb-12">
+          {Object.entries(PACKS_CONFIG).map(([key, pack]) => (
+            <motion.div
+              key={key}
+              whileHover={{ scale: 1.02 }}
+              onClick={() => setSelected(key)}
+              className={`relative cursor-pointer p-8 rounded-[2.5rem] border-2 transition-all ${
+                selected === key ? 'border-[#C29036] bg-[#C29036]/10' : 'border-white/10 bg-white/5'
+              }`}
+            >
+              {pack.popular && <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#C29036] text-[#2C1A0E] text-[10px] font-bold px-3 py-1 rounded-full uppercase">Conseillé</span>}
+              <h3 className="text-xl font-bold mb-2">{pack.label}</h3>
+              <div className="text-3xl font-black text-[#C29036] mb-2">{pack.price} FCFA</div>
+              <p className="text-sm opacity-70 italic">{pack.description}</p>
+            </motion.div>
+          ))}
+        </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-12 px-2">
-        {Object.entries(PACKS_CONFIG).map(([key, pack]) => (
-          <motion.div
-            key={key}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => setSelected(key)}
-            className={`relative p-8 rounded-[40px] border-2 cursor-pointer transition-all duration-300 ${
-              selected === key ? 'border-[#C29036] bg-[#C29036]/10' : 'border-white/10 bg-white/5'
-            }`}
-          >
-            {pack.popular && (
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#C29036] text-[#2C1A0E] text-[10px] font-black px-4 py-1 rounded-full uppercase">
-                Le plus prisé
-              </div>
-            )}
-            <h3 className="text-xl font-bold mb-2 italic">{pack.label}</h3>
-            <div className="text-4xl font-black text-[#C29036] mb-2">{pack.price} <span className="text-sm">FCFA</span></div>
-            <p className="text-sm opacity-60 italic leading-tight">{pack.description}</p>
-          </motion.div>
-        ))}
+        <button
+          onClick={handleBuy}
+          disabled={loading}
+          className="w-full md:w-80 bg-[#C29036] hover:bg-[#d4a045] text-[#2C1A0E] font-extrabold py-5 rounded-2xl transition-all disabled:opacity-50"
+        >
+          {loading ? 'Traitement...' : 'Payer avec FedaPay 💳'}
+        </button>
       </div>
-
-      <button
-        onClick={handleBuy}
-        disabled={loading}
-        className={`w-full max-w-sm mx-auto py-5 rounded-2xl font-black text-lg transition-all shadow-xl ${
-          loading ? 'bg-gray-600 opacity-50 cursor-not-allowed' : 'bg-[#C29036] text-[#2C1A0E] active:scale-95'
-        }`}
-      >
-        {loading ? 'Lancement...' : 'Payer avec FedaPay 💳'}
-      </button>
     </div>
   );
 }
