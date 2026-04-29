@@ -1,7 +1,3 @@
-// ============================================================
-// /api/fedapay.js — AfroTresse (Version Live Mise à jour)
-// ============================================================
-
 export const config = { api: { bodyParser: true } };
 
 const RATE_LIMIT = 5;
@@ -21,32 +17,17 @@ function checkRateLimit(ip) {
   return true;
 }
 
-// SOURCE DE VÉRITÉ MISE À JOUR (Selon ton image)
 const PACKS = {
-  decouverte: { 
-    amount: 300,  
-    credits: 3,  
-    description: 'AfroTresse - Pack Découverte (3 crédits)' 
-  },
-  allie: { 
-    amount: 900,  
-    credits: 10, 
-    description: 'AfroTresse - Pack Allié (10 crédits)' 
-  },
-  vip: { 
-    amount: 2500, 
-    credits: 50, 
-    description: 'AfroTresse - Pack VIP (50 crédits)' 
-  },
+  decouverte: { amount: 300,  credits: 3,  description: 'AfroTresse - Pack Découverte' },
+  allie:      { amount: 900,  credits: 10, description: 'AfroTresse - Pack Allié'      },
+  vip:        { amount: 2500, credits: 50, description: 'AfroTresse - Pack VIP'        },
 };
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Méthode non autorisée' });
 
   const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-  if (!checkRateLimit(ip)) {
-    return res.status(429).json({ error: 'Trop de tentatives. Réessayez plus tard.' });
-  }
+  if (!checkRateLimit(ip)) return res.status(429).json({ error: 'Trop de requêtes' });
 
   const secretKey = process.env.FEDAPAY_SECRET_KEY;
   const fedaBase = process.env.FEDAPAY_API_URL || 'https://api.fedapay.com';
@@ -87,13 +68,11 @@ export default async function handler(req, res) {
     const transaction = data['v1/transaction'] || data?.transaction || data?.entity;
     const paymentUrl  = transaction?.payment_url;
 
-    if (!paymentUrl) {
-      return res.status(500).json({ error: 'Lien de paiement introuvable' });
-    }
+    if (!paymentUrl) return res.status(500).json({ error: 'Lien FedaPay introuvable' });
 
     return res.status(200).json({ paymentUrl, transactionId: transaction?.id });
 
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur interne lors du paiement' });
+    return res.status(500).json({ error: 'Erreur interne' });
   }
 }
