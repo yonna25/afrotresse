@@ -346,7 +346,9 @@ export default function Credits() {
                     >
                       {isSelected && (
                         <motion.div
-                          layoutId="radio-dot"
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ duration: 0.15 }}
                           className="w-2.5 h-2.5 rounded-full"
                           style={{ backgroundColor: '#C29036' }}
                         />
