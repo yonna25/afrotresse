@@ -1,11 +1,12 @@
 // ============================================================
-// /api/fedapay.js — AfroTresse
+// /api/fedapay.js — AfroTresse (Version Live Mise à jour)
 // ============================================================
 
 export const config = { api: { bodyParser: true } };
 
+// Limitation du nombre de requêtes pour éviter les abus
 const RATE_LIMIT = 5;
-const WINDOW_MS  = 60 * 60 * 1000;
+const WINDOW_MS  = 60 * 60 * 1000; // 1 heure
 const rateMap    = new Map();
 
 function checkRateLimit(ip) {
@@ -21,6 +22,7 @@ function checkRateLimit(ip) {
   return true;
 }
 
+// Source de vérité pour les tarifs
 const PACKS = {
   starter: { amount: 500,  credits: 3,  description: 'AfroTresse - Pack Starter 3 tests'  },
   plus:    { amount: 1500, credits: 10, description: 'AfroTresse - Pack Plus 10 tests'     },
@@ -30,22 +32,26 @@ const PACKS = {
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Méthode non autorisée' });
 
-  const ip = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown';
-  if (!checkRateLimit(ip)) return res.status(429).json({ error: 'Trop de requêtes.' });
+  // Sécurité : Rate Limiting
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  if (!checkRateLimit(ip)) {
+    return res.status(429).json({ error: 'Trop de tentatives. Réessayez plus tard.' });
+  }
 
   const secretKey = process.env.FEDAPAY_SECRET_KEY;
-  if (!secretKey) return res.status(500).json({ error: 'Config FedaPay manquante' });
+  
+  // CORRECTION : L'URL pointe maintenant vers la production par défaut
+  const fedaBase = process.env.FEDAPAY_API_URL || 'https://api.fedapay.com';
 
   try {
     const { pack, email, phone, sessionId } = req.body;
     const selectedPack = PACKS[pack];
 
     if (!selectedPack || !sessionId) {
-      return res.status(400).json({ error: 'Données invalides' });
+      return res.status(400).json({ error: 'Données invalides (pack ou session manquante)' });
     }
 
-    const fedaBase = process.env.FEDAPAY_API_URL || 'https://sandbox-api.fedapay.com';
-
+    // Appel à l'API FedaPay pour créer la transaction
     const fedaRes = await fetch(`${fedaBase}/v1/transactions`, {
       method: 'POST',
       headers: {
@@ -71,14 +77,21 @@ export default async function handler(req, res) {
     });
 
     const data = await fedaRes.json();
+    
+    // Extraction de l'objet transaction selon la réponse de l'API
     const transaction = data['v1/transaction'] || data?.transaction || data?.entity;
     const paymentUrl  = transaction?.payment_url;
 
-    if (!paymentUrl) return res.status(500).json({ error: 'Lien de paiement introuvable' });
+    if (!paymentUrl) {
+      console.error('[FedaPay Error]', data);
+      return res.status(500).json({ error: 'Lien de paiement introuvable dans la réponse' });
+    }
 
+    // On renvoie l'URL de paiement au frontend
     return res.status(200).json({ paymentUrl, transactionId: transaction?.id });
 
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur serveur' });
+    console.error('[API EXCEPTION]', error);
+    return res.status(500).json({ error: 'Erreur interne lors de la création du paiement' });
   }
 }
