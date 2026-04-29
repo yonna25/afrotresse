@@ -285,8 +285,8 @@ export default function Credits() {
 
   return (
     <div
-      className="text-white font-sans pb-32"
-      style={{ backgroundColor: '#1E1008', minHeight: '100%' }}
+      className="text-white font-sans"
+      style={{ backgroundColor: '#1E1008', height: '100dvh', overflowY: 'auto', overflowX: 'hidden', paddingBottom: '100px', WebkitOverflowScrolling: 'touch' }}
     >
       <Seo title="Acheter des crédits - AfroTresse" />
 
