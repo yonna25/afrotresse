@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 
-export const config = { api: { bodyParser: true } };
+export const config = { maxDuration: 30 };
 
 const PACKS = {
   decouverte: { credits: 3,  amount: 300 },
