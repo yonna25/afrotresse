@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // ── Configuration ─────────────────────────────────────────────────
-const WHATSAPP_NUMBER = '2290151360355'; // 👈 Remplace par ton numéro WhatsApp
+const WHATSAPP_NUMBER = '2290164749117'; // 👈 Remplace par ton numéro WhatsApp
 
 const MESSAGES = {
   '/credits': "Bonjour, je suis sur la page des tarifs AfroTresse et j'aimerais avoir plus d'informations sur les packs.",
@@ -12,10 +12,10 @@ const MESSAGES = {
 };
 
 const TRIGGER_PAGES   = ['/credits', '/profile'];
-const DELAY_MS        = 90_000; // 90 secondes
+const DELAY_MS        = 30_000; // 30 secondes
 const STORAGE_SHOWN   = 'afrotresse_whatsapp_shown';
 const STORAGE_START   = 'afrotresse_whatsapp_timer_start';
-const AUTO_HIDE_MS    = 600_000; // 10 minutes d'inactivité
+const AUTO_HIDE_MS    = 120_000; // 2 minutes d'inactivité
 
 function buildWhatsAppUrl(pathname) {
   const msg = MESSAGES[pathname] || MESSAGES.default;
