@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // ── Configuration ─────────────────────────────────────────────────
-const WHATSAPP_NUMBER = '2290164649117'; // 👈 Remplace par ton numéro WhatsApp
+const WHATSAPP_NUMBER = '22900000000'; // 👈 Remplace par ton numéro WhatsApp
 
 const MESSAGES = {
   '/credits': "Bonjour, je suis sur la page des tarifs AfroTresse et j'aimerais avoir plus d'informations sur les packs.",
@@ -15,6 +15,7 @@ const TRIGGER_PAGES   = ['/credits', '/profile'];
 const DELAY_MS        = 90_000; // 90 secondes
 const STORAGE_SHOWN   = 'afrotresse_whatsapp_shown';
 const STORAGE_START   = 'afrotresse_whatsapp_timer_start';
+const AUTO_HIDE_MS    = 600_000; // 10 minutes d'inactivité
 
 function buildWhatsAppUrl(pathname) {
   const msg = MESSAGES[pathname] || MESSAGES.default;
@@ -62,6 +63,26 @@ export default function WhatsAppWidget() {
     return () => clearTimeout(timer);
   }, [isTargetPage, pathname]);
 
+  // Auto-hide après 10 minutes d'inactivité
+  useEffect(() => {
+    if (!visible) return;
+    let hideTimer = setTimeout(() => setVisible(false), AUTO_HIDE_MS);
+
+    const reset = () => {
+      clearTimeout(hideTimer);
+      hideTimer = setTimeout(() => setVisible(false), AUTO_HIDE_MS);
+    };
+
+    window.addEventListener('touchstart', reset);
+    window.addEventListener('click', reset);
+
+    return () => {
+      clearTimeout(hideTimer);
+      window.removeEventListener('touchstart', reset);
+      window.removeEventListener('click', reset);
+    };
+  }, [visible]);
+
   // Pulse toutes les 8s pour attirer l'attention
   useEffect(() => {
     if (!visible) return;
@@ -72,8 +93,8 @@ export default function WhatsAppWidget() {
     return () => clearInterval(interval);
   }, [visible]);
 
-  // Ne rien rendre si pas sur une page cible et pas encore visible
-  if (!visible) return null;
+  // Visible uniquement sur les pages cibles
+  if (!visible || !isTargetPage) return null;
 
   return (
     <AnimatePresence>
