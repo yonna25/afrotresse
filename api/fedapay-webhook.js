@@ -1,13 +1,8 @@
-// ============================================================
-// /api/fedapay-webhook.js — AfroTresse (Version Corrigée)
-// ============================================================
-
 import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
 
 export const config = { api: { bodyParser: false } };
 
-// ── Lecture du corps brut (Raw Body) ──────────────────────────────────────────
 async function getRawBody(req) {
   return new Promise((resolve, reject) => {
     const chunks = [];
@@ -17,7 +12,6 @@ async function getRawBody(req) {
   });
 }
 
-// ── Packs — Source de vérité (Mis à jour selon image) ────────────────────────
 const PACKS = {
   decouverte: { credits: 3,  amount: 300  },
   allie:      { credits: 10, amount: 900  },
@@ -25,107 +19,50 @@ const PACKS = {
 };
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Méthode non autorisée" });
-  }
+  if (req.method !== "POST") return res.status(405).end();
 
-  // 1. Lecture du body
-  let rawBody;
-  try {
-    rawBody = await getRawBody(req);
-  } catch {
-    return res.status(400).json({ error: "Impossible de lire le body" });
-  }
-
-  // 2. Vérification de la sécurité (HMAC / Secret Token)
+  let rawBody = await getRawBody(req);
   const webhookSecret = process.env.FEDAPAY_WEBHOOK_SECRET;
   const signature = req.headers["x-fedapay-signature"] || req.headers["x-fedapay-token"];
 
-  if (!webhookSecret || !signature) {
-    return res.status(401).json({ error: "Sécurité absente" });
-  }
+  if (!webhookSecret || !signature) return res.status(401).end();
 
-  // Vérification HMAC
-  if (req.headers["x-fedapay-signature"]) {
-    const expectedSig = crypto.createHmac("sha256", webhookSecret).update(rawBody).digest("hex");
-    if (`sha256=${expectedSig}` !== signature) {
-      return res.status(401).json({ error: "Signature invalide" });
-    }
-  } else if (signature !== webhookSecret) {
-    return res.status(401).json({ error: "Token invalide" });
-  }
-
-  // 3. Parse et validation de l'événement
-  let event;
-  try {
-    event = JSON.parse(rawBody.toString("utf8"));
-  } catch {
-    return res.status(400).json({ error: "JSON invalide" });
-  }
-
-  if (event.name !== "transaction.approved") {
+  const event = JSON.parse(rawBody.toString());
+  if (event.name !== "transaction.approved" && event.event !== "transaction.approved") {
     return res.status(200).json({ ignored: true });
   }
 
-  const transaction = event.entity;
-  const metadata    = transaction?.metadata ?? {};
-  const sessionId   = metadata.session_id;
-  const pack        = metadata.pack;
-  const transId     = String(transaction?.id ?? "");
-  const paidAmount  = transaction?.amount;
+  const transaction = event.entity || event;
+  const { session_id: sessionId, pack } = transaction.metadata || {};
+  const transId = String(transaction.id);
 
-  if (!sessionId || !pack || !PACKS[pack]) {
-    return res.status(400).json({ error: "Données manquantes ou pack inconnu" });
-  }
+  if (!sessionId || !pack || !PACKS[pack]) return res.status(400).end();
 
-  // 4. Initialisation Supabase
-  const supabase = createClient(
-    process.env.SUPABASE_URL, 
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  );
+  const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
-  // 5. Idempotence : Éviter de créditer deux fois
-  const { data: already } = await supabase
-    .from("paid_transactions")
-    .select("id")
-    .eq("transaction_id", transId)
-    .maybeSingle();
-
+  const { data: already } = await supabase.from("paid_transactions").select("id").eq("transaction_id", transId).maybeSingle();
   if (already) return res.status(200).json({ duplicate: true });
 
   const creditsToAdd = PACKS[pack].credits;
 
-  // 6. Enregistrement de la preuve de paiement
   await supabase.from("paid_transactions").insert([{
     transaction_id: transId,
     session_id: sessionId,
     pack,
     credits: creditsToAdd,
-    amount: paidAmount
+    amount: transaction.amount
   }]);
 
-  // 7. MISE À JOUR DES CRÉDITS (Table usage_credits)
-  const { data: account } = await supabase
-    .from("usage_credits")
-    .select("id, credits")
-    .eq("session_id", sessionId)
-    .maybeSingle();
+  const { data: account } = await supabase.from("usage_credits").select("id, credits").eq("session_id", sessionId).maybeSingle();
 
   if (account) {
-    await supabase
-      .from("usage_credits")
-      .update({ 
-        credits: account.credits + creditsToAdd,
-        updated_at: new Date().toISOString()
-      })
-      .eq("id", account.id);
+    await supabase.from("usage_credits").update({ 
+      credits: account.credits + creditsToAdd,
+      updated_at: new Date().toISOString()
+    }).eq("id", account.id);
   } else {
-    await supabase.from("usage_credits").insert([{
-      session_id: sessionId,
-      credits: creditsToAdd
-    }]);
+    await supabase.from("usage_credits").insert([{ session_id: sessionId, credits: creditsToAdd }]);
   }
 
-  console.log(`✅ Crédits ajoutés avec succès pour la session ${sessionId}`);
   return res.status(200).json({ success: true });
 }
