@@ -17,11 +17,11 @@ async function getRawBody(req) {
   });
 }
 
-// ── Packs — Source de vérité ────────────────────────────────────────────────
+// ── Packs — Source de vérité (Mis à jour selon image) ────────────────────────
 const PACKS = {
-  starter: { credits: 3,  amount: 500  },
-  plus:    { credits: 10, amount: 1500 },
-  pro:     { credits: 99, amount: 2500 },
+  decouverte: { credits: 3,  amount: 300  },
+  allie:      { credits: 10, amount: 900  },
+  vip:        { credits: 50, amount: 2500 },
 };
 
 export default async function handler(req, res) {
@@ -45,7 +45,7 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: "Sécurité absente" });
   }
 
-  // Vérification HMAC si disponible
+  // Vérification HMAC
   if (req.headers["x-fedapay-signature"]) {
     const expectedSig = crypto.createHmac("sha256", webhookSecret).update(rawBody).digest("hex");
     if (`sha256=${expectedSig}` !== signature) {
@@ -75,10 +75,10 @@ export default async function handler(req, res) {
   const paidAmount  = transaction?.amount;
 
   if (!sessionId || !pack || !PACKS[pack]) {
-    return res.status(400).json({ error: "Données manquantes" });
+    return res.status(400).json({ error: "Données manquantes ou pack inconnu" });
   }
 
-  // 4. Initialisation Supabase avec Service Role Key (SRL)
+  // 4. Initialisation Supabase
   const supabase = createClient(
     process.env.SUPABASE_URL, 
     process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -112,7 +112,6 @@ export default async function handler(req, res) {
     .maybeSingle();
 
   if (account) {
-    // Mise à jour de l'existant
     await supabase
       .from("usage_credits")
       .update({ 
@@ -121,7 +120,6 @@ export default async function handler(req, res) {
       })
       .eq("id", account.id);
   } else {
-    // Création si nouveau (cas rare)
     await supabase.from("usage_credits").insert([{
       session_id: sessionId,
       credits: creditsToAdd
