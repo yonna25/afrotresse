@@ -6,12 +6,12 @@ import Seo from "../components/Seo.jsx";
 import { getApprovedReviews } from '../services/reviews.js';
 
 const SLIDES = [
-  { id: 1, image: '/Afrotresse1.jpg', style: 'Knotless Braids' },
-  { id: 2, image: '/Afrotresse2.jpg', style: 'Box Braids' },
-  { id: 3, image: '/Afrotresse2.jpg', style: 'Cornrows' }, // Ajusté selon tes imports
-  { id: 4, image: '/Afrotresse4.jpg', style: 'Fulani Braids' },
-  { id: 5, image: '/Afrotresse5.jpg', style: 'Senegalese Twist' },
-  { id: 6, image: '/Afrotresse6.jpg', style: 'Ghana Braids' },
+  { id: 1, image: '/Afrotresse1.webp', style: 'Knotless Braids' },
+  { id: 2, image: '/Afrotresse2.webp', style: 'Box Braids' },
+  { id: 3, image: '/Afrotresse3.webp', style: 'Cornrows' },
+  { id: 4, image: '/Afrotresse4.webp', style: 'Fulani Braids' },
+  { id: 5, image: '/Afrotresse5.webp', style: 'Senegalese Twist' },
+  { id: 6, image: '/Afrotresse6.webp', style: 'Ghana Braids' },
 ];
 
 const MAINTENANCE_MESSAGE = "✨ AfroTresse évolue pour vous ! Travaux de maintenance en cours : merci de votre patience. ✨";
@@ -28,7 +28,6 @@ function TickerBar() {
           className="flex items-center whitespace-nowrap"
           style={{ willChange: 'transform' }}
         >
-          {/* Répétition pour une boucle infinie fluide */}
           {[0, 1, 2, 3].map(i => (
             <span key={i} className="font-body text-[11px] font-bold px-10 uppercase tracking-tight" style={{ color: '#2C1A0E' }}>
               {MAINTENANCE_MESSAGE}
@@ -109,14 +108,12 @@ export default function Home() {
             </motion.div>
           ))}
 
-          {/* OVERLAYS */}
           <div className="absolute inset-0 bg-black/40 z-10" />
           <div className="absolute inset-x-0 top-0 h-40 z-20"
             style={{ background: 'linear-gradient(to bottom, rgba(44,26,14,0.85), transparent)' }} />
           <div className="absolute inset-x-0 bottom-0 h-1/2 z-20"
             style={{ background: 'linear-gradient(to top, rgba(44,26,14,0.98), transparent)' }} />
 
-          {/* LOGO */}
           <div className="absolute inset-x-0 top-0 z-30 px-5 pt-4">
             <div className="flex flex-col leading-tight">
               <span className="font-display text-4xl leading-none">
@@ -129,7 +126,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* TEXTE */}
           <div className="absolute inset-x-0 bottom-0 z-30 px-5 pb-36">
             <h1 className="font-display text-2xl font-medium" style={{ lineHeight: 1.2, textShadow: '0 2px 12px rgba(0,0,0,0.65)' }}>
               <span style={{ color: '#C9963A', fontWeight: 600 }}>Un selfie, et</span>{' '}
@@ -150,7 +146,6 @@ export default function Home() {
               ))}
             </div>
 
-            {/* BADGE PREUVE SOCIALE */}
             {socialProof && (
               <motion.div
                 initial={{ opacity: 0, y: 6 }}
@@ -190,7 +185,6 @@ export default function Home() {
             )}
           </div>
 
-          {/* CTA */}
           <div className="absolute bottom-20 left-0 right-0 z-40 flex flex-col items-center gap-3 pointer-events-none px-5">
             <AnimatePresence>
               {showArrow && (
