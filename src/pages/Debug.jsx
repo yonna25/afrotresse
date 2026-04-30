@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { getCurrentUser, getSupabaseCredits } from '../services/useSupabaseCredits.js'
-import { getCredits, getSessionIdWithFp } from '../services/credits.js'
+import { getCredits } from '../services/credits.js'
+import { getSessionIdWithFp } from '../services/fingerprint.js'
 
 export default function Debug() {
   const navigate = useNavigate()
