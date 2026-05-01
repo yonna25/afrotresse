@@ -4,6 +4,7 @@ import { supabase } from '../services/supabase.js'
 const TABS = [
   { path: '/admin-partners', label: 'Partenaires', emoji: '🤝' },
   { path: '/admin-reviews',  label: 'Avis',        emoji: '⭐' },
+  { path: '/admin-credits',  label: 'Crédits',     emoji: '💎' },
   { path: '/debug',          label: 'Debug',        emoji: '🔧' },
 ]
 
