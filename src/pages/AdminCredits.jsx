@@ -20,13 +20,12 @@ const AuthLoader = () => (
 );
 
 export default function AdminCredits() {
-  // Changement ici : undefined pour attendre la réponse de Supabase sans rediriger trop vite
   const [session, setSession] = useState(undefined);
-  const [email, setEmail]         = useState("");
-  const [amount, setAmount]       = useState("");
-  const [loading, setLoading]     = useState(false);
-  const [msg, setMsg]             = useState(null);
-  const [history, setHistory]     = useState([]);
+  const [email, setEmail]     = useState("");
+  const [amount, setAmount]   = useState("");
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg]         = useState(null);
+  const [history, setHistory] = useState([]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -62,41 +61,47 @@ export default function AdminCredits() {
     setMsg(null);
 
     try {
-      // 1. Recherche par email (ton ancre sécurisée)
-      const { data: record, error: fetchError } = await supabase
-        .from("usage_credits")
-        .select("user_id, credits, email")
-        .eq("email", cleanEmail)
-        .maybeSingle();
-
-      if (fetchError) throw fetchError;
-
-      let targetUserId;
-      let newBalance;
       const creditsToAdd = parseInt(amount);
 
-      if (record) {
-        // Utilisatrice existe déjà
-        targetUserId = record.user_id;
-        newBalance = (record.credits || 0) + creditsToAdd;
-      } else {
-        // Optionnel : Créer une entrée préventive si l'user n'est jamais venu
-        // Mais par sécurité pragmatique, on informe que l'utilisatrice doit s'être connectée 1 fois.
-        setMsg({ text: `❌ L'utilisatrice ${cleanEmail} n'a pas encore de compte AfroTresse.`, type: "error" });
+      // 1. Récupérer le user_id via auth.users (admin API)
+      const { data: usersData, error: usersError } = await supabase.auth.admin.listUsers();
+      if (usersError) throw usersError;
+
+      const matchedUser = usersData.users.find(u => u.email?.toLowerCase() === cleanEmail);
+      if (!matchedUser) {
+        setMsg({ text: `❌ Aucun compte trouvé pour ${cleanEmail}. L'utilisatrice doit s'être connectée au moins une fois.`, type: "error" });
         setLoading(false);
         return;
       }
 
-      // 2. Mise à jour sécurisée
-      const { error: updateError } = await supabase
-        .from("usage_credits")
-        .update({ 
-          credits: newBalance, 
-          updated_at: new Date().toISOString() 
-        })
-        .eq("user_id", targetUserId);
+      const targetUserId = matchedUser.id;
 
-      if (updateError) throw updateError;
+      // 2. Lire le solde actuel dans usage_credits
+      const { data: record, error: fetchError } = await supabase
+        .from("usage_credits")
+        .select("credits")
+        .eq("user_id", targetUserId)
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+
+      const currentCredits = record?.credits || 0;
+      const newBalance = currentCredits + creditsToAdd;
+
+      if (record) {
+        // Mise à jour
+        const { error: updateError } = await supabase
+          .from("usage_credits")
+          .update({ credits: newBalance, email: cleanEmail, updated_at: new Date().toISOString() })
+          .eq("user_id", targetUserId);
+        if (updateError) throw updateError;
+      } else {
+        // Insertion si pas encore de ligne
+        const { error: insertError } = await supabase
+          .from("usage_credits")
+          .insert({ user_id: targetUserId, email: cleanEmail, credits: creditsToAdd });
+        if (insertError) throw insertError;
+      }
 
       const entry = {
         email: cleanEmail,
@@ -117,7 +122,6 @@ export default function AdminCredits() {
     }
   };
 
-  // Gestion de l'état d'auth sans flash blanc
   if (session === undefined) return <AuthLoader />;
   if (session === null) return <Navigate to="/login" replace />;
 
