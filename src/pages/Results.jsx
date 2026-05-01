@@ -56,7 +56,8 @@ function Fireworks({ onDone }) {
         if (this.trail) {
           ctx.globalAlpha = Math.max(0, this.life * 0.3);
           ctx.beginPath();
-          ctx.arc(this.x - this.vx * 2, this.y - this.vy * 2, this.size * 0.6, 0, Math.PI * 2); ctx.fill();
+          ctx.arc(this.x - this.vx * 2, this.y - this.vy * 2, this.size * 0.6, 0, Math.PI * 2);
+          ctx.fill();
         }
       }
     }
@@ -100,7 +101,6 @@ function Fireworks({ onDone }) {
 const VirtualTryOnPopup = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
   const whatsappGroupLink = "https://chat.whatsapp.com/VOTRE_LIEN_GROUPE_WHATSAPP";
-
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
       <div className="bg-[#FAF4EC] border-2 border-[#C9963A] w-full max-w-md rounded-2xl p-10 shadow-2xl relative">
@@ -117,12 +117,8 @@ const VirtualTryOnPopup = ({ isOpen, onClose }) => {
             <p className="leading-relaxed">Essayez vos tresses en un instant avant de passer au salon.</p>
             <p className="italic font-medium">Rejoignez notre liste d'attente exclusive pour être informée les premiers.</p>
           </div>
-          <a
-            href={whatsappGroupLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex w-full items-center justify-center bg-[#C9963A] hover:bg-[#2C1A0E] text-white text-[10px] font-black py-5 rounded-lg shadow-xl transition-all duration-300 uppercase tracking-widest"
-          >
+          <a href={whatsappGroupLink} target="_blank" rel="noopener noreferrer"
+            className="inline-flex w-full items-center justify-center bg-[#C9963A] hover:bg-[#2C1A0E] text-white text-[10px] font-black py-5 rounded-lg shadow-xl transition-all duration-300 uppercase tracking-widest">
             REJOINDRE LE CERCLE SUR WHATSAPP
           </a>
         </div>
@@ -137,15 +133,17 @@ export default function Results() {
   const [faceShape, setFaceShape]         = useState("oval");
   const [selfieUrl, setSelfieUrl]         = useState(null);
   const [styles, setStyles]               = useState([]);
-  const [credits, setCredits]             = useState(getCredits());
+  // FIX #1 : null = "pas encore syncé" — évite le faux 0 qui redirige vers /credits
+  const [credits, setCredits]             = useState(null);
   const [zoomImage, setZoomImage]         = useState(null);
   const [errorMsg, setErrorMsg]           = useState("");
   const [showFireworks, setShowFireworks] = useState(false);
   const [showVirtualTryOnModal, setShowVirtualTryOnModal] = useState(false);
+  const [isGenerating, setIsGenerating]   = useState(false);
   const [stableMsg, setStableMsg]         = useState({ headline: "Voici tes résultats ✨", subtext: "" });
   const [displayName, setDisplayName]     = useState(() => localStorage.getItem("afrotresse_user_name") || "");
 
-  const { favorites, isFav, toggleFav, FREE_LIMIT } = useFavorites();
+  const { isFav, toggleFav, FREE_LIMIT } = useFavorites();
 
   const [currentPage, setCurrentPage]     = useState(() => parseInt(localStorage.getItem("afrotresse_current_page") || "1", 10));
   const [unlockedPages, setUnlockedPages] = useState(() => parseInt(localStorage.getItem("afrotresse_unlocked_pages") || "1", 10));
@@ -184,7 +182,12 @@ export default function Results() {
     }
     const photo = sessionStorage.getItem("afrotresse_photo");
     if (photo) setSelfieUrl(photo);
-    syncCreditsFromServer().then(c => setCredits(c)).catch(() => setCredits(getCredits()));
+
+    // FIX #1 : solde local d'abord, puis correction serveur
+    setCredits(getCredits());
+    syncCreditsFromServer()
+      .then(c => setCredits(c))
+      .catch(() => setCredits(getCredits()));
   }, []);
 
   const getShuffledStyles = (shuffleSeed) => {
@@ -216,6 +219,7 @@ export default function Results() {
 
   const displayedStyles = getPageStyles(currentPage);
   const totalPages      = styles.length > 0 ? Math.ceil(styles.length / STYLES_PER_PAGE) : 1;
+  const hasMorePages    = unlockedPages < totalPages;
 
   const goToPage = (page) => {
     setCurrentPage(page);
@@ -223,18 +227,38 @@ export default function Results() {
     topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
+  // FIX #1 : sync AVANT de vérifier le solde + état de chargement
   const handleGenerateMore = async () => {
-    if (credits === 0) { navigate("/credits"); return; }
-    const ok = await consumeCredits(1);
-    if (!ok) { navigate("/credits"); return; }
-    setCredits(getCredits());
-    const nextPage = unlockedPages + 1;
-    setUnlockedPages(nextPage);
-    setCurrentPage(nextPage);
-    localStorage.setItem("afrotresse_unlocked_pages", String(nextPage));
-    localStorage.setItem("afrotresse_current_page", String(nextPage));
-    setShowFireworks(true);
-    topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (isGenerating) return;
+    setIsGenerating(true);
+    setErrorMsg("");
+
+    try {
+      const realCredits = await syncCreditsFromServer().catch(() => getCredits());
+      setCredits(realCredits);
+
+      if (realCredits <= 0) {
+        navigate("/credits");
+        return;
+      }
+
+      const ok = await consumeCredits(1);
+      if (!ok) {
+        navigate("/credits");
+        return;
+      }
+
+      setCredits(getCredits());
+      const nextPage = unlockedPages + 1;
+      setUnlockedPages(nextPage);
+      setCurrentPage(nextPage);
+      localStorage.setItem("afrotresse_unlocked_pages", String(nextPage));
+      localStorage.setItem("afrotresse_current_page", String(nextPage));
+      setShowFireworks(true);
+      topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleToggleFav = (style) => {
@@ -250,10 +274,8 @@ export default function Results() {
     return (
       <div className="min-h-[100dvh] bg-[#1A0A00] text-[#FAF4EC] flex flex-col relative overflow-hidden">
         <div className="relative h-52 overflow-hidden bg-[#1A0A00] flex items-center justify-center">
-          <div
-            className="absolute inset-0 flex flex-col items-center justify-center"
-            style={{ background: "linear-gradient(160deg, rgba(201,150,58,0.15) 0%, rgba(44,26,14,0.7) 100%)" }}
-          >
+          <div className="absolute inset-0 flex flex-col items-center justify-center"
+            style={{ background: "linear-gradient(160deg, rgba(201,150,58,0.15) 0%, rgba(44,26,14,0.7) 100%)" }}>
             <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-5xl mb-3">👑</motion.div>
             <motion.p className="text-white font-black text-2xl text-center px-4 leading-tight">
               Ton visage,<br /><span className="text-[#C9963A]">tes styles ✨</span>
@@ -262,7 +284,6 @@ export default function Results() {
           <div className="absolute bottom-0 left-0 right-0 h-24"
             style={{ background: "linear-gradient(to bottom, transparent, #1A0A00)" }} />
         </div>
-
         <div className="flex flex-col flex-1 px-5 pt-2 pb-32">
           <h2 className="text-xl font-black text-white mb-2">Découvre les tresses adaptées à ton visage 💛</h2>
           <p className="text-[12px] text-white/50 leading-relaxed mb-6 italic">
@@ -286,11 +307,9 @@ export default function Results() {
               </div>
             ))}
           </div>
-          <button
-            onClick={() => navigate("/camera")}
+          <button onClick={() => navigate("/camera")}
             className="w-full py-5 rounded-2xl font-black text-lg text-[#2C1A0E]"
-            style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}
-          >
+            style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}>
             📸 Prendre mon selfie
           </button>
         </div>
@@ -308,10 +327,8 @@ export default function Results() {
       <div ref={topRef} />
 
       {errorMsg && (
-        <motion.div
-          ref={errorRef}
-          className="mb-4 px-5 py-3 rounded-2xl bg-red-900/30 border border-red-500/30 text-red-300 text-[11px] font-bold text-center"
-        >
+        <motion.div ref={errorRef}
+          className="mb-4 px-5 py-3 rounded-2xl bg-red-900/30 border border-red-500/30 text-red-300 text-[11px] font-bold text-center">
           {errorMsg}
         </motion.div>
       )}
@@ -320,15 +337,11 @@ export default function Results() {
       <motion.div
         initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
         className="mb-10 flex flex-row gap-5 items-center bg-white/5 p-5 rounded-[2.5rem] border border-white/10"
-        style={{ boxShadow: "0 0 40px rgba(201,150,58,0.2)" }}
-      >
+        style={{ boxShadow: "0 0 40px rgba(201,150,58,0.2)" }}>
         <div className="relative shrink-0">
           {selfieUrl ? (
-            <ProtectedImg
-              src={selfieUrl}
-              alt="Mon selfie"
-              className="w-20 h-20 rounded-2xl border-2 border-[#C9963A] object-cover"
-            />
+            <ProtectedImg src={selfieUrl} alt="Mon selfie"
+              className="w-20 h-20 rounded-2xl border-2 border-[#C9963A] object-cover" />
           ) : (
             <div className="w-20 h-20 rounded-2xl border-2 border-white/10 bg-white/5 flex items-center justify-center text-[10px] text-white/50">
               Photo
@@ -342,8 +355,7 @@ export default function Results() {
           <h1 className="font-bold text-lg text-[#C9963A] leading-tight break-words">
             {displayName
               ? <><span className="block">Voici tes résultats</span><span className="text-white">{displayName}</span> ✨</>
-              : stableMsg.headline
-            }
+              : stableMsg.headline}
           </h1>
           <p className="text-[11px] opacity-80 leading-snug mt-1.5">{stableMsg.subtext}</p>
         </div>
@@ -352,13 +364,11 @@ export default function Results() {
       {/* LISTE DE STYLES */}
       <div className="flex flex-col gap-8">
         {displayedStyles.map((style, index) => {
-          const styleId    = style.id?.replace(/-/g, "");
+          const styleId     = style.id?.replace(/-/g, "");
           const isFavorited = isFav(style.id);
           return (
-            <motion.div
-              key={style.id || index}
-              className="bg-[#3D2616] rounded-[2.5rem] overflow-hidden border border-[#C9963A]/20 shadow-2xl"
-            >
+            <motion.div key={style.id || index}
+              className="bg-[#3D2616] rounded-[2.5rem] overflow-hidden border border-[#C9963A]/20 shadow-2xl">
               <div className="grid grid-cols-3 gap-0.5 h-72 bg-black/40">
                 <div className="col-span-2 h-full overflow-hidden">
                   <ProtectedImg
@@ -391,10 +401,8 @@ export default function Results() {
                   </button>
                 </div>
                 <p className="text-[11px] opacity-60 mb-6 px-4">{style.description}</p>
-                <button
-                  onClick={() => setShowVirtualTryOnModal(true)}
-                  className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 text-white/40 text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all"
-                >
+                <button onClick={() => setShowVirtualTryOnModal(true)}
+                  className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 text-white/40 text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all">
                   ✨ Essayer virtuellement — Bientôt
                 </button>
               </div>
@@ -403,21 +411,39 @@ export default function Results() {
         })}
       </div>
 
-      {/* PAGINATION */}
+      {/* FIX #2 — BOUTON "VOIR 3 AUTRES STYLES" sous les cartes */}
+      {hasMorePages && (
+        <motion.div
+          initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="mt-10">
+          <button
+            onClick={handleGenerateMore}
+            disabled={isGenerating || credits === null}
+            className="w-full py-5 rounded-2xl font-black text-lg text-[#2C1A0E] shadow-2xl disabled:opacity-60 disabled:cursor-not-allowed active:scale-95 transition-all"
+            style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)", boxShadow: "0 0 30px rgba(201,150,58,0.35)" }}>
+            {isGenerating ? "⏳ Chargement…" : "✨ Voir 3 autres styles — 1 crédit"}
+          </button>
+          {credits !== null && (
+            <p className="text-center text-[10px] text-white/30 mt-3">
+              Solde : <span className="text-[#C9963A] font-black">{credits} crédit{credits > 1 ? "s" : ""}</span>
+            </p>
+          )}
+        </motion.div>
+      )}
+
+      {/* FIX #3 — PAGINATION : visible dès que plusieurs pages sont débloquées */}
       {unlockedPages > 1 && (
-        <div className="mt-8 mb-4 flex flex-col items-center gap-4">
+        <div className="mt-10 mb-4 flex flex-col items-center gap-4">
           <p className="text-[10px] text-white/30 uppercase tracking-widest font-bold">Pages débloquées</p>
           <div className="flex flex-wrap justify-center gap-2">
             {Array.from({ length: unlockedPages }, (_, i) => i + 1).map((p) => (
-              <button
-                key={p}
-                onClick={() => goToPage(p)}
+              <button key={p} onClick={() => goToPage(p)}
                 className={`w-12 h-12 rounded-2xl font-black text-sm transition-all ${
                   p === currentPage
                     ? "bg-[#C9963A] text-[#2C1A0E] scale-110 shadow-lg"
                     : "bg-white/5 text-white/40 border border-white/10"
-                }`}
-              >
+                }`}>
                 {p}
               </button>
             ))}
@@ -427,22 +453,24 @@ export default function Results() {
 
       {/* BOUTONS FLOTTANTS */}
       <div className="fixed bottom-24 right-4 z-[60] flex flex-col gap-3">
-        <motion.div
-          onClick={() => navigate("/credits")}
-          className="w-12 h-12 bg-[#FAF4EC] text-[#2C1A0E] rounded-lg flex flex-col items-center justify-center shadow-lg border border-[#C9963A]/30 cursor-pointer"
-        >
+        {/* Solde */}
+        <motion.div onClick={() => navigate("/credits")}
+          className="w-12 h-12 bg-[#FAF4EC] text-[#2C1A0E] rounded-lg flex flex-col items-center justify-center shadow-lg border border-[#C9963A]/30 cursor-pointer">
           <div className="text-[5px] font-black uppercase opacity-60 leading-tight">Solde</div>
-          <div className="text-xl font-black leading-none">{credits}</div>
+          <div className="text-xl font-black leading-none">{credits ?? "…"}</div>
         </motion.div>
 
-        {unlockedPages < totalPages && (
+        {/* Raccourci générer */}
+        {hasMorePages && (
           <motion.button
             initial={{ scale: 0 }} animate={{ scale: 1 }} whileTap={{ scale: 0.9 }}
             onClick={handleGenerateMore}
-            className="w-12 h-12 rounded-lg flex flex-col items-center justify-center shadow-lg border border-white/10"
-            style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}
-          >
-            <span className="text-[6px] font-black text-[#2C1A0E] uppercase leading-none mb-1">Générer</span>
+            disabled={isGenerating || credits === null}
+            className="w-12 h-12 rounded-lg flex flex-col items-center justify-center shadow-lg border border-white/10 disabled:opacity-50"
+            style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}>
+            <span className="text-[6px] font-black text-[#2C1A0E] uppercase leading-none mb-1">
+              {isGenerating ? "…" : "Générer"}
+            </span>
             <span className="text-xl">✨</span>
           </motion.button>
         )}
@@ -451,19 +479,12 @@ export default function Results() {
       {/* ZOOM IMAGE */}
       <AnimatePresence>
         {zoomImage && (
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[150] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4"
-          >
-            <button onClick={() => setZoomImage(null)} className="absolute top-10 right-6 text-white text-3xl z-[160]">
-              ✕
-            </button>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[150] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4">
+            <button onClick={() => setZoomImage(null)} className="absolute top-10 right-6 text-white text-3xl z-[160]">✕</button>
             <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="relative max-w-full max-h-full">
-              <ProtectedImg
-                src={zoomImage}
-                alt="Zoom style"
-                className="max-w-full max-h-[85dvh] rounded-3xl object-contain shadow-2xl border border-white/10"
-              />
+              <ProtectedImg src={zoomImage} alt="Zoom style"
+                className="max-w-full max-h-[85dvh] rounded-3xl object-contain shadow-2xl border border-white/10" />
             </motion.div>
           </motion.div>
         )}
