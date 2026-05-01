@@ -1,11 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../services/supabase.js'
-import { 
-  getCurrentUser, 
-  syncCreditsWithServer, 
-  getOrCreateFingerprint 
-} from '../services/useSupabaseCredits.js'
+import { getCurrentUser } from '../services/useSupabaseCredits.js'
 import { setCredits } from '../services/credits.js'
 
 export default function MagicLink() {
@@ -35,11 +31,7 @@ export default function MagicLink() {
       })
 
       if (error) throw error
-      
-      // Synchronisation préventive avec le fingerprint actuel
-      const fp = getOrCreateFingerprint()
-      await syncCreditsWithServer(email, fp)
-      
+
       setMessage('Lien magique envoyé ! Vérifiez vos e-mails. 📧')
     } catch (error) {
       setMessage('Erreur : ' + error.message)
