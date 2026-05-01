@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, Routes, Route } from 'react-router-dom';
 import CameraCapture from './components/CameraCapture';
-import Analyse from './pages/Analyse'; 
+import Analyze from './pages/Analyze'; 
 import { getCredits, consumeCredits, syncCreditsFromServer } from "./services/credits.js";
 
 export default function App() {
@@ -30,14 +30,14 @@ export default function App() {
     
     if (ok) {
       setCredits(getCredits()); // Mise à jour locale du solde
-      navigate('/analyse');
+      navigate('/analyze');
     } else {
       // Tentative de resynchronisation en cas d'échec de communication
       const synced = await syncCreditsFromServer().catch(() => 0);
       if (synced > 0) {
         await consumeCredits(1);
         setCredits(getCredits());
-        navigate('/analyse');
+        navigate('/analyze');
       } else {
         navigate('/credits');
       }
@@ -86,7 +86,7 @@ export default function App() {
           </div>
         } />
 
-        <Route path="/analyse" element={<Analyse />} />
+        <Route path="/analyze" element={<Analyze />} />
       </Routes>
     </div>
   );
