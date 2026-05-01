@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { setCredits, getCredits, syncCreditsFromServer } from './services/credits.js'
-import { getCurrentUser, getSupabaseCredits, ensureUserExists, addSupabaseCredits } from './services/useSupabaseCredits.js'
+
+// Services
+import { setCredits, getCredits } from './services/credits.js'
+import { syncCreditsWithServer, getOrCreateFingerprint } from './services/useSupabaseCredits.js'
 import { supabase } from './services/supabase.js'
 
-// Import des pages
+// Pages
 import Home from './pages/Home.jsx'
 import Camera from './pages/Camera.jsx'
 import Analyze from './pages/Analyze.jsx'
@@ -22,53 +24,43 @@ import Library from './pages/Library.jsx'
 import AdminReviews from './pages/AdminReviews.jsx'
 import Partners from './pages/Partners.jsx'
 import AdminPartners from './pages/AdminPartners.jsx'
-import Login from './pages/Login.jsx' // 👈 Import de la page Login
+import AdminCredits from './pages/AdminCredits.jsx'
+import Login from './pages/Login.jsx'
 
-// Import de la navigation
+// Composants
 import BottomNav from './components/BottomNav.jsx'
+import WhatsAppWidget from './components/WhatsAppWidget.jsx'
 
-// ─── Transfert crédits en attente → Supabase ─────────────────────
-async function flushPendingCredits(userId) {
-  try {
-    const pending = parseInt(localStorage.getItem('afrotresse_pending_credits') || '0', 10)
-    if (pending > 0) {
-      await addSupabaseCredits(userId, pending)
-      localStorage.removeItem('afrotresse_pending_credits')
-    }
-  } catch (err) {
-    console.error('flushPendingCredits error:', err)
-  }
-}
-
-
-// ─── Protection route admin ───────────────────────────────────────
+/**
+ * Composant de Route Protégée (Admin)
+ * Utilise un état 'undefined' pour éviter les redirections brutales pendant le chargement.
+ */
 function AdminRoute({ children }) {
-  const [status, setStatus] = useState('checking') // 'checking' | 'allowed' | 'denied'
+  const [session, setSession] = useState(undefined);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setStatus('allowed')
-      } else {
-        setStatus('denied')
-        window.location.href = '/login'
-      }
-    })
-  }, [])
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+    });
+  }, []);
 
-  if (status === 'checking') return (
-    <div style={{
-      minHeight: '100vh', backgroundColor: '#0F0500',
-      display: 'flex', alignItems: 'center', justifyContent: 'center'
-    }}>
-      <div style={{ color: '#C9963A', fontSize: 13, fontWeight: 700 }}>Vérification...</div>
+  if (session === undefined) return (
+    <div className="min-h-screen bg-[#0F0500] flex items-center justify-center">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-6 h-6 border-2 border-[#C9963A] border-t-transparent rounded-full animate-spin"></div>
+        <span className="text-[#C9963A] text-[10px] font-black uppercase tracking-widest">Vérification...</span>
+      </div>
     </div>
-  )
-  if (status === 'denied') return null
-  return children
+  );
+  
+  if (!session) return <Navigate to="/login" replace />;
+  return children;
 }
 
-// CREDIT SUCCESS POPUP (Code inchangé)
+/**
+ * Popup de succès pour l'achat ou l'attribution de crédits
+ * Conserve ton design premium et tes animations.
+ */
 function CreditSuccessPopup({ data, onClose }) {
   useEffect(() => {
     const timer = setTimeout(onClose, 4000)
@@ -77,18 +69,15 @@ function CreditSuccessPopup({ data, onClose }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       className="fixed inset-0 z-[200] flex items-center justify-center px-6"
-      style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(10px)' }}
+      style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)' }}
       onClick={onClose}
     >
       <motion.div
         initial={{ scale: 0.8, y: 40, opacity: 0 }}
         animate={{ scale: 1, y: 0, opacity: 1 }}
         exit={{ scale: 0.8, y: 40, opacity: 0 }}
-        transition={{ type: 'spring', stiffness: 260, damping: 22 }}
         className="w-full max-w-sm rounded-[2.5rem] p-8 text-center relative overflow-hidden"
         style={{
           background: 'linear-gradient(160deg, #2C1A0E 0%, #3D2616 100%)',
@@ -97,52 +86,10 @@ function CreditSuccessPopup({ data, onClose }) {
         }}
         onClick={e => e.stopPropagation()}
       >
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {[...Array(8)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute text-lg"
-              initial={{ opacity: 0, y: 60, x: `${10 + i * 12}%` }}
-              animate={{ opacity: [0, 1, 0], y: -80 }}
-              transition={{ delay: i * 0.15, duration: 1.8, repeat: Infinity, repeatDelay: 1.5 }}
-            >
-              {['✨', '💎', '👑', '⭐', '✨', '💛', '👑', '💎'][i]}
-            </motion.div>
-          ))}
-        </div>
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: [0, 1.2, 1] }}
-          transition={{ delay: 0.1, duration: 0.5 }}
-          className="text-6xl mb-4"
-        >
-          💎
-        </motion.div>
-        <h2 className="text-2xl font-black text-[#C9963A] mb-1">
-          Félicitations {data.userName} ! 🎉
-        </h2>
-        <motion.p
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="text-4xl font-black text-white my-4"
-        >
-          +{data.credits} crédits
-        </motion.p>
-        <p className="text-sm text-white/60 mb-2">
-          Pack <span className="text-[#C9963A] font-bold">{data.label}</span> activé
-        </p>
-        <p className="text-xs text-white/40 mb-6">
-          Solde : <span className="text-white font-bold">{getCredits()} crédits</span>
-        </p>
-        <motion.div className="h-1 rounded-full bg-[#C9963A]/30 overflow-hidden mb-5">
-          <motion.div
-            className="h-full bg-[#C9963A]"
-            initial={{ width: '100%' }}
-            animate={{ width: '0%' }}
-            transition={{ duration: 4 }}
-          />
-        </motion.div>
+        <div className="text-6xl mb-4">💎</div>
+        <h2 className="text-2xl font-black text-[#C9963A] mb-1">Félicitations {data.userName} ! 🎉</h2>
+        <p className="text-4xl font-black text-white my-4">+{data.credits} crédits</p>
+        <p className="text-xs text-white/40 mb-6">Nouveau solde : <span className="text-white font-bold">{getCredits()}</span></p>
         <button
           onClick={onClose}
           className="w-full py-4 rounded-2xl font-black text-[#1A0A00]"
@@ -155,19 +102,12 @@ function CreditSuccessPopup({ data, onClose }) {
   )
 }
 
-// ROUTES
 function AnimatedRoutes() {
   const location = useLocation()
   
-  // Masquer BottomNav sur camera, analyze, magic-link, admin, et LOGIN
   const hideNav = [
-    '/camera', 
-    '/analyze', 
-    '/magic-link', 
-    '/admin-reviews', 
-    '/admin-partners',
-    '/login',
-    '/debug'
+    '/camera', '/analyze', '/magic-link', '/admin-reviews', 
+    '/admin-partners', '/admin-credits', '/login', '/debug'
   ].includes(location.pathname)
 
   return (
@@ -188,79 +128,60 @@ function AnimatedRoutes() {
           <Route path="/magic-link" element={<MagicLink />} />
           <Route path="/library" element={<Library />} />
           <Route path="/partners" element={<Partners />} />
-          <Route path="/admin-reviews" element={<AdminReviews />} />
-          <Route path="/admin-partners" element={<AdminPartners />} />
-          <Route path="/login" element={<Login />} /> {/* 👈 Nouvelle Route */}
+          <Route path="/admin-reviews" element={<AdminRoute><AdminReviews /></AdminRoute>} />
+          <Route path="/admin-partners" element={<AdminRoute><AdminPartners /></AdminRoute>} />
+          <Route path="/admin-credits" element={<AdminRoute><AdminCredits /></AdminRoute>} />
+          <Route path="/login" element={<Login />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AnimatePresence>
       {!hideNav && <BottomNav />}
+      <WhatsAppWidget />
     </>
   )
 }
 
-// APP (Code principal inchangé)
 export default function App() {
   const [creditSuccess, setCreditSuccess] = useState(null)
 
   useEffect(() => {
-    getCurrentUser().then(async (user) => {
-      if (user) {
-        try {
-          await ensureUserExists(user.id, user.email)
-          await flushPendingCredits(user.id)
-          const balance = await getSupabaseCredits(user.id)
-          if (balance > 0) setCredits(balance)
-        } catch {}
-      } else {
-        syncCreditsFromServer().catch(() => {})
-      }
-    })
+    const fp = getOrCreateFingerprint();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user?.id) {
-          try {
-            await ensureUserExists(session.user.id, session.user.email)
-            await flushPendingCredits(session.user.id)
-            const balance = await getSupabaseCredits(session.user.id)
-            if (balance > 0) setCredits(balance)
-          } catch {}
-        }
-      }
-    )
+    // Fonction de synchronisation sécurisée (Email + Fingerprint)
+    const syncSession = async (user) => {
+      const balance = await syncCreditsWithServer(user?.email, fp);
+      setCredits(balance);
+    };
 
-    return () => subscription?.unsubscribe()
+    // Initialisation au chargement
+    supabase.auth.getUser().then(({ data }) => syncSession(data.user));
+
+    // Écouteur de changement d'état (Connexion / Refresh)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        syncSession(session?.user);
+      }
+    });
+
+    return () => subscription?.unsubscribe();
   }, [])
 
+  // Écouteur pour les popups de succès (provenant de Stripe ou Admin)
   useEffect(() => {
-    const handler = (e) => setCreditSuccess(e.detail)
-    window.addEventListener('afrotresse:credit_success', handler)
-    return () => window.removeEventListener('afrotresse:credit_success', handler)
-  }, [])
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const raw = sessionStorage.getItem('afrotresse_credit_success')
-      if (raw) {
-        try {
-          const data = JSON.parse(raw)
-          sessionStorage.removeItem('afrotresse_credit_success')
-          setCreditSuccess(data)
-        } catch {}
-      }
-    }, 400)
-    return () => clearInterval(interval)
+    const handler = (e) => setCreditSuccess(e.detail);
+    window.addEventListener('afrotresse:credit_success', handler);
+    return () => window.removeEventListener('afrotresse:credit_success', handler);
   }, [])
 
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-black flex justify-center">
-        <div className="w-full max-w-[430px] relative bg-[#2C1A0E] min-h-screen shadow-2xl">
+      <div className="min-h-screen bg-black flex justify-center font-sans">
+        <div className="w-full max-w-[430px] relative bg-[#2C1A0E] min-h-screen shadow-2xl overflow-x-hidden">
           <AnimatePresence>
             {creditSuccess && (
-              <CreditSuccessPopup
-                data={creditSuccess}
-                onClose={() => setCreditSuccess(null)}
+              <CreditSuccessPopup 
+                data={creditSuccess} 
+                onClose={() => setCreditSuccess(null)} 
               />
             )}
           </AnimatePresence>
@@ -269,5 +190,4 @@ export default function App() {
       </div>
     </BrowserRouter>
   )
-                  }
-        
+}
