@@ -22,6 +22,7 @@ import Library from './pages/Library.jsx'
 import AdminReviews from './pages/AdminReviews.jsx'
 import Partners from './pages/Partners.jsx'
 import AdminPartners from './pages/AdminPartners.jsx'
+import AdminCredits from './pages/AdminCredits.jsx'
 import Login from './pages/Login.jsx' // 👈 Import de la page Login
 
 // Import de la navigation
@@ -167,7 +168,8 @@ function AnimatedRoutes() {
     '/admin-reviews', 
     '/admin-partners',
     '/login',
-    '/debug'
+    '/debug',
+    '/admin-credits'
   ].includes(location.pathname)
 
   return (
@@ -190,6 +192,7 @@ function AnimatedRoutes() {
           <Route path="/partners" element={<Partners />} />
           <Route path="/admin-reviews" element={<AdminReviews />} />
           <Route path="/admin-partners" element={<AdminPartners />} />
+          <Route path="/admin-credits" element={<AdminCredits />} />
           <Route path="/login" element={<Login />} /> {/* 👈 Nouvelle Route */}
         </Routes>
       </AnimatePresence>
@@ -269,5 +272,4 @@ export default function App() {
       </div>
     </BrowserRouter>
   )
-                  }
-        
+}
