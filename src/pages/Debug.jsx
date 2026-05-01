@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../services/supabase.js'
 import { getCredits, setCredits } from '../services/credits.js'
-import { syncCreditsWithServer } from '../services/useSupabaseCredits.js'
 import AdminNav from '../components/AdminNav.jsx'
 
 export default function Debug() {
@@ -42,11 +41,6 @@ export default function Debug() {
 
   const handleFullSync = async () => {
     setLoading(true)
-    const fp = localStorage.getItem('afrotresse_fingerprint') || null
-    const email = session?.user?.email || null
-    const newBalance = await syncCreditsWithServer(email, fp)
-    setLocalCredits(newBalance)
-    setCredits(newBalance)
     await refreshAllData()
     setLoading(false)
   }
@@ -61,7 +55,7 @@ export default function Debug() {
         <div className="flex items-center justify-between border-b border-[#C9963A]/20 pb-6">
           <div>
             <h1 className="text-[#C9963A] text-3xl font-black uppercase tracking-tighter">Diagnostic</h1>
-            <p className="text-white/50 text-xs uppercase tracking-widest mt-1">Supervision Syst\u00e8me</p>
+            <p className="text-white/50 text-xs uppercase tracking-widest mt-1">Supervision Système</p>
           </div>
           <button
             onClick={() => navigate('/admin-credits')}
@@ -73,7 +67,7 @@ export default function Debug() {
 
         {/* 1. COMPARAISON DES CRÉDITS */}
         <div className="rounded-[2rem] p-6 bg-white/5 border border-white/10">
-          <p className="text-xs font-black text-[#C9963A] uppercase tracking-widest mb-6 text-center">\u00c9tat des Cr\u00e9dits</p>
+          <p className="text-xs font-black text-[#C9963A] uppercase tracking-widest mb-6 text-center">État des Crédits</p>
           <div className="grid grid-cols-2 gap-4">
             <div className="text-center p-4 bg-black/40 rounded-2xl border border-white/5">
               <p className="text-4xl font-black text-white">{localCredits}</p>
@@ -100,11 +94,11 @@ export default function Debug() {
 
         {/* 2. IDENTITÉ */}
         <div className="rounded-[2rem] p-6 bg-white/5 border border-white/10">
-          <p className="text-xs font-black text-[#C9963A] uppercase tracking-widest mb-4">Identit\u00e9 Connect\u00e9e</p>
+          <p className="text-xs font-black text-[#C9963A] uppercase tracking-widest mb-4">Identité Connectée</p>
           <div className="space-y-4 text-sm">
             <div className="flex flex-col">
               <span className="text-[10px] text-white/40 uppercase mb-1">Email Actif</span>
-              <span className="text-white font-bold">{session?.user?.email || 'NON CONNECT\u00c9'}</span>
+              <span className="text-white font-bold">{session?.user?.email || 'NON CONNECTÉ'}</span>
             </div>
             <div className="flex flex-col">
               <span className="text-[10px] text-white/40 uppercase mb-1">ID Technique (UID)</span>
@@ -143,7 +137,7 @@ export default function Debug() {
             onClick={async () => { await supabase.auth.signOut(); navigate('/login'); }}
             className="w-full py-5 rounded-2xl bg-red-500/20 border border-red-500/40 text-xs font-black uppercase tracking-widest text-red-500"
           >
-            D\u00e9connexion Imm\u00e9diate
+            Déconnexion Immédiate
           </button>
         </div>
 
