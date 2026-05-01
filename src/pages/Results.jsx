@@ -145,10 +145,6 @@ export default function Results() {
   const { favorites, isFav, toggleFav, FREE_LIMIT } = useFavorites();
   const [currentPage, setCurrentPage]     = useState(() => parseInt(localStorage.getItem("afrotresse_current_page") || "1", 10));
   const [unlockedPages, setUnlockedPages] = useState(() => parseInt(localStorage.getItem("afrotresse_unlocked_pages") || "1", 10));
-  const [styleStats] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("afrotresse_style_stats") || "{}"); }
-    catch { return {}; }
-  });
 
   const topRef   = useRef(null);
   const errorRef = useRef(null);
@@ -181,7 +177,6 @@ export default function Results() {
     const photo = sessionStorage.getItem("afrotresse_photo");
     if (photo) setSelfieUrl(photo);
 
-    // Sync crédits au montage et mettre à jour le state
     syncCreditsFromServer()
       .then(c => { if (c !== undefined) setCredits(c); })
       .catch(() => setCredits(getCredits()));
@@ -222,11 +217,8 @@ export default function Results() {
     topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  // ── Générer plus — bug corrigé ────────────────────────────────
   const handleGenerateMore = async () => {
-    // Relire les crédits frais depuis localStorage (pas depuis le state)
     const freshCredits = getCredits();
-
     if (freshCredits <= 0) {
       navigate("/credits");
       return;
@@ -234,7 +226,6 @@ export default function Results() {
 
     const ok = await consumeCredits(1);
     if (!ok) {
-      // Sync et réessayer une fois
       const synced = await syncCreditsFromServer().catch(() => 0);
       setCredits(synced);
       if (synced <= 0) { navigate("/credits"); return; }
@@ -242,10 +233,7 @@ export default function Results() {
       if (!retry) { navigate("/credits"); return; }
     }
 
-    // Mettre à jour le state crédits après consommation
-    const updated = getCredits();
-    setCredits(updated);
-
+    setCredits(getCredits());
     const nextPage = unlockedPages + 1;
     setUnlockedPages(nextPage);
     setCurrentPage(nextPage);
@@ -256,7 +244,6 @@ export default function Results() {
   };
 
   const totalPages = styles.length > 0 ? Math.ceil(styles.length / STYLES_PER_PAGE) : 1;
-  const allStylesSeen = unlockedPages >= totalPages && unlockedPages > 1;
 
   const handleToggleFav = (style) => {
     const result = toggleFav(style);
@@ -352,7 +339,6 @@ export default function Results() {
         })}
       </div>
 
-      {/* ── Bouton Voir 3 autres styles ── */}
       {unlockedPages < totalPages && (
         <motion.button
           initial={{ opacity: 0, y: 20 }}
@@ -370,7 +356,6 @@ export default function Results() {
         </motion.button>
       )}
 
-      {/* Pagination */}
       {unlockedPages > 1 && (
         <div className="mt-8 mb-4 flex flex-col items-center gap-4">
           <p className="text-[10px] text-white/30 uppercase tracking-widest font-bold">Pages débloquées</p>
@@ -385,7 +370,22 @@ export default function Results() {
         </div>
       )}
 
-      {/* Boutons flottants */}
+      {/* BOUTON FLOTTANT GÉNÉRER (Activation de la fonction + Animation) */}
+      <AnimatePresence>
+        {unlockedPages < totalPages && (
+          <motion.button
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            onClick={handleGenerateMore}
+            className="fixed bottom-32 right-6 z-[100] w-16 h-16 bg-[#C9963A] rounded-full shadow-[0_10px_30px_rgba(201,150,58,0.4)] flex flex-col items-center justify-center border-4 border-[#1A0A00] active:scale-90 transition-transform"
+          >
+            <span className="text-xl">✨</span>
+            <span className="text-[7px] font-black uppercase text-[#1A0A00] leading-none mt-1">Générer</span>
+          </motion.button>
+        )}
+      </AnimatePresence>
+
       <div className="fixed bottom-24 right-4 z-[60] flex flex-col gap-3">
         <motion.div onClick={() => navigate("/credits")}
           className="w-12 h-12 bg-[#FAF4EC] text-[#2C1A0E] rounded-lg flex flex-col items-center justify-center shadow-lg border border-[#C9963A]/30 cursor-pointer">
@@ -394,19 +394,18 @@ export default function Results() {
         </motion.div>
       </div>
 
-      {/* Zoom image */}
+      <VirtualTryOnPopup isOpen={showVirtualTryOnModal} onClose={() => setShowVirtualTryOnModal(false)} />
+
       <AnimatePresence>
         {zoomImage && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[150] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4">
             <button onClick={() => setZoomImage(null)} className="absolute top-10 right-6 text-white text-3xl z-[160]">✕</button>
             <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="relative max-w-full max-h-full">
-              <ProtectedImg src={zoomImage} className="max-w-full max-h-[85dvh] rounded-3xl object-contain shadow-2xl border border-white/10" />
+              <ProtectedImg src={zoomImage} className="max-w-full max-h-[80vh] rounded-3xl object-contain shadow-2xl border border-white/10" />
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-
-      <VirtualTryOnPopup isOpen={showVirtualTryOnModal} onClose={() => setShowVirtualTryOnModal(false)} />
     </div>
   );
 }
