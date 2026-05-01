@@ -19,7 +19,7 @@ const AuthLoader = () => (
 );
 
 export default function AdminCredits() {
-  const [authState, setAuthState] = useState("checking"); // "checking" | "ok"
+  const [authState, setAuthState] = useState("checking");
   const [email, setEmail]         = useState("");
   const [amount, setAmount]       = useState("");
   const [loading, setLoading]     = useState(false);
@@ -60,9 +60,10 @@ export default function AdminCredits() {
     setMsg(null);
 
     try {
+      // Chercher directement dans usage_credits par email
       const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("id")
+        .from("usage_credits")
+        .select("user_id, credits")
         .eq("email", email.trim().toLowerCase())
         .maybeSingle();
 
@@ -74,16 +75,9 @@ export default function AdminCredits() {
         return;
       }
 
-      const userId = profile.id;
+      const userId = profile.user_id;
       const credits = parseInt(amount);
-
-      const { data: current } = await supabase
-        .from("usage_credits")
-        .select("credits")
-        .eq("user_id", userId)
-        .maybeSingle();
-
-      const currentBalance = current?.credits || 0;
+      const currentBalance = profile.credits || 0;
       const newBalance = currentBalance + credits;
 
       const { error: updateError } = await supabase
