@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../services/supabase.js";
+import { Navigate } from "react-router-dom";
 import AdminNav from "../components/AdminNav.jsx";
 
 const QUICK_AMOUNTS = [3, 10, 50];
@@ -19,7 +20,8 @@ const AuthLoader = () => (
 );
 
 export default function AdminCredits() {
-  const [authState, setAuthState] = useState("checking");
+  // Changement ici : undefined pour attendre la réponse de Supabase sans rediriger trop vite
+  const [session, setSession] = useState(undefined);
   const [email, setEmail]         = useState("");
   const [amount, setAmount]       = useState("");
   const [loading, setLoading]     = useState(false);
@@ -28,9 +30,8 @@ export default function AdminCredits() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) { window.location.href = "/login"; return; }
-      setAuthState("ok");
-      loadHistory();
+      setSession(session);
+      if (session) loadHistory();
     });
   }, []);
 
@@ -51,7 +52,8 @@ export default function AdminCredits() {
   };
 
   const handleCredit = async () => {
-    if (!email.trim() || !amount || parseInt(amount) <= 0) {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !amount || parseInt(amount) <= 0) {
       setMsg({ text: "⚠️ Email et montant requis.", type: "error" });
       return;
     }
@@ -60,93 +62,93 @@ export default function AdminCredits() {
     setMsg(null);
 
     try {
-      // Chercher directement dans usage_credits par email
-      const { data: profile, error: profileError } = await supabase
+      // 1. Recherche par email (ton ancre sécurisée)
+      const { data: record, error: fetchError } = await supabase
         .from("usage_credits")
-        .select("user_id, credits")
-        .eq("email", email.trim().toLowerCase())
+        .select("user_id, credits, email")
+        .eq("email", cleanEmail)
         .maybeSingle();
 
-      if (profileError) throw profileError;
+      if (fetchError) throw fetchError;
 
-      if (!profile) {
-        setMsg({ text: `❌ Aucun compte trouvé pour : ${email}`, type: "error" });
+      let targetUserId;
+      let newBalance;
+      const creditsToAdd = parseInt(amount);
+
+      if (record) {
+        // Utilisatrice existe déjà
+        targetUserId = record.user_id;
+        newBalance = (record.credits || 0) + creditsToAdd;
+      } else {
+        // Optionnel : Créer une entrée préventive si l'user n'est jamais venu
+        // Mais par sécurité pragmatique, on informe que l'utilisatrice doit s'être connectée 1 fois.
+        setMsg({ text: `❌ L'utilisatrice ${cleanEmail} n'a pas encore de compte AfroTresse.`, type: "error" });
         setLoading(false);
         return;
       }
 
-      const userId = profile.user_id;
-      const credits = parseInt(amount);
-      const currentBalance = profile.credits || 0;
-      const newBalance = currentBalance + credits;
-
+      // 2. Mise à jour sécurisée
       const { error: updateError } = await supabase
         .from("usage_credits")
-        .upsert(
-          { user_id: userId, credits: newBalance, updated_at: new Date().toISOString() },
-          { onConflict: "user_id" }
-        );
+        .update({ 
+          credits: newBalance, 
+          updated_at: new Date().toISOString() 
+        })
+        .eq("user_id", targetUserId);
 
       if (updateError) throw updateError;
 
       const entry = {
-        email: email.trim(),
-        amount: credits,
+        email: cleanEmail,
+        amount: creditsToAdd,
         newBalance,
         date: new Date().toLocaleString("fr-FR"),
       };
 
       saveHistory(entry);
-      setMsg({ text: `✅ +${credits} crédits ajoutés à ${email}. Nouveau solde : ${newBalance}`, type: "success" });
+      setMsg({ text: `✅ +${creditsToAdd} crédits ajoutés. Nouveau solde : ${newBalance}`, type: "success" });
       setEmail("");
       setAmount("");
 
     } catch (err) {
       setMsg({ text: `❌ Erreur : ${err.message}`, type: "error" });
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
-  if (authState === "checking") return <AuthLoader />;
+  // Gestion de l'état d'auth sans flash blanc
+  if (session === undefined) return <AuthLoader />;
+  if (session === null) return <Navigate to="/login" replace />;
 
   return (
     <div className="min-h-screen bg-[#0F0500] text-white pb-20">
       <AdminNav />
 
       <div className="mt-24 px-4 max-w-md mx-auto">
-
-        {/* Header */}
         <div className="mb-6">
           <h1 className="text-[#C9963A] text-2xl font-black uppercase tracking-tighter">Crédits</h1>
           <p className="text-white/30 text-[9px] uppercase tracking-widest mt-1">
-            Attribuer des crédits à une utilisatrice
+            Gestion administrative des comptes
           </p>
         </div>
 
-        {/* Formulaire */}
         <div className="rounded-[2rem] p-6 space-y-4 mb-6"
           style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(201,150,58,0.2)" }}>
 
-          {/* Email */}
           <div>
-            <p className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-2">
-              Email de l'utilisatrice
-            </p>
+            <p className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-2">Rechercher par email</p>
             <input
               type="email"
               placeholder="exemple@email.com"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              className="w-full bg-black/40 p-4 rounded-xl border border-white/10 outline-none text-sm text-white placeholder-white/20 focus:border-[#C9963A]/50 transition-all"
+              className="w-full bg-black/40 p-4 rounded-xl border border-white/10 outline-none text-sm text-white focus:border-[#C9963A]/50 transition-all"
             />
           </div>
 
-          {/* Montant */}
           <div>
-            <p className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-2">
-              Nombre de crédits
-            </p>
+            <p className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-2">Montant à ajouter</p>
             <div className="flex gap-2 mb-2">
               {QUICK_AMOUNTS.map(q => (
                 <button key={q} onClick={() => setAmount(String(q))}
@@ -162,15 +164,13 @@ export default function AdminCredits() {
             </div>
             <input
               type="number"
-              placeholder="Ou saisir un montant personnalisé"
+              placeholder="Montant personnalisé"
               value={amount}
-              min="1"
               onChange={e => setAmount(e.target.value)}
-              className="w-full bg-black/40 p-4 rounded-xl border border-white/10 outline-none text-sm text-white placeholder-white/20 focus:border-[#C9963A]/50 transition-all"
+              className="w-full bg-black/40 p-4 rounded-xl border border-white/10 outline-none text-sm text-white focus:border-[#C9963A]/50 transition-all"
             />
           </div>
 
-          {/* Message */}
           {msg && (
             <div className="rounded-xl px-4 py-3 text-sm font-bold"
               style={{
@@ -182,56 +182,39 @@ export default function AdminCredits() {
             </div>
           )}
 
-          {/* Bouton */}
           <button
             onClick={handleCredit}
             disabled={loading || !email || !amount}
-            className="w-full py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all disabled:opacity-40 active:scale-95"
+            className="w-full py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all active:scale-95 disabled:opacity-40"
             style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)", color: "#1A0A00" }}
           >
-            {loading
-              ? <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-                  </svg>
-                  Traitement...
-                </span>
-              : `Attribuer ${amount ? `+${amount}` : ""} crédits`
-            }
+            {loading ? "Mise à jour..." : `Valider +${amount || 0} crédits`}
           </button>
         </div>
 
-        {/* Historique */}
         {history.length > 0 && (
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-[9px] font-black text-white/30 uppercase tracking-widest">Historique récent</p>
-              <button
-                onClick={() => { localStorage.removeItem("admin_credits_history"); setHistory([]); }}
-                className="text-[9px] text-red-400/60 font-bold hover:text-red-400 transition-all"
-              >
-                Effacer
-              </button>
+            <div className="flex items-center justify-between mb-3 px-1">
+              <p className="text-[9px] font-black text-white/30 uppercase tracking-widest">Dernières attributions</p>
+              <button onClick={() => { localStorage.removeItem("admin_credits_history"); setHistory([]); }}
+                className="text-[9px] text-red-400/60 font-bold">Effacer</button>
             </div>
             <div className="space-y-2">
               {history.map((h, i) => (
-                <div key={i} className="flex items-center justify-between px-4 py-3 rounded-xl"
-                  style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                  <div>
-                    <p className="text-xs font-bold text-white truncate max-w-[180px]">{h.email}</p>
-                    <p className="text-[9px] text-white/30">{h.date}</p>
+                <div key={i} className="flex items-center justify-between px-4 py-3 rounded-xl bg-white/5 border border-white/10">
+                  <div className="overflow-hidden">
+                    <p className="text-xs font-bold text-white truncate">{h.email}</p>
+                    <p className="text-[9px] text-white/40">{h.date}</p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-black" style={{ color: "#C9963A" }}>+{h.amount}</p>
-                    <p className="text-[9px] text-white/30">Solde : {h.newBalance}</p>
+                  <div className="text-right min-w-[70px]">
+                    <p className="text-sm font-black text-[#C9963A]">+{h.amount}</p>
+                    <p className="text-[9px] text-white/40">Total: {h.newBalance}</p>
                   </div>
                 </div>
               ))}
             </div>
           </div>
         )}
-
       </div>
     </div>
   );
