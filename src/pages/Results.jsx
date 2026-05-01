@@ -119,7 +119,7 @@ const VirtualTryOnPopup = ({ isOpen, onClose }) => {
             <p className="leading-relaxed">Essayez vos tresses en un instant avant de passer au salon.</p>
             <p className="italic font-medium">Rejoignez notre liste d'attente exclusive pour être informée les premiers.</p>
           </div>
-          <a href={whatsappGroupLink} target="_blank" rel="noopener noreferrer" 
+          <a href={whatsappGroupLink} target="_blank" rel="noopener noreferrer"
              className="inline-flex w-full items-center justify-center bg-[#C9963A] hover:bg-[#2C1A0E] text-white text-[10px] font-black py-5 rounded-lg shadow-xl transition-all duration-300 uppercase tracking-widest">
             REJOINDRE LE CERCLE SUR WHATSAPP
           </a>
@@ -149,7 +149,7 @@ export default function Results() {
     try { return JSON.parse(localStorage.getItem("afrotresse_style_stats") || "{}"); }
     catch { return {}; }
   });
-  
+
   const topRef   = useRef(null);
   const errorRef = useRef(null);
   const userName = localStorage.getItem("afrotresse_user_name") || "Reine";
@@ -180,7 +180,11 @@ export default function Results() {
     }
     const photo = sessionStorage.getItem("afrotresse_photo");
     if (photo) setSelfieUrl(photo);
-    syncCreditsFromServer().then(c => setCredits(c)).catch(() => setCredits(getCredits()));
+
+    // Sync crédits au montage et mettre à jour le state
+    syncCreditsFromServer()
+      .then(c => { if (c !== undefined) setCredits(c); })
+      .catch(() => setCredits(getCredits()));
   }, []);
 
   const getShuffledStyles = (shuffleSeed) => {
@@ -218,11 +222,30 @@ export default function Results() {
     topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
+  // ── Générer plus — bug corrigé ────────────────────────────────
   const handleGenerateMore = async () => {
-    if (credits === 0) { navigate("/credits"); return; }
+    // Relire les crédits frais depuis localStorage (pas depuis le state)
+    const freshCredits = getCredits();
+
+    if (freshCredits <= 0) {
+      navigate("/credits");
+      return;
+    }
+
     const ok = await consumeCredits(1);
-    if (!ok) { navigate("/credits"); return; }
-    setCredits(getCredits());
+    if (!ok) {
+      // Sync et réessayer une fois
+      const synced = await syncCreditsFromServer().catch(() => 0);
+      setCredits(synced);
+      if (synced <= 0) { navigate("/credits"); return; }
+      const retry = await consumeCredits(1);
+      if (!retry) { navigate("/credits"); return; }
+    }
+
+    // Mettre à jour le state crédits après consommation
+    const updated = getCredits();
+    setCredits(updated);
+
     const nextPage = unlockedPages + 1;
     setUnlockedPages(nextPage);
     setCurrentPage(nextPage);
@@ -315,12 +338,10 @@ export default function Results() {
               </div>
               <div className="p-6 text-center">
                 <div className="flex justify-between items-center mb-4 px-2">
-                   <h3 className="font-bold text-xl">{style.name}</h3>
-                   <button onClick={() => handleToggleFav(style)} className="text-xl">{isFavorited ? "❤️" : "🤍"}</button>
+                  <h3 className="font-bold text-xl">{style.name}</h3>
+                  <button onClick={() => handleToggleFav(style)} className="text-xl">{isFavorited ? "❤️" : "🤍"}</button>
                 </div>
                 <p className="text-[11px] opacity-60 mb-6 px-4">{style.description}</p>
-                
-                {/* BOUTON AVEC BIENTOT RESTAURÉ */}
                 <button onClick={() => setShowVirtualTryOnModal(true)}
                   className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 text-white/40 text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all">
                   ✨ Essayer virtuellement - Bientôt
@@ -331,14 +352,32 @@ export default function Results() {
         })}
       </div>
 
-      {/* PAGINATION RESTAURÉE */}
+      {/* ── Bouton Voir 3 autres styles ── */}
+      {unlockedPages < totalPages && (
+        <motion.button
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          onClick={handleGenerateMore}
+          className="w-full mt-8 py-5 rounded-2xl font-bold text-sm text-[#2C1A0E] flex items-center justify-center gap-2 active:scale-95 transition-all"
+          style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}
+        >
+          <span>✨</span>
+          <span>Voir 3 autres styles</span>
+          <span className="ml-2 text-xs bg-[#2C1A0E]/20 px-2 py-0.5 rounded-full">
+            1 crédit
+          </span>
+        </motion.button>
+      )}
+
+      {/* Pagination */}
       {unlockedPages > 1 && (
         <div className="mt-8 mb-4 flex flex-col items-center gap-4">
           <p className="text-[10px] text-white/30 uppercase tracking-widest font-bold">Pages débloquées</p>
           <div className="flex flex-wrap justify-center gap-2">
             {Array.from({ length: unlockedPages }, (_, i) => i + 1).map((p) => (
-              <button key={p} onClick={() => goToPage(p)} 
-                className={`w-12 h-12 rounded-2xl font-black text-sm transition-all ${p === currentPage ? "bg-[#C9963A] text-[#2C1A0E] scale-110 shadow-lg" : "bg-white/5 text-white/40 border border-white/10"}`}>
+              <button key={p} onClick={() => goToPage(p)}
+                className={`w-12 h-12 rounded-2xl font-bold text-sm transition-all ${p === currentPage ? "bg-[#C9963A] text-[#2C1A0E] scale-110 shadow-lg" : "bg-white/5 text-white/40 border border-white/10"}`}>
                 {p}
               </button>
             ))}
@@ -346,26 +385,16 @@ export default function Results() {
         </div>
       )}
 
-      {/* BOUTONS FLOTTANTS RESTAURÉS */}
+      {/* Boutons flottants */}
       <div className="fixed bottom-24 right-4 z-[60] flex flex-col gap-3">
-        <motion.div onClick={() => navigate("/credits")} 
+        <motion.div onClick={() => navigate("/credits")}
           className="w-12 h-12 bg-[#FAF4EC] text-[#2C1A0E] rounded-lg flex flex-col items-center justify-center shadow-lg border border-[#C9963A]/30 cursor-pointer">
           <div className="text-[5px] font-black uppercase opacity-60 leading-tight">Solde</div>
           <div className="text-xl font-black leading-none">{credits}</div>
         </motion.div>
-        
-        {unlockedPages < totalPages && (
-          <motion.button initial={{ scale: 0 }} animate={{ scale: 1 }} whileTap={{ scale: 0.9 }}
-            onClick={handleGenerateMore}
-            className="w-12 h-12 rounded-lg flex flex-col items-center justify-center shadow-lg border border-white/10"
-            style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}>
-            <span className="text-[6px] font-black text-[#2C1A0E] uppercase leading-none mb-1">Générer</span>
-            <span className="text-xl">✨</span>
-          </motion.button>
-        )}
       </div>
 
-      {/* ZOOM IMAGE AVEC FERMETURE (X) RESTAURÉ */}
+      {/* Zoom image */}
       <AnimatePresence>
         {zoomImage && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[150] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4">
