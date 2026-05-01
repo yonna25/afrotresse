@@ -1,73 +1,62 @@
 import { supabase } from './supabase.js'
 
-/**
- * Synchronise les crédits avec le serveur (Double Ancre : Email + Fingerprint)
- * Appelle la fonction SQL sécurisée pour fusionner les sessions anonymes et connectées.
- */
-export async function syncCreditsWithServer(email = null, fingerprint = null) {
-  try {
-    // Nettoyage de l'email pour éviter les erreurs de doublons
-    const cleanEmail = email?.trim().toLowerCase() || null;
-    const fp = fingerprint || localStorage.getItem('afrotresse_fingerprint');
-
-    // Appel de la Database Function (RPC) - Sécurité côté serveur
-    const { data, error } = await supabase.rpc('sync_user_credits_secure', {
-      p_email: cleanEmail,
-      p_fingerprint: fp
-    });
-
-    if (error) throw error;
-
-    // Le serveur renvoie un tableau contenant le solde (res_credits)
-    const balance = data[0]?.res_credits ?? 0;
-    
-    // Mise à jour locale du cache pour l'UI
-    localStorage.setItem('afrotresse_credits', balance.toString());
-    
-    return balance;
-  } catch (err) {
-    console.error('Erreur lors de la synchronisation des crédits:', err);
-    // En cas d'erreur, on retourne le solde local par défaut
-    return parseInt(localStorage.getItem('afrotresse_credits') || '0', 10);
-  }
+// Envoyer magic link par email
+export async function sendMagicLink(email) {
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: `${window.location.origin}/credits` }
+  })
+  if (error) throw error
+  return true
 }
 
-/**
- * Génère ou récupère l'identifiant unique du navigateur (Fingerprint)
- * Assure la persistance des crédits pour les utilisatrices anonymes.
- */
-export function getOrCreateFingerprint() {
-  let fp = localStorage.getItem('afrotresse_fingerprint');
-  
-  if (!fp) {
-    // Génération d'un identifiant aléatoire sécurisé
-    fp = `fp_${Math.random().toString(36).substring(2, 15)}_${Date.now()}`;
-    localStorage.setItem('afrotresse_fingerprint', fp);
-  }
-  
-  return fp;
-}
-
-/**
- * Récupère les informations de l'utilisateur actuellement connecté via Supabase Auth.
- */
+// Recuperer l'utilisateur connecte
 export async function getCurrentUser() {
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error) return null;
-  return user;
+  const { data: { user } } = await supabase.auth.getUser()
+  return user
 }
 
-/**
- * Récupère le solde actuel stocké en base de données pour un user_id spécifique.
- * Utile pour les rafraîchissements rapides de l'interface.
- */
+// Recuperer le solde de credits
 export async function getSupabaseCredits(userId) {
   const { data, error } = await supabase
-    .from('usage_credits')
-    .select('credits')
+    .from('credits')
+    .select('balance')
     .eq('user_id', userId)
-    .maybeSingle();
+    .single()
+  if (error) return 0
+  return data?.balance || 0
+}
 
-  if (error) return 0;
-  return data?.credits ?? 0;
+// Ajouter des credits apres paiement
+export async function addSupabaseCredits(userId, amount) {
+  const current = await getSupabaseCredits(userId)
+  const { error } = await supabase
+    .from('credits')
+    .upsert({ user_id: userId, balance: current + amount, updated_at: new Date() })
+  if (error) throw error
+  return current + amount
+}
+
+// Consommer 1 credit
+export async function useSupabaseCredit(userId) {
+  const current = await getSupabaseCredits(userId)
+  if (current <= 0) return false
+  const { error } = await supabase
+    .from('credits')
+    .upsert({ user_id: userId, balance: current - 1, updated_at: new Date() })
+  if (error) return false
+  return true
+}
+
+// Creer un user s'il n'existe pas encore
+export async function ensureUserExists(userId, email) {
+  const { data } = await supabase
+    .from('users')
+    .select('id')
+    .eq('id', userId)
+    .single()
+  if (!data) {
+    await supabase.from('users').insert({ id: userId, email })
+    await supabase.from('credits').insert({ user_id: userId, balance: 0 })
+  }
 }
