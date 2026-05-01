@@ -2,18 +2,34 @@ import { useState, useEffect } from "react";
 import { supabase } from "../services/supabase.js";
 import AdminNav from "../components/AdminNav.jsx";
 
+const QUICK_AMOUNTS = [3, 10, 50];
+
+const AuthLoader = () => (
+  <div className="min-h-screen bg-[#0F0500] flex items-center justify-center">
+    <div className="flex flex-col items-center gap-3">
+      <svg className="animate-spin w-6 h-6 text-[#C9963A]" viewBox="0 0 24 24" fill="none">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+      </svg>
+      <span className="text-[#C9963A] text-[10px] font-black uppercase tracking-widest">
+        Vérification...
+      </span>
+    </div>
+  </div>
+);
+
 export default function AdminCredits() {
-  const [isAdmin, setIsAdmin]   = useState(false);
-  const [email, setEmail]       = useState("");
-  const [amount, setAmount]     = useState("");
-  const [loading, setLoading]   = useState(false);
-  const [msg, setMsg]           = useState(null); // { text, type: 'success'|'error' }
-  const [history, setHistory]   = useState([]);
+  const [authState, setAuthState] = useState("checking"); // "checking" | "ok"
+  const [email, setEmail]         = useState("");
+  const [amount, setAmount]       = useState("");
+  const [loading, setLoading]     = useState(false);
+  const [msg, setMsg]             = useState(null);
+  const [history, setHistory]     = useState([]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) { window.location.href = "/login"; return; }
-      setIsAdmin(true);
+      setAuthState("ok");
       loadHistory();
     });
   }, []);
@@ -44,15 +60,6 @@ export default function AdminCredits() {
     setMsg(null);
 
     try {
-      // 1. Trouver l'utilisatrice par email
-      const { data: users, error: userError } = await supabase
-        .from("usage_credits")
-        .select("user_id, credits")
-        .limit(100);
-
-      if (userError) throw userError;
-
-      // Chercher via auth.users (nécessite service role — on passe par profiles)
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("id")
@@ -70,7 +77,6 @@ export default function AdminCredits() {
       const userId = profile.id;
       const credits = parseInt(amount);
 
-      // 2. Récupérer le solde actuel
       const { data: current } = await supabase
         .from("usage_credits")
         .select("credits")
@@ -80,7 +86,6 @@ export default function AdminCredits() {
       const currentBalance = current?.credits || 0;
       const newBalance = currentBalance + credits;
 
-      // 3. Upsert
       const { error: updateError } = await supabase
         .from("usage_credits")
         .upsert(
@@ -109,9 +114,7 @@ export default function AdminCredits() {
     setLoading(false);
   };
 
-  const QUICK_AMOUNTS = [3, 10, 50];
-
-  if (!isAdmin) return <div className="min-h-screen bg-black" />;
+  if (authState === "checking") return <AuthLoader />;
 
   return (
     <div className="min-h-screen bg-[#0F0500] text-white pb-20">
@@ -121,22 +124,16 @@ export default function AdminCredits() {
 
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-[#C9963A] text-2xl font-black uppercase tracking-tighter">
-            Crédits
-          </h1>
+          <h1 className="text-[#C9963A] text-2xl font-black uppercase tracking-tighter">Crédits</h1>
           <p className="text-white/30 text-[9px] uppercase tracking-widest mt-1">
             Attribuer des crédits à une utilisatrice
           </p>
         </div>
 
         {/* Formulaire */}
-        <div
-          className="rounded-[2rem] p-6 space-y-4 mb-6"
-          style={{
-            background: "rgba(255,255,255,0.03)",
-            border: "1px solid rgba(201,150,58,0.2)",
-          }}
-        >
+        <div className="rounded-[2rem] p-6 space-y-4 mb-6"
+          style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(201,150,58,0.2)" }}>
+
           {/* Email */}
           <div>
             <p className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-2">
@@ -156,19 +153,15 @@ export default function AdminCredits() {
             <p className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-2">
               Nombre de crédits
             </p>
-            {/* Raccourcis */}
             <div className="flex gap-2 mb-2">
               {QUICK_AMOUNTS.map(q => (
-                <button
-                  key={q}
-                  onClick={() => setAmount(String(q))}
+                <button key={q} onClick={() => setAmount(String(q))}
                   className="flex-1 py-2 rounded-xl text-xs font-black transition-all"
                   style={{
                     background: amount === String(q) ? "#C9963A" : "rgba(255,255,255,0.05)",
                     color: amount === String(q) ? "#1A0A00" : "rgba(255,255,255,0.5)",
                     border: `1px solid ${amount === String(q) ? "#C9963A" : "rgba(255,255,255,0.08)"}`,
-                  }}
-                >
+                  }}>
                   +{q}
                 </button>
               ))}
@@ -185,14 +178,12 @@ export default function AdminCredits() {
 
           {/* Message */}
           {msg && (
-            <div
-              className="rounded-xl px-4 py-3 text-sm font-bold"
+            <div className="rounded-xl px-4 py-3 text-sm font-bold"
               style={{
                 background: msg.type === "success" ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)",
                 border: `1px solid ${msg.type === "success" ? "rgba(34,197,94,0.3)" : "rgba(239,68,68,0.3)"}`,
                 color: msg.type === "success" ? "#22c55e" : "#ef4444",
-              }}
-            >
+              }}>
               {msg.text}
             </div>
           )}
@@ -204,7 +195,16 @@ export default function AdminCredits() {
             className="w-full py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all disabled:opacity-40 active:scale-95"
             style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)", color: "#1A0A00" }}
           >
-            {loading ? "Traitement..." : `Attribuer ${amount ? `+${amount}` : ""} crédits`}
+            {loading
+              ? <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                  </svg>
+                  Traitement...
+                </span>
+              : `Attribuer ${amount ? `+${amount}` : ""} crédits`
+            }
           </button>
         </div>
 
@@ -212,26 +212,18 @@ export default function AdminCredits() {
         {history.length > 0 && (
           <div>
             <div className="flex items-center justify-between mb-3">
-              <p className="text-[9px] font-black text-white/30 uppercase tracking-widest">
-                Historique récent
-              </p>
+              <p className="text-[9px] font-black text-white/30 uppercase tracking-widest">Historique récent</p>
               <button
-                onClick={() => {
-                  localStorage.removeItem("admin_credits_history");
-                  setHistory([]);
-                }}
-                className="text-[9px] text-red-400/60 font-bold"
+                onClick={() => { localStorage.removeItem("admin_credits_history"); setHistory([]); }}
+                className="text-[9px] text-red-400/60 font-bold hover:text-red-400 transition-all"
               >
                 Effacer
               </button>
             </div>
             <div className="space-y-2">
               {history.map((h, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between px-4 py-3 rounded-xl"
-                  style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
-                >
+                <div key={i} className="flex items-center justify-between px-4 py-3 rounded-xl"
+                  style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
                   <div>
                     <p className="text-xs font-bold text-white truncate max-w-[180px]">{h.email}</p>
                     <p className="text-[9px] text-white/30">{h.date}</p>
