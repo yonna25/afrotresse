@@ -1,156 +1,89 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import {
-  sendMagicLink,
-  getCurrentUser,
-  ensureUserExists,
-  getOrCreateFingerprint,
+import { supabase } from '../services/supabase.js'
+import { 
+  getCurrentUser, 
+  syncCreditsWithServer, 
+  getOrCreateFingerprint 
 } from '../services/useSupabaseCredits.js'
-
-// Restaurer les données de session sauvegardées avant le redirect Magic Link
-function restoreSessionBackup() {
-  try {
-    const raw = localStorage.getItem('afrotresse_session_backup')
-    if (!raw) return
-    const backup = JSON.parse(raw)
-    Object.entries(backup).forEach(([key, val]) => sessionStorage.setItem(key, val))
-    localStorage.removeItem('afrotresse_session_backup')
-  } catch {}
-}
+import { setCredits } from '../services/credits.js'
 
 export default function MagicLink() {
-  const navigate  = useNavigate()
-  const [email,   setEmail]   = useState('')
-  const [sent,    setSent]    = useState(false)
+  const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
-  const [error,   setError]   = useState('')
+  const [message, setMessage] = useState('')
+  const navigate = useNavigate()
 
   useEffect(() => {
-    // S'assurer que le fingerprint est créé avant même la connexion
-    getOrCreateFingerprint()
-
-    // Si l'utilisatrice revient via magic link, elle est connectée
-    getCurrentUser().then(async user => {
-      if (user) {
-        // Fusion crédits : user_id + email + fingerprint
-        await ensureUserExists(user.id, user.email)
-        // Restaurer les résultats d'analyse avant de quitter cette page
-        restoreSessionBackup()
-        navigate('/profile')
-      }
+    // Vérifier si l'utilisateur est déjà connecté en arrivant
+    getCurrentUser().then(user => {
+      if (user) navigate('/profile')
     })
   }, [navigate])
 
-  const handleSend = async () => {
-    if (!email.trim()) return
+  const handleLogin = async (e) => {
+    e.preventDefault()
     setLoading(true)
-    setError('')
+    setMessage('')
+
     try {
-      // Sauvegarder le fingerprint dans localStorage avant le redirect
-      getOrCreateFingerprint()
-      await sendMagicLink(email.trim())
-      setSent(true)
-    } catch {
-      setError("Erreur lors de l'envoi. Vérifie ton email et réessaie.")
+      const { error } = await supabase.auth.signInWithOtp({
+        email: email.trim().toLowerCase(),
+        options: {
+          emailRedirectTo: window.location.origin + '/profile',
+        },
+      })
+
+      if (error) throw error
+      
+      // Synchronisation préventive avec le fingerprint actuel
+      const fp = getOrCreateFingerprint()
+      await syncCreditsWithServer(email, fp)
+      
+      setMessage('Lien magique envoyé ! Vérifiez vos e-mails. 📧')
+    } catch (error) {
+      setMessage('Erreur : ' + error.message)
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div
-      className="min-h-screen flex items-end justify-center pb-0"
-      style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)' }}
-    >
-      <motion.div
-        initial={{ y: 300 }} animate={{ y: 0 }}
-        transition={{ type: 'spring', stiffness: 200, damping: 25 }}
-        className="w-full max-w-sm rounded-t-3xl p-6 pb-10"
-        style={{ background: '#2C1A0E', border: '1px solid rgba(201,150,58,0.3)' }}
-      >
-        <div className="flex justify-center mb-4">
-          <div
-            className="w-12 h-12 rounded-full flex items-center justify-center text-xl"
-            style={{ background: 'rgba(201,150,58,0.15)', border: '1px solid rgba(201,150,58,0.4)' }}
-          >
-            🔐
-          </div>
+    <div className="min-h-screen flex flex-col items-center justify-center px-6 text-white">
+      <div className="w-full max-w-md space-y-8 p-8 rounded-[2.5rem] bg-[#3D2616] border-2 border-[#C9963A]">
+        <div className="text-center">
+          <h2 className="text-3xl font-black text-[#C9963A]">Connexion Magique</h2>
+          <p className="mt-2 text-sm text-white/60">
+            Recevez un lien par e-mail pour vous connecter sans mot de passe et retrouver vos crédits.
+          </p>
         </div>
 
-        {!sent ? (
-          <>
-            <h2 className="font-display text-center text-lg mb-1" style={{ color: '#FAF4EC' }}>
-              Connexion à ton compte
-            </h2>
-            <p className="font-body text-center text-sm mb-6" style={{ color: 'rgba(250,244,236,0.6)' }}>
-              Entre ton email pour te connecter et retrouver tes crédits, favoris et résultats.
-            </p>
+        <form className="mt-8 space-y-6" onSubmit={handleLogin}>
+          <input
+            type="email"
+            required
+            className="w-full px-5 py-4 rounded-2xl bg-black/30 border border-[#C9963A]/30 text-white focus:border-[#C9963A] outline-none transition-all"
+            placeholder="votre@email.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
 
-            <input
-              type="email"
-              placeholder="ton@email.com"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleSend()}
-              className="w-full px-4 py-3 rounded-2xl font-body text-sm outline-none mb-3"
-              style={{
-                background: 'rgba(92,51,23,0.5)',
-                border: '1px solid rgba(201,150,58,0.35)',
-                color: '#FAF4EC',
-              }}
-              autoFocus
-            />
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-4 rounded-2xl font-black text-[#1A0A00] transition-transform active:scale-95 disabled:opacity-50"
+            style={{ background: 'linear-gradient(135deg, #C9963A, #E8B96A)' }}
+          >
+            {loading ? 'Envoi en cours...' : 'Envoyer le lien ✨'}
+          </button>
+        </form>
 
-            {error && (
-              <p className="text-xs text-red-400 mb-3 text-center">{error}</p>
-            )}
-
-            <button
-              onClick={handleSend}
-              disabled={loading || !email.trim()}
-              className="w-full py-3 rounded-2xl font-display font-semibold text-sm disabled:opacity-50"
-              style={{ background: 'linear-gradient(135deg,#C9963A,#E8B96A)', color: '#2C1A0E' }}
-            >
-              {loading ? 'Envoi en cours...' : 'Recevoir mon lien de connexion'}
-            </button>
-
-            <button
-              onClick={() => navigate(-1)}
-              className="w-full py-2 mt-2 font-body text-xs text-center"
-              style={{ color: 'rgba(250,244,236,0.4)' }}
-            >
-              Pas maintenant
-            </button>
-          </>
-        ) : (
-          <>
-            <h2 className="font-display text-center text-lg mb-2" style={{ color: '#FAF4EC' }}>
-              Vérifie ta boîte mail 📬
-            </h2>
-            <p className="font-body text-center text-sm mb-6" style={{ color: 'rgba(250,244,236,0.6)' }}>
-              Un lien de connexion a été envoyé à{' '}
-              <span style={{ color: '#C9963A' }}>{email}</span>.
-              Clique dessus pour accéder à ton compte.
-            </p>
-            <button
-              onClick={() => navigate('/profile')}
-              className="w-full py-3 rounded-2xl font-display font-semibold text-sm"
-              style={{
-                background: 'rgba(201,150,58,0.15)',
-                border: '1px solid rgba(201,150,58,0.3)',
-                color: '#C9963A',
-              }}
-            >
-              Retour
-            </button>
-          </>
+        {message && (
+          <p className="text-center text-sm font-medium text-[#C9963A] animate-pulse">
+            {message}
+          </p>
         )}
-
-        <p className="font-body text-xs text-center mt-4" style={{ color: 'rgba(250,244,236,0.3)' }}>
-          ✨ Ton email ne sera jamais partagé
-        </p>
-      </motion.div>
+      </div>
     </div>
   )
 }
