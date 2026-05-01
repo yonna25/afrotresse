@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, Routes, Route } from 'react-router-dom';
 import CameraCapture from './components/CameraCapture';
-import Analyse from './Pages/Analyse'; 
+import Analyse from './pages/Analyse'; 
 import { getCredits, consumeCredits, syncCreditsFromServer } from "./services/credits.js";
 
 export default function App() {
