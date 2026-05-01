@@ -1,7 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { HelmetProvider } from 'react-helmet-async'
-// Ajout de l'extension .jsx pour aider Vercel à trouver le fichier
+// On ajoute l'extension .jsx pour aider Vercel à résoudre le fichier
 import App from './App.jsx' 
 import './index.css'
 
