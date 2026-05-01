@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, Routes, Route } from 'react-router-dom';
 import CameraCapture from './components/CameraCapture';
 import Analyze from './pages/Analyze'; 
-import { getCredits, consumeCredits } from './services/credits.js';
+import { consumeCredits, syncCreditsFromServer } from './services/credits.js';
 import { 
   getCurrentUser, 
   getSupabaseCredits, 
@@ -14,31 +14,35 @@ import {
 export default function App() {
   const navigate = useNavigate();
   const [capturedImage, setCapturedImage] = useState(null);
-  const [user, setUser] = useState(null);
 
+  // Initialisation de la session utilisateur au démarrage
   useEffect(() => {
-    const initUser = async () => {
-      const currentUser = await getCurrentUser();
-      if (currentUser) {
-        setUser(currentUser);
-        await ensureUserExists(currentUser);
+    const initSession = async () => {
+      const user = await getCurrentUser();
+      if (user) {
+        // S'assure que le profil existe et synchronise le solde local
+        await ensureUserExists(user);
+        await syncCreditsFromServer();
       }
     };
-    initUser();
+    initSession();
   }, []);
 
+  // Gestion de la capture du selfie
   const handleCapture = (data) => {
     setCapturedImage(data.url);
     sessionStorage.setItem("afrotresse_photo", data.url);
   };
 
+  // Logique du bouton "Générer mon style" (Défalcation Serveur)
   const handleStartAnalysis = async () => {
-    // Logique de défalcation serveur
-    const ok = await consumeCredits(1);
+    // On déduit 1 crédit via le service orienté Supabase
+    const success = await consumeCredits(1);
     
-    if (ok) {
+    if (success) {
       navigate('/analyze');
     } else {
+      // Redirection vers l'achat si le solde est insuffisant ou erreur
       navigate('/credits');
     }
   };
@@ -52,14 +56,21 @@ export default function App() {
               <CameraCapture onCapture={handleCapture} onClose={() => navigate('/home')} />
             ) : (
               <div className="relative h-[100dvh] w-full bg-black">
-                <img src={capturedImage} className="h-full w-full object-cover" alt="Selfie" />
+                <img 
+                  src={capturedImage} 
+                  className="h-full w-full object-cover" 
+                  alt="Aperçu du selfie" 
+                />
+                
+                {/* Bouton pour annuler et reprendre la photo */}
                 <button 
                   onClick={() => setCapturedImage(null)}
-                  className="absolute top-6 right-6 w-12 h-12 bg-black/50 rounded-full flex items-center justify-center z-50 text-white border border-white/20"
+                  className="absolute top-6 right-6 w-12 h-12 bg-black/50 rounded-full flex items-center justify-center z-50 text-white border border-white/20 active:scale-90 transition-transform"
                 >
                   ✕
                 </button>
 
+                {/* BOUTON FLOTTANT DE GÉNÉRATION */}
                 <AnimatePresence>
                   <motion.button
                     initial={{ y: 100, x: '-50%', opacity: 0 }}
@@ -74,6 +85,7 @@ export default function App() {
             )}
           </div>
         } />
+
         <Route path="/analyze" element={<Analyze />} />
       </Routes>
     </div>
