@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../services/supabase.js'
 import { getCredits, setCredits } from '../services/credits.js'
-import { syncCreditsWithServer, getOrCreateFingerprint } from '../services/useSupabaseCredits.js'
+import { syncCreditsWithServer } from '../services/useSupabaseCredits.js'
 import AdminNav from '../components/AdminNav.jsx'
 
 export default function Debug() {
@@ -20,11 +20,10 @@ export default function Debug() {
   const refreshAllData = async () => {
     const local = getCredits()
     setLocalCredits(local)
-    
+
     const { data: { session: currentSession } } = await supabase.auth.getSession()
     setSession(currentSession)
 
-    // Récupération du solde réel sur Supabase pour comparer
     if (currentSession?.user) {
       const { data } = await supabase
         .from('usage_credits')
@@ -35,15 +34,15 @@ export default function Debug() {
     }
 
     setStorageData({
-      credits: localStorage.getItem('afrotresse_credits'),
+      credits:     localStorage.getItem('afrotresse_credits'),
       fingerprint: localStorage.getItem('afrotresse_fingerprint'),
-      history: localStorage.getItem('admin_credits_history')
+      history:     localStorage.getItem('admin_credits_history'),
     })
   }
 
   const handleFullSync = async () => {
     setLoading(true)
-    const fp = getOrCreateFingerprint()
+    const fp = localStorage.getItem('afrotresse_fingerprint') || null
     const email = session?.user?.email || null
     const newBalance = await syncCreditsWithServer(email, fp)
     setLocalCredits(newBalance)
@@ -57,14 +56,14 @@ export default function Debug() {
       <AdminNav />
 
       <div className="mt-24 px-6 max-w-md mx-auto space-y-8">
-        
+
         {/* EN-TÊTE */}
         <div className="flex items-center justify-between border-b border-[#C9963A]/20 pb-6">
           <div>
             <h1 className="text-[#C9963A] text-3xl font-black uppercase tracking-tighter">Diagnostic</h1>
-            <p className="text-white/50 text-xs uppercase tracking-widest mt-1">Supervision Système</p>
+            <p className="text-white/50 text-xs uppercase tracking-widest mt-1">Supervision Syst\u00e8me</p>
           </div>
-          <button 
+          <button
             onClick={() => navigate('/admin-credits')}
             className="px-4 py-2 rounded-xl bg-[#C9963A] text-[#1A0A00] text-[10px] font-black uppercase tracking-widest"
           >
@@ -72,9 +71,9 @@ export default function Debug() {
           </button>
         </div>
 
-        {/* 1. COMPARAISON DES CRÉDITS (LE MANQUANT) */}
+        {/* 1. COMPARAISON DES CRÉDITS */}
         <div className="rounded-[2rem] p-6 bg-white/5 border border-white/10">
-          <p className="text-xs font-black text-[#C9963A] uppercase tracking-widest mb-6 text-center">État des Crédits</p>
+          <p className="text-xs font-black text-[#C9963A] uppercase tracking-widest mb-6 text-center">\u00c9tat des Cr\u00e9dits</p>
           <div className="grid grid-cols-2 gap-4">
             <div className="text-center p-4 bg-black/40 rounded-2xl border border-white/5">
               <p className="text-4xl font-black text-white">{localCredits}</p>
@@ -87,7 +86,7 @@ export default function Debug() {
               <p className="text-[10px] text-white/40 uppercase mt-2">Serveur (Cloud)</p>
             </div>
           </div>
-          <button 
+          <button
             onClick={handleFullSync}
             disabled={loading}
             className="w-full mt-6 py-4 rounded-2xl bg-white/5 border border-[#C9963A]/30 text-[#C9963A] font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3"
@@ -99,13 +98,13 @@ export default function Debug() {
           </button>
         </div>
 
-        {/* 2. IDENTITY (LISIBILITÉ ACCRUE) */}
+        {/* 2. IDENTITÉ */}
         <div className="rounded-[2rem] p-6 bg-white/5 border border-white/10">
-          <p className="text-xs font-black text-[#C9963A] uppercase tracking-widest mb-4">Identité Connectée</p>
+          <p className="text-xs font-black text-[#C9963A] uppercase tracking-widest mb-4">Identit\u00e9 Connect\u00e9e</p>
           <div className="space-y-4 text-sm">
             <div className="flex flex-col">
               <span className="text-[10px] text-white/40 uppercase mb-1">Email Actif</span>
-              <span className="text-white font-bold">{session?.user?.email || 'NON CONNECTÉ'}</span>
+              <span className="text-white font-bold">{session?.user?.email || 'NON CONNECT\u00c9'}</span>
             </div>
             <div className="flex flex-col">
               <span className="text-[10px] text-white/40 uppercase mb-1">ID Technique (UID)</span>
@@ -116,35 +115,35 @@ export default function Debug() {
           </div>
         </div>
 
-        {/* 3. FINGERPRINT (PLUS LISIBLE) */}
+        {/* 3. FINGERPRINT */}
         <div className="rounded-[2rem] p-6 bg-white/5 border border-white/10">
-          <p className="text-xs font-black text-[#C9963A] uppercase tracking-widest mb-2">Ancre de l'appareil</p>
+          <p className="text-xs font-black text-[#C9963A] uppercase tracking-widest mb-2">Ancre de l&apos;appareil</p>
           <p className="text-[11px] font-mono text-white/60 bg-black/40 p-4 rounded-xl break-all">
             {storageData.fingerprint || 'Aucune empreinte'}
           </p>
         </div>
 
-        {/* ACTIONS (LISIBILITÉ ACCRUE) */}
+        {/* ACTIONS */}
         <div className="space-y-4 pt-4">
-          <button 
+          <button
             onClick={() => navigate('/')}
             className="w-full py-5 rounded-2xl bg-white/5 border border-white/10 text-xs font-black uppercase tracking-widest text-white/70"
           >
             Quitter le Diagnostic
           </button>
-          
-          <button 
-            onClick={() => { if(window.confirm("Vider le cache ?")) { localStorage.clear(); window.location.reload(); } }}
+
+          <button
+            onClick={() => { if (window.confirm("Vider le cache ?")) { localStorage.clear(); window.location.reload(); } }}
             className="w-full py-5 rounded-2xl bg-orange-500/10 border border-orange-500/30 text-xs font-black uppercase tracking-widest text-orange-500"
           >
             Hard Reset LocalStorage
           </button>
 
-          <button 
+          <button
             onClick={async () => { await supabase.auth.signOut(); navigate('/login'); }}
             className="w-full py-5 rounded-2xl bg-red-500/20 border border-red-500/40 text-xs font-black uppercase tracking-widest text-red-500"
           >
-            Déconnexion Immédiate
+            D\u00e9connexion Imm\u00e9diate
           </button>
         </div>
 
