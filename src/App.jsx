@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 
 // Services
 import { setCredits, getCredits } from './services/credits.js'
-import { syncCreditsWithServer, getOrCreateFingerprint } from './services/useSupabaseCredits.js'
+import { getCurrentUser, getSupabaseCredits } from './services/useSupabaseCredits.js'
 import { supabase } from './services/supabase.js'
 
 // Pages
@@ -145,12 +145,11 @@ export default function App() {
   const [creditSuccess, setCreditSuccess] = useState(null)
 
   useEffect(() => {
-    const fp = getOrCreateFingerprint();
-
-    // Fonction de synchronisation sécurisée (Email + Fingerprint)
+    // Fonction de synchronisation : récupère les crédits Supabase et les applique en local
     const syncSession = async (user) => {
-      const balance = await syncCreditsWithServer(user?.email, fp);
-      setCredits(balance);
+      if (!user) return;
+      const balance = await getSupabaseCredits(user.id);
+      if (balance > 0) setCredits(balance);
     };
 
     // Initialisation au chargement
