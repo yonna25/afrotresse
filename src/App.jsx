@@ -26,7 +26,6 @@ import Login from './pages/Login.jsx' // 👈 Import de la page Login
 
 // Import de la navigation
 import BottomNav from './components/BottomNav.jsx'
-import WhatsAppWidget from './components/WhatsAppWidget.jsx'
 
 // ─── Transfert crédits en attente → Supabase ─────────────────────
 async function flushPendingCredits(userId) {
@@ -39,6 +38,25 @@ async function flushPendingCredits(userId) {
   } catch (err) {
     console.error('flushPendingCredits error:', err)
   }
+}
+
+
+// ─── Protection route admin ───────────────────────────────────────
+function AdminRoute({ children }) {
+  const [checking, setChecking] = useState(true)
+  const [allowed, setAllowed] = useState(false)
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) { setAllowed(true) }
+      else { window.location.href = '/login' }
+      setChecking(false)
+    })
+  }, [])
+
+  if (checking) return <div className="min-h-screen bg-black" />
+  if (!allowed) return null
+  return children
 }
 
 // CREDIT SUCCESS POPUP (Code inchangé)
@@ -139,7 +157,8 @@ function AnimatedRoutes() {
     '/magic-link', 
     '/admin-reviews', 
     '/admin-partners',
-    '/login' // 👈 Navigation cachée pour le login
+    '/login',
+    '/debug'
   ].includes(location.pathname)
 
   return (
@@ -152,7 +171,7 @@ function AnimatedRoutes() {
           <Route path="/results" element={<Results />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/credits" element={<Credits />} />
-          <Route path="/debug" element={<Debug />} />
+          <Route path="/debug" element={<AdminRoute><Debug /></AdminRoute>} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms-of-service" element={<TermsOfService />} />
           <Route path="/cookie-policy" element={<CookiePolicy />} />
@@ -166,7 +185,6 @@ function AnimatedRoutes() {
         </Routes>
       </AnimatePresence>
       {!hideNav && <BottomNav />}
-      <WhatsAppWidget />
     </>
   )
 }
