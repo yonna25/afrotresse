@@ -10,38 +10,54 @@ export default function Debug() {
   const [localCredits, setLocalCredits] = useState(0)
   const [session, setSession] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [storageData, setStorageData] = useState({})
 
   useEffect(() => {
-    // Sync initial
-    setLocalCredits(getCredits())
-    supabase.auth.getSession().then(({ data }) => setSession(data.session))
+    refreshAllData()
   }, [])
 
-  const handleRefreshSync = async () => {
+  const refreshAllData = async () => {
+    setLocalCredits(getCredits())
+    const { data } = await supabase.auth.getSession()
+    setSession(data.session)
+    
+    // Récupération des données brutes du LocalStorage pour le diagnostic
+    setStorageData({
+      credits: localStorage.getItem('afrotresse_credits'),
+      fingerprint: localStorage.getItem('afrotresse_fingerprint'),
+      history: localStorage.getItem('admin_credits_history')
+    })
+  }
+
+  const handleFullSync = async () => {
     setLoading(true)
     const fp = getOrCreateFingerprint()
     const email = session?.user?.email || null
     const newBalance = await syncCreditsWithServer(email, fp)
     setLocalCredits(newBalance)
     setCredits(newBalance)
+    await refreshAllData()
     setLoading(false)
   }
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut()
-    navigate('/login')
+  const clearLocalData = () => {
+    if(window.confirm("Attention: Cela va supprimer tes crédits locaux et ton fingerprint. Continuer ?")) {
+      localStorage.clear()
+      window.location.reload()
+    }
   }
 
   return (
-    <div className="min-h-screen bg-[#0F0500] text-white pb-20">
+    <div className="min-h-screen bg-[#0F0500] text-white pb-32">
       <AdminNav />
 
-      <div className="mt-24 px-6 max-w-md mx-auto">
-        {/* Header avec bouton Retour Intelligent */}
-        <div className="flex items-center justify-between mb-8">
+      <div className="mt-24 px-6 max-w-md mx-auto space-y-6">
+        
+        {/* EN-TÊTE & NAVIGATION */}
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-[#C9963A] text-2xl font-black uppercase tracking-tighter">Debug Mode</h1>
-            <p className="text-white/30 text-[9px] uppercase tracking-widest mt-1">Outils de diagnostic système</p>
+            <h1 className="text-[#C9963A] text-2xl font-black uppercase tracking-tighter">Diagnostic Expert</h1>
+            <p className="text-white/30 text-[9px] uppercase tracking-widest mt-1">État profond du système</p>
           </div>
           <button 
             onClick={() => navigate('/admin-credits')}
@@ -51,63 +67,92 @@ export default function Debug() {
           </button>
         </div>
 
-        {/* État de la Session */}
-        <div className="rounded-[2rem] p-6 mb-6" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(201,150,58,0.2)" }}>
-          <p className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-4">Statut Session</p>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-xs text-white/60">Utilisateur :</span>
-              <span className="text-xs font-mono text-[#C9963A]">{session?.user?.email || 'Anonyme'}</span>
+        {/* 1. SESSION & AUTH (DÉTAILLÉ) */}
+        <div className="rounded-[2rem] p-6 bg-white/5 border border-white/10">
+          <p className="text-[9px] font-black text-[#C9963A] uppercase tracking-widest mb-4">Auth & Identity</p>
+          <div className="space-y-3 font-mono text-[10px]">
+            <div className="flex justify-between border-b border-white/5 pb-2">
+              <span className="text-white/40">Email:</span>
+              <span className="text-white">{session?.user?.email || 'ANONYME'}</span>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-xs text-white/60">ID Supabase :</span>
-              <span className="text-[10px] font-mono text-white/40 truncate ml-4">{session?.user?.id || 'N/A'}</span>
+            <div className="flex justify-between border-b border-white/5 pb-2">
+              <span className="text-white/40">Auth Role:</span>
+              <span className="text-green-500 font-bold">{session?.user?.role || 'none'}</span>
+            </div>
+            <div className="flex flex-col gap-1">
+              <span className="text-white/40">Supabase UID:</span>
+              <span className="text-white/20 break-all">{session?.user?.id || 'null'}</span>
             </div>
           </div>
         </div>
 
-        {/* Diagnostic Crédits */}
-        <div className="rounded-[2rem] p-6 mb-6" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
-          <p className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-4">Diagnostic Crédits</p>
+        {/* 2. SYSTÈME DE CRÉDITS & FINGERPRINT */}
+        <div className="rounded-[2rem] p-6 bg-white/5 border border-white/10">
+          <p className="text-[9px] font-black text-[#C9963A] uppercase tracking-widest mb-4">Moteur de Crédits</p>
           <div className="flex items-center justify-between mb-6">
             <div>
-              <p className="text-3xl font-black text-white">{localCredits}</p>
-              <p className="text-[10px] text-white/40 uppercase tracking-widest">Solde Local (Cache)</p>
+              <p className="text-4xl font-black text-white">{localCredits}</p>
+              <p className="text-[9px] text-white/40 uppercase tracking-widest">Balance Active</p>
             </div>
             <button 
-              onClick={handleRefreshSync}
+              onClick={handleFullSync}
               disabled={loading}
-              className={`p-4 rounded-2xl bg-[#C9963A] text-[#1A0A00] transition-all ${loading ? 'animate-pulse opacity-50' : 'active:scale-95'}`}
+              className={`p-4 rounded-2xl bg-[#C9963A] text-[#1A0A00] shadow-[0_0_20px_rgba(201,150,58,0.3)] ${loading ? 'animate-spin' : ''}`}
             >
-              <svg className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
             </button>
           </div>
+          <div className="pt-4 border-t border-white/5">
+            <p className="text-[8px] text-white/30 uppercase mb-2">Fingerprint Actuel :</p>
+            <p className="text-[9px] font-mono text-white/60 bg-black/40 p-2 rounded-lg break-all italic">
+              {storageData.fingerprint || 'Génération en cours...'}
+            </p>
+          </div>
         </div>
 
-        {/* Actions de Sortie */}
-        <div className="space-y-3">
+        {/* 3. INSPECTION DU STORAGE (LOGS) */}
+        <div className="rounded-[2rem] p-6 bg-white/5 border border-white/10">
+          <p className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-4">Inspection Cache</p>
+          <div className="space-y-2 text-[9px] font-mono">
+            <div className="flex justify-between">
+              <span className="text-white/40">Storage Credits:</span>
+              <span>{storageData.credits || 'null'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-white/40">Admin Logs:</span>
+              <span className={storageData.history ? 'text-green-500' : 'text-red-500'}>
+                {storageData.history ? 'Contient des logs' : 'Vide'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* ACTIONS CRITIQUES */}
+        <div className="space-y-3 pt-4">
           <button 
             onClick={() => navigate('/')}
-            className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 text-xs font-black uppercase tracking-widest text-white/60 hover:text-white transition-all"
+            className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-white/40"
           >
-            Quitter le mode Debug (Vers Accueil)
+            Sortie de Secours (Home)
           </button>
           
           <button 
-            onClick={handleSignOut}
-            className="w-full py-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-xs font-black uppercase tracking-widest text-red-500 hover:bg-red-500/20 transition-all"
+            onClick={clearLocalData}
+            className="w-full py-4 rounded-2xl bg-orange-500/10 border border-orange-500/20 text-[10px] font-black uppercase tracking-widest text-orange-500"
           >
-            Déconnexion de la session
+            Hard Reset Cache (LocalStorage)
+          </button>
+
+          <button 
+            onClick={async () => { await supabase.auth.signOut(); navigate('/login'); }}
+            className="w-full py-4 rounded-2xl bg-red-500/20 border border-red-500/30 text-[10px] font-black uppercase tracking-widest text-red-500"
+          >
+            Forcer la Déconnexion
           </button>
         </div>
 
-        {/* Info Fingerprint */}
-        <div className="mt-8 text-center">
-          <p className="text-[8px] text-white/20 uppercase tracking-[0.2em]">Device Fingerprint</p>
-          <p className="text-[9px] font-mono text-white/10 mt-1 break-all">{getOrCreateFingerprint()}</p>
-        </div>
       </div>
     </div>
   )
