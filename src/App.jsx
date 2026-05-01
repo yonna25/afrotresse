@@ -5,7 +5,6 @@ import { setCredits, getCredits, syncCreditsFromServer } from './services/credit
 import { getCurrentUser, getSupabaseCredits, ensureUserExists, addSupabaseCredits } from './services/useSupabaseCredits.js'
 import { supabase } from './services/supabase.js'
 
-// Import des pages
 import Home from './pages/Home.jsx'
 import Camera from './pages/Camera.jsx'
 import Analyze from './pages/Analyze.jsx'
@@ -23,12 +22,11 @@ import AdminReviews from './pages/AdminReviews.jsx'
 import Partners from './pages/Partners.jsx'
 import AdminPartners from './pages/AdminPartners.jsx'
 import AdminCredits from './pages/AdminCredits.jsx'
-import Login from './pages/Login.jsx' // 👈 Import de la page Login
+import Login from './pages/Login.jsx'
 
-// Import de la navigation
 import BottomNav from './components/BottomNav.jsx'
+import WhatsAppWidget from './components/WhatsAppWidget.jsx'
 
-// ─── Transfert crédits en attente → Supabase ─────────────────────
 async function flushPendingCredits(userId) {
   try {
     const pending = parseInt(localStorage.getItem('afrotresse_pending_credits') || '0', 10)
@@ -41,10 +39,8 @@ async function flushPendingCredits(userId) {
   }
 }
 
-
-// ─── Protection route admin ───────────────────────────────────────
 function AdminRoute({ children }) {
-  const [status, setStatus] = useState('checking') // 'checking' | 'allowed' | 'denied'
+  const [status, setStatus] = useState('checking')
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -69,7 +65,6 @@ function AdminRoute({ children }) {
   return children
 }
 
-// CREDIT SUCCESS POPUP (Code inchangé)
 function CreditSuccessPopup({ data, onClose }) {
   useEffect(() => {
     const timer = setTimeout(onClose, 4000)
@@ -156,20 +151,18 @@ function CreditSuccessPopup({ data, onClose }) {
   )
 }
 
-// ROUTES
 function AnimatedRoutes() {
   const location = useLocation()
-  
-  // Masquer BottomNav sur camera, analyze, magic-link, admin, et LOGIN
+
   const hideNav = [
-    '/camera', 
-    '/analyze', 
-    '/magic-link', 
-    '/admin-reviews', 
+    '/camera',
+    '/analyze',
+    '/magic-link',
+    '/admin-reviews',
     '/admin-partners',
+    '/admin-credits',
     '/login',
     '/debug',
-    '/admin-credits'
   ].includes(location.pathname)
 
   return (
@@ -190,18 +183,18 @@ function AnimatedRoutes() {
           <Route path="/magic-link" element={<MagicLink />} />
           <Route path="/library" element={<Library />} />
           <Route path="/partners" element={<Partners />} />
-          <Route path="/admin-reviews" element={<AdminReviews />} />
-          <Route path="/admin-partners" element={<AdminPartners />} />
-          <Route path="/admin-credits" element={<AdminCredits />} />
-          <Route path="/login" element={<Login />} /> {/* 👈 Nouvelle Route */}
+          <Route path="/admin-reviews" element={<AdminRoute><AdminReviews /></AdminRoute>} />
+          <Route path="/admin-partners" element={<AdminRoute><AdminPartners /></AdminRoute>} />
+          <Route path="/admin-credits" element={<AdminRoute><AdminCredits /></AdminRoute>} />
+          <Route path="/login" element={<Login />} />
         </Routes>
       </AnimatePresence>
       {!hideNav && <BottomNav />}
+      <WhatsAppWidget />
     </>
   )
 }
 
-// APP (Code principal inchangé)
 export default function App() {
   const [creditSuccess, setCreditSuccess] = useState(null)
 
