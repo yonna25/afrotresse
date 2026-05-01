@@ -266,12 +266,32 @@ export default function Results() {
   };
 
   const handleGenerateMore = async () => {
+    // Sync d'abord pour avoir le vrai solde serveur
     const realCredits = await syncCreditsFromServer().catch(() => getCredits());
     setCredits(realCredits);
     if (realCredits <= 0) { navigate("/credits"); return; }
-    consumeCredits(1);
-    setCredits(getCredits());
-    syncCreditsFromServer().catch(() => {});
+
+    // Débiter côté serveur uniquement
+    try {
+      const { getSessionIdWithFp } = await import("../services/fingerprint.js");
+      const { getCurrentUser } = await import("../services/useSupabaseCredits.js");
+      const sessionId = await getSessionIdWithFp();
+      const user = await getCurrentUser().catch(() => null);
+      const userId = user?.id || null;
+
+      const res = await fetch("/api/consume", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId, userId, amount: 1 }),
+      });
+      if (res.status === 402) { navigate("/credits"); return; }
+      if (!res.ok) { navigate("/credits"); return; }
+      const { credits: newBalance } = await res.json();
+      setCredits(newBalance);
+    } catch {
+      navigate("/credits"); return;
+    }
+
     const nextPage = unlockedPages + 1;
     setUnlockedPages(nextPage);
     setCurrentPage(nextPage);
@@ -625,47 +645,6 @@ export default function Results() {
       </div>
 
       {/* VOIR 3 AUTRES STYLES */}
-      {currentPage === 1 && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }} className="mt-10 flex flex-col items-center gap-3">
-          <div className="flex items-center gap-3 w-full max-w-xs">
-            <div className="flex-1 h-px bg-white/10" />
-            <span className="text-[10px] text-white/30 uppercase tracking-widest">Envie de plus ?</span>
-            <div className="flex-1 h-px bg-white/10" />
-          </div>
-          {allStylesSeen ? (
-            <div className="w-full max-w-xs py-5 rounded-2xl text-center"
-              style={{ background: "rgba(201,150,58,0.08)", border: "1.5px solid rgba(201,150,58,0.2)" }}>
-              <p className="text-sm font-black text-[#C9963A]">Tu as découvert tous tes styles ✨</p>
-              <p className="text-[11px] text-white/40 mt-1">Reprends un selfie pour de nouvelles recommandations</p>
-              <motion.button whileTap={{ scale: 0.97 }}
-                onClick={() => navigate("/camera")}
-                className="mt-3 px-5 py-2 rounded-xl font-black text-xs text-[#1A0A00]"
-                style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}>
-                Nouveau selfie
-              </motion.button>
-            </div>
-          ) : (
-            <motion.button whileTap={{ scale: 0.97 }} onClick={handleGenerateMore}
-              className="w-full max-w-xs py-5 rounded-2xl font-black text-base relative overflow-hidden"
-              style={{
-                background: "linear-gradient(135deg, #3D2616, #4A2E1A)",
-                border: "1.5px solid rgba(201,150,58,0.4)",
-                boxShadow: "0 0 30px rgba(201,150,58,0.1)",
-              }}>
-              <span className="flex items-center justify-center gap-2 text-[#C9963A]">
-                ✨ Voir 3 autres styles
-                <span className="text-[10px] bg-[#C9963A]/20 border border-[#C9963A]/40 text-[#C9963A] px-2 py-0.5 rounded-full font-black">
-                  1 crédit
-                </span>
-              </span>
-              <p className="text-[10px] text-white/30 mt-1 font-normal">
-                Solde actuel : {credits} crédit{credits > 1 ? "s" : ""}
-              </p>
-            </motion.button>
-          )}
-        </motion.div>
-      )}
 
       {/* VOIR 3 AUTRES STYLES */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
@@ -721,19 +700,110 @@ export default function Results() {
           <p className="text-[10px] text-[#C9963A]/60">
             Solde : {credits} crédit{credits > 1 ? "s" : ""}
           </p>
-          <motion.button whileTap={{ scale: 0.97 }} onClick={handleGenerateMore}
-            className="mt-2 w-full max-w-xs py-5 rounded-2xl font-black text-base relative overflow-hidden"
-            style={{ background: "linear-gradient(135deg, #3D2616, #4A2E1A)", border: "1.5px solid rgba(201,150,58,0.4)", boxShadow: "0 0 30px rgba(201,150,58,0.1)" }}>
-            <span className="flex items-center justify-center gap-2 text-[#C9963A]">
-              ✨ Voir 3 autres styles
-              <span className="text-[10px] bg-[#C9963A]/20 border border-[#C9963A]/40 text-[#C9963A] px-2 py-0.5 rounded-full font-black">
-                1 crédit
+        </motion.div>
+      )}
+
+      {/* MODALE VIRTUAL TRY-ON */}
+      <AnimatePresence>
+        {showVirtualTryOnModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[150] flex items-end justify-center px-4 pb-8"
+            style={{ background: "rgba(0,0,0,0.80)", backdropFilter: "blur(12px)" }}
+            onClick={() => setShowVirtualTryOnModal(false)}>
+            <motion.div initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 80, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 280, damping: 26 }}
+              className="w-full max-w-sm rounded-[2.5rem] p-8 text-center relative overflow-hidden"
+              style={{
+                background: "linear-gradient(160deg, #2C1A0E 0%, #3D2616 100%)",
+                border: "2px solid rgba(201,150,58,0.5)",
+                boxShadow: "0 0 60px rgba(201,150,58,0.3)",
+              }}
+              onClick={(e) => e.stopPropagation()}>
+              <motion.div initial={{ scale: 0 }} animate={{ scale: [0, 1.2, 1] }}
+                transition={{ delay: 0.1, duration: 0.5 }} className="text-5xl mb-4">🧖‍♀️</motion.div>
+              <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full mb-4 inline-block"
+                style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)", color: "#2C1A0E" }}>
+                Bientôt disponible
               </span>
-            </span>
-            <p className="text-[10px] text-white/30 mt-1 font-normal">
-              Solde actuel : {credits} crédit{credits > 1 ? "s" : ""}
-            </p>
-          </motion.button>
+              <h2 className="text-2xl font-black text-white mt-3 mb-2 leading-tight">
+                Virtual Try-On ✨
+              </h2>
+              <p className="text-sm text-white/60 mb-6 leading-relaxed">
+                Vois-toi <span className="text-[#C9963A] font-bold">réellement</span> avec la coiffure, avec une précision bluffante — disponible très bientôt !
+              </p>
+              <div className="flex flex-col gap-3 mb-6">
+                {[
+                  { icon: "📸", text: "Rendu sur mesure sur ton selfie" },
+                  { icon: "🎨", text: "Rendu réaliste en quelques secondes" },
+                  { icon: "💾", text: "Sauvegarde & partage facilement" },
+                ].map((item, i) => (
+                  <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.2 + i * 0.1 }}
+                    className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-left">
+                    <span className="text-xl">{item.icon}</span>
+                    <span className="text-sm text-white/70 font-medium">{item.text}</span>
+                  </motion.div>
+                ))}
+              </div>
+              {/* Quand le VTO livrera ses résultats : appeler triggerFireworks() ici */}
+              <button onClick={() => setShowVirtualTryOnModal(false)}
+                className="w-full py-4 rounded-2xl font-black text-[#2C1A0E] text-base"
+                style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}>
+                J'ai hâte ! 🔥
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* LIGHTBOX */}
+      <AnimatePresence>
+        {zoomImage && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black/98 flex flex-col items-center justify-center backdrop-blur-xl"
+            style={{ padding: "16px", paddingBottom: "96px" }}
+            onClick={() => setZoomImage(null)} onContextMenu={(e) => e.preventDefault()}>
+            <div className="flex flex-col items-center w-full max-w-sm gap-4" onClick={(e) => e.stopPropagation()}>
+              <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="w-full relative">
+                <img src={zoomImage} alt="Zoom"
+                  className="w-full rounded-3xl shadow-2xl border border-white/10"
+                  draggable={false} onContextMenu={(e) => e.preventDefault()}
+                  style={{ objectFit: "cover", maxHeight: "52vh", userSelect: "none", WebkitUserSelect: "none" }} />
+                <div className="absolute inset-0 rounded-3xl pointer-events-none"
+                  onContextMenu={(e) => e.preventDefault()} onDragStart={(e) => e.preventDefault()} />
+              </motion.div>
+              <button onClick={() => setZoomImage(null)}
+                className="w-full py-4 bg-white/10 text-white rounded-2xl font-bold backdrop-blur-md border border-white/10">
+                ✕ Fermer
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* BOUTONS FLOTTANTS */}
+      <div className="fixed bottom-24 right-4 z-40 flex flex-col items-center gap-2">
+        <motion.div initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+          onClick={() => navigate("/credits")}
+          className="w-12 h-12 bg-[#C9963A] text-[#2C1A0E] rounded-lg flex flex-col items-center justify-center shadow-lg border border-[#2C1A0E]/20 active:scale-95 transition-all cursor-pointer">
+          <div className="text-[5px] font-black uppercase opacity-60 leading-tight">Solde</div>
+          <div className="text-xl font-black leading-none">{credits}</div>
+        </motion.div>
+        <motion.button initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+          whileTap={{ scale: 0.95 }} onClick={handleGenerateMore}
+          className="w-12 h-12 rounded-lg flex flex-col items-center justify-center shadow-lg relative border border-white/10 active:scale-95 transition-all"
+          style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}>
+          <span className="text-[6px] font-black text-[#2C1A0E] uppercase leading-none">Gen</span>
+          <span className="text-base">✨</span>
+          <div className="absolute -top-1 -right-1 bg-[#1A0A00] text-[#C9963A] text-[7px] px-1 py-0 rounded-full font-bold border border-[#C9963A]">
+            -1
+          </div>
+        </motion.button>
+      </div>
+
+    </div>
+  );
+}
         </motion.div>
       )}
 
