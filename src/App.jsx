@@ -43,19 +43,28 @@ async function flushPendingCredits(userId) {
 
 // ─── Protection route admin ───────────────────────────────────────
 function AdminRoute({ children }) {
-  const [checking, setChecking] = useState(true)
-  const [allowed, setAllowed] = useState(false)
+  const [status, setStatus] = useState('checking') // 'checking' | 'allowed' | 'denied'
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) { setAllowed(true) }
-      else { window.location.href = '/login' }
-      setChecking(false)
+      if (session) {
+        setStatus('allowed')
+      } else {
+        setStatus('denied')
+        window.location.href = '/login'
+      }
     })
   }, [])
 
-  if (checking) return <div className="min-h-screen bg-black" />
-  if (!allowed) return null
+  if (status === 'checking') return (
+    <div style={{
+      minHeight: '100vh', backgroundColor: '#0F0500',
+      display: 'flex', alignItems: 'center', justifyContent: 'center'
+    }}>
+      <div style={{ color: '#C9963A', fontSize: 13, fontWeight: 700 }}>Vérification...</div>
+    </div>
+  )
+  if (status === 'denied') return null
   return children
 }
 
@@ -246,7 +255,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <div className="min-h-screen bg-black flex justify-center">
-        <div className="w-full max-w-[430px] relative bg-[#2C1A0E] min-h-screen overflow-hidden shadow-2xl">
+        <div className="w-full max-w-[430px] relative bg-[#2C1A0E] min-h-screen shadow-2xl">
           <AnimatePresence>
             {creditSuccess && (
               <CreditSuccessPopup
@@ -260,4 +269,5 @@ export default function App() {
       </div>
     </BrowserRouter>
   )
-}
+                  }
+        
