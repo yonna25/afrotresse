@@ -1,258 +1,113 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { getCurrentUser, getSupabaseCredits } from '../services/useSupabaseCredits.js'
-import { getCredits } from '../services/credits.js'
-import { getSessionIdWithFp } from '../services/fingerprint.js'
 import { supabase } from '../services/supabase.js'
+import { getCredits, setCredits } from '../services/credits.js'
+import { syncCreditsWithServer, getOrCreateFingerprint } from '../services/useSupabaseCredits.js'
+import AdminNav from '../components/AdminNav.jsx'
 
 export default function Debug() {
   const navigate = useNavigate()
-  const [user, setUser] = useState(null)
-  const [supabaseBalance, setSupabaseBalance] = useState(null)
-  const [localBalance, setLocalBalance] = useState(null)
-  const [sessionId, setSessionId] = useState(null)
+  const [localCredits, setLocalCredits] = useState(0)
+  const [session, setSession] = useState(null)
   const [loading, setLoading] = useState(false)
-  const [logs, setLogs] = useState([])
-  const [copied, setCopied] = useState(false)
-
-  const addLog = (message, type = 'info') => {
-    const timestamp = new Date().toLocaleTimeString('fr-FR')
-    setLogs(prev => [...prev, { message, type, timestamp }])
-  }
 
   useEffect(() => {
-    checkStatus()
-    getSessionIdWithFp().then(id => setSessionId(id)).catch(() => {})
+    // Sync initial
+    setLocalCredits(getCredits())
+    supabase.auth.getSession().then(({ data }) => setSession(data.session))
   }, [])
 
-  const checkStatus = async () => {
+  const handleRefreshSync = async () => {
     setLoading(true)
-    setLogs([])
-    addLog('🔍 Vérification du statut...', 'info')
-
-    try {
-      // ── Vérification session Supabase ──
-      const { data: { session } } = await supabase.auth.getSession()
-      addLog(
-        `Session: ${session ? session.access_token.substring(0, 20) + '...' : 'NULL'}`,
-        session ? 'success' : 'error'
-      )
-      if (session) {
-        addLog(`Token expire le: ${new Date(session.expires_at * 1000).toLocaleString('fr-FR')}`, 'info')
-      }
-
-      // ── Vérification user ──
-      const currentUser = await getCurrentUser()
-      setUser(currentUser)
-
-      if (currentUser) {
-        addLog(`✅ User connecté: ${currentUser.email}`, 'success')
-        addLog(`ID: ${currentUser.id}`, 'info')
-        try {
-          const balance = await getSupabaseCredits(currentUser.id)
-          setSupabaseBalance(balance)
-          addLog(`✅ Supabase balance: ${balance} crédits`, 'success')
-        } catch (err) {
-          addLog(`❌ Erreur Supabase: ${err.message}`, 'error')
-          setSupabaseBalance('Erreur')
-        }
-      } else {
-        addLog('❌ Aucun user connecté — session expirée ou absente', 'error')
-        setUser(null)
-        setSupabaseBalance(null)
-      }
-
-      const local = getCredits()
-      setLocalBalance(local)
-      addLog(`✅ localStorage balance: ${local} crédits`, 'success')
-
-    } catch (err) {
-      addLog(`❌ Erreur: ${err.message}`, 'error')
-    }
-
+    const fp = getOrCreateFingerprint()
+    const email = session?.user?.email || null
+    const newBalance = await syncCreditsWithServer(email, fp)
+    setLocalCredits(newBalance)
+    setCredits(newBalance)
     setLoading(false)
   }
 
-  const testSync = async () => {
-    setLoading(true)
-    addLog('🔄 Test de synchro...', 'info')
-    try {
-      const currentUser = await getCurrentUser()
-      if (!currentUser) { addLog('❌ User non connecté', 'error'); setLoading(false); return }
-      const supaBalance = await getSupabaseCredits(currentUser.id)
-      const local = getCredits()
-      addLog(`Supabase: ${supaBalance} | localStorage: ${local}`, 'info')
-      if (supaBalance > local) addLog('✅ Les crédits Supabase sont supérieurs', 'success')
-      else if (supaBalance < local) addLog('⚠️ localStorage a plus de crédits', 'warning')
-      else addLog('✅ Les soldes sont synchronisés', 'success')
-    } catch (err) {
-      addLog(`❌ Erreur: ${err.message}`, 'error')
-    }
-    setLoading(false)
-  }
-
-  const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-      addLog('📋 Copié !', 'success')
-    }).catch(() => {
-      addLog('❌ Copie échouée', 'error')
-    })
+  const handleSignOut = async () => {
+    await supabase.auth.signOut()
+    navigate('/login')
   }
 
   return (
-    <div className="min-h-screen bg-[#1A0A00] text-white pb-32 pt-4">
-      <div className="max-w-md mx-auto px-4">
+    <div className="min-h-screen bg-[#0F0500] text-white pb-20">
+      <AdminNav />
 
-        {/* Header */}
-        <div className="mb-6">
-          <button onClick={() => navigate('/profile')} className="text-xs text-[#C9963A] font-bold mb-3 hover:opacity-70">
-            ← Retour
+      <div className="mt-24 px-6 max-w-md mx-auto">
+        {/* Header avec bouton Retour Intelligent */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-[#C9963A] text-2xl font-black uppercase tracking-tighter">Debug Mode</h1>
+            <p className="text-white/30 text-[9px] uppercase tracking-widest mt-1">Outils de diagnostic système</p>
+          </div>
+          <button 
+            onClick={() => navigate('/admin-credits')}
+            className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-[#C9963A]"
+          >
+            Retour Admin
           </button>
-          <h1 className="text-2xl font-black text-[#C9963A]">🔧 Debug</h1>
-          <p className="text-xs text-white/50 mt-1">Vérification complète du statut</p>
         </div>
 
-        {/* Session Fingerprint */}
-        <motion.div className="p-4 rounded-2xl border border-[#C9963A]/60 bg-[#2b1810] mb-4">
-          <p className="text-xs opacity-60 uppercase tracking-widest mb-2">Session Fingerprint (fp_xxx)</p>
-          {sessionId ? (
-            <div>
-              <p className="text-[11px] font-mono text-[#E8B96A] break-all leading-relaxed">{sessionId}</p>
-              <button
-                onClick={() => copyToClipboard(sessionId)}
-                className="mt-2 px-3 py-1.5 rounded-lg text-[10px] font-black text-[#1A0A00]"
-                style={{ background: copied ? '#4CAF50' : '#C9963A' }}
-              >
-                {copied ? '✅ Copié !' : '📋 Copier pour Supabase'}
-              </button>
-              <p className="text-[9px] text-white/30 mt-1">
-                Cherchez cette valeur dans Supabase → sessions → session_id
-              </p>
+        {/* État de la Session */}
+        <div className="rounded-[2rem] p-6 mb-6" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(201,150,58,0.2)" }}>
+          <p className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-4">Statut Session</p>
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-white/60">Utilisateur :</span>
+              <span className="text-xs font-mono text-[#C9963A]">{session?.user?.email || 'Anonyme'}</span>
             </div>
-          ) : (
-            <p className="text-xs text-white/50">Chargement...</p>
-          )}
-        </motion.div>
-
-        {/* Status Cards */}
-        <div className="space-y-3 mb-6">
-          <motion.div className="p-4 rounded-2xl border"
-            style={{ background: user ? '#2b1810' : '#8b0000', borderColor: user ? '#C9963A' : '#ff4444' }}>
-            <p className="text-xs opacity-60 uppercase tracking-widest mb-1">User connecté</p>
-            {user ? (
-              <div>
-                <p className="font-black text-lg">✅ Connecté</p>
-                <p className="text-xs text-white/70 mt-1 font-mono break-all">{user.email}</p>
-                <p className="text-[10px] text-white/50 mt-1">ID: {user.id.substring(0, 12)}...</p>
-              </div>
-            ) : (
-              <div>
-                <p className="font-black text-lg">❌ Non connecté</p>
-                <p className="text-[10px] text-white/50 mt-1">Session absente ou expirée — reconnecte-toi via Magic Link</p>
-              </div>
-            )}
-          </motion.div>
-
-          <motion.div className="p-4 rounded-2xl border border-[#C9963A]/40 bg-[#2b1810]">
-            <p className="text-xs opacity-60 uppercase tracking-widest mb-1">Supabase</p>
-            {supabaseBalance !== null ? (
-              <p className="font-black text-2xl text-[#C9963A]">{supabaseBalance}</p>
-            ) : (
-              <p className="text-xs text-white/50">—</p>
-            )}
-            <p className="text-[10px] text-white/50 mt-1">Crédits payés stockés</p>
-          </motion.div>
-
-          <motion.div className="p-4 rounded-2xl border border-white/10 bg-white/5">
-            <p className="text-xs opacity-60 uppercase tracking-widest mb-1">localStorage</p>
-            <p className="font-black text-2xl text-white">{localBalance}</p>
-            <p className="text-[10px] text-white/50 mt-1">Crédits affichés</p>
-          </motion.div>
-
-          <motion.div className="p-4 rounded-2xl border"
-            style={{
-              background: supabaseBalance === localBalance ? '#2b1810' : '#8b4513',
-              borderColor: supabaseBalance === localBalance ? '#4CAF50' : '#ff8c00',
-            }}>
-            <p className="text-xs opacity-60 uppercase tracking-widest mb-1">Synchro</p>
-            {supabaseBalance !== null && localBalance !== null ? (
-              supabaseBalance === localBalance ? (
-                <p className="font-black text-lg">✅ Synchronisé</p>
-              ) : (
-                <div>
-                  <p className="font-black text-lg">⚠️ Différence</p>
-                  <p className="text-xs text-white/70 mt-1">Écart: {Math.abs(supabaseBalance - localBalance)} crédits</p>
-                </div>
-              )
-            ) : (
-              <p className="text-xs text-white/50">Vérification...</p>
-            )}
-          </motion.div>
-        </div>
-
-        {/* Buttons */}
-        <div className="flex gap-2 mb-6">
-          <button onClick={checkStatus} disabled={loading}
-            className="flex-1 py-3 rounded-xl font-black text-sm bg-[#C9963A] text-[#1A0A00] disabled:opacity-50">
-            🔄 Rafraîchir
-          </button>
-          <button onClick={testSync} disabled={loading}
-            className="flex-1 py-3 rounded-xl font-black text-sm bg-white/10 border border-white/20 disabled:opacity-50">
-            ⚙️ Test Sync
-          </button>
-        </div>
-
-        {/* Logs */}
-        <div className="mb-6">
-          <h2 className="text-sm font-black text-white mb-2">📋 Logs</h2>
-          <div className="bg-black/50 rounded-xl p-3 max-h-64 overflow-y-auto border border-white/10">
-            {logs.length === 0 ? (
-              <p className="text-xs text-white/50">Aucun log</p>
-            ) : (
-              logs.map((log, i) => (
-                <div key={i} className={`text-[10px] font-mono mb-1 pb-1 border-b border-white/5 ${
-                  log.type === 'error' ? 'text-red-400' :
-                  log.type === 'success' ? 'text-green-400' :
-                  log.type === 'warning' ? 'text-yellow-400' : 'text-white/70'
-                }`}>
-                  <span className="opacity-50">[{log.timestamp}]</span> {log.message}
-                </div>
-              ))
-            )}
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-white/60">ID Supabase :</span>
+              <span className="text-[10px] font-mono text-white/40 truncate ml-4">{session?.user?.id || 'N/A'}</span>
+            </div>
           </div>
         </div>
 
-        {user && (
-          <motion.div className="p-4 rounded-2xl bg-white/5 border border-white/10 mb-6">
-            <h3 className="text-xs font-black uppercase tracking-widest text-[#C9963A] mb-2">Infos User</h3>
-            <div className="space-y-2 text-[10px] font-mono">
-              <div className="flex items-center justify-between p-2 bg-black/30 rounded">
-                <span className="text-white/60">Email:</span>
-                <span className="text-white/90 truncate ml-2">{user.email}</span>
-              </div>
-              <div className="flex items-center justify-between p-2 bg-black/30 rounded">
-                <span className="text-white/60">ID:</span>
-                <button onClick={() => copyToClipboard(user.id)} className="text-[#C9963A] hover:text-[#E8B96A] truncate ml-2">
-                  {user.id.substring(0, 8)}... (copier)
-                </button>
-              </div>
+        {/* Diagnostic Crédits */}
+        <div className="rounded-[2rem] p-6 mb-6" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
+          <p className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-4">Diagnostic Crédits</p>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <p className="text-3xl font-black text-white">{localCredits}</p>
+              <p className="text-[10px] text-white/40 uppercase tracking-widest">Solde Local (Cache)</p>
             </div>
-          </motion.div>
-        )}
-
-        <div className="p-4 rounded-2xl bg-white/5 border border-white/10 text-[10px] leading-relaxed text-white/60">
-          <p className="font-black text-[#C9963A] mb-2">📖 Comment ça marche :</p>
-          <ol className="space-y-1 list-decimal list-inside">
-            <li>Copie ton fp_xxx en haut</li>
-            <li>Va dans Supabase → sessions → cherche ce sessionId</li>
-            <li>Modifie le champ credits directement</li>
-            <li>Reviens ici et clique Rafraîchir</li>
-          </ol>
+            <button 
+              onClick={handleRefreshSync}
+              disabled={loading}
+              className={`p-4 rounded-2xl bg-[#C9963A] text-[#1A0A00] transition-all ${loading ? 'animate-pulse opacity-50' : 'active:scale-95'}`}
+            >
+              <svg className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </button>
+          </div>
         </div>
 
+        {/* Actions de Sortie */}
+        <div className="space-y-3">
+          <button 
+            onClick={() => navigate('/')}
+            className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 text-xs font-black uppercase tracking-widest text-white/60 hover:text-white transition-all"
+          >
+            Quitter le mode Debug (Vers Accueil)
+          </button>
+          
+          <button 
+            onClick={handleSignOut}
+            className="w-full py-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-xs font-black uppercase tracking-widest text-red-500 hover:bg-red-500/20 transition-all"
+          >
+            Déconnexion de la session
+          </button>
+        </div>
+
+        {/* Info Fingerprint */}
+        <div className="mt-8 text-center">
+          <p className="text-[8px] text-white/20 uppercase tracking-[0.2em]">Device Fingerprint</p>
+          <p className="text-[9px] font-mono text-white/10 mt-1 break-all">{getOrCreateFingerprint()}</p>
+        </div>
       </div>
     </div>
   )
