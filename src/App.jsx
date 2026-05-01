@@ -1,93 +1,268 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate, Routes, Route } from 'react-router-dom';
-import CameraCapture from './components/CameraCapture';
-import Analyze from './pages/Analyze'; 
-import { getCredits, consumeCredits, syncCreditsFromServer } from "./services/credits.js";
+import { useState, useEffect } from 'react'
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { AnimatePresence, motion } from 'framer-motion'
+import { setCredits, getCredits, syncCreditsFromServer } from './services/credits.js'
+import { getCurrentUser, getSupabaseCredits, ensureUserExists, addSupabaseCredits } from './services/useSupabaseCredits.js'
+import { supabase } from './services/supabase.js'
 
-export default function App() {
-  const navigate = useNavigate();
-  const [capturedImage, setCapturedImage] = useState(null);
-  const [credits, setCredits] = useState(getCredits());
+import Home from './pages/Home.jsx'
+import Camera from './pages/Camera.jsx'
+import Analyze from './pages/Analyze.jsx'
+import Results from './pages/Results.jsx'
+import Profile from './pages/Profile.jsx'
+import Credits from './pages/Credits.jsx'
+import Debug from './pages/Debug.jsx'
+import PrivacyPolicy from './pages/PrivacyPolicy.jsx'
+import TermsOfService from './pages/TermsOfService.jsx'
+import CookiePolicy from './pages/CookiePolicy.jsx'
+import FAQ from './pages/FAQ.jsx'
+import MagicLink from './pages/MagicLink.jsx'
+import Library from './pages/Library.jsx'
+import AdminReviews from './pages/AdminReviews.jsx'
+import Partners from './pages/Partners.jsx'
+import AdminPartners from './pages/AdminPartners.jsx'
+import AdminCredits from './pages/AdminCredits.jsx'
+import Login from './pages/Login.jsx'
 
-  // 1. Gestion de la capture photo
-  const handleCapture = (data) => {
-    setCapturedImage(data.url);
-    sessionStorage.setItem("afrotresse_photo", data.url);
-  };
+import BottomNav from './components/BottomNav.jsx'
+import WhatsAppWidget from './components/WhatsAppWidget.jsx'
 
-  // 2. Logique du bouton "Générer mon style" avec déduction de crédit
-  const handleStartAnalysis = async () => {
-    const freshCredits = getCredits();
-    
-    if (freshCredits <= 0) {
-      navigate('/credits');
-      return;
+async function flushPendingCredits(userId) {
+  try {
+    const pending = parseInt(localStorage.getItem('afrotresse_pending_credits') || '0', 10)
+    if (pending > 0) {
+      await addSupabaseCredits(userId, pending)
+      localStorage.removeItem('afrotresse_pending_credits')
     }
+  } catch (err) {
+    console.error('flushPendingCredits error:', err)
+  }
+}
 
-    // Déduction du crédit pour l'analyse
-    const ok = await consumeCredits(1);
-    
-    if (ok) {
-      setCredits(getCredits()); // Mise à jour locale du solde
-      navigate('/analyze');
-    } else {
-      // Tentative de resynchronisation en cas d'échec de communication
-      const synced = await syncCreditsFromServer().catch(() => 0);
-      if (synced > 0) {
-        await consumeCredits(1);
-        setCredits(getCredits());
-        navigate('/analyze');
+function AdminRoute({ children }) {
+  const [status, setStatus] = useState('checking')
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setStatus('allowed')
       } else {
-        navigate('/credits');
+        setStatus('denied')
+        window.location.href = '/login'
       }
-    }
-  };
+    })
+  }, [])
+
+  if (status === 'checking') return (
+    <div style={{
+      minHeight: '100vh', backgroundColor: '#0F0500',
+      display: 'flex', alignItems: 'center', justifyContent: 'center'
+    }}>
+      <div style={{ color: '#C9963A', fontSize: 13, fontWeight: 700 }}>Vérification...</div>
+    </div>
+  )
+  if (status === 'denied') return null
+  return children
+}
+
+function CreditSuccessPopup({ data, onClose }) {
+  useEffect(() => {
+    const timer = setTimeout(onClose, 4000)
+    return () => clearTimeout(timer)
+  }, [onClose])
 
   return (
-    <div className="min-h-[100dvh] bg-[#1A0A00] text-[#FAF4EC] overflow-hidden">
-      <Routes>
-        <Route path="/" element={
-          <div className="relative h-full w-full">
-            {!capturedImage ? (
-              <CameraCapture 
-                onCapture={handleCapture} 
-                onClose={() => navigate('/home')} 
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[200] flex items-center justify-center px-6"
+      style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(10px)' }}
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.8, y: 40, opacity: 0 }}
+        animate={{ scale: 1, y: 0, opacity: 1 }}
+        exit={{ scale: 0.8, y: 40, opacity: 0 }}
+        transition={{ type: 'spring', stiffness: 260, damping: 22 }}
+        className="w-full max-w-sm rounded-[2.5rem] p-8 text-center relative overflow-hidden"
+        style={{
+          background: 'linear-gradient(160deg, #2C1A0E 0%, #3D2616 100%)',
+          border: '2px solid #C9963A',
+          boxShadow: '0 0 60px rgba(201,150,58,0.4)',
+        }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {[...Array(8)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute text-lg"
+              initial={{ opacity: 0, y: 60, x: `${10 + i * 12}%` }}
+              animate={{ opacity: [0, 1, 0], y: -80 }}
+              transition={{ delay: i * 0.15, duration: 1.8, repeat: Infinity, repeatDelay: 1.5 }}
+            >
+              {['✨', '💎', '👑', '⭐', '✨', '💛', '👑', '💎'][i]}
+            </motion.div>
+          ))}
+        </div>
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: [0, 1.2, 1] }}
+          transition={{ delay: 0.1, duration: 0.5 }}
+          className="text-6xl mb-4"
+        >
+          💎
+        </motion.div>
+        <h2 className="text-2xl font-black text-[#C9963A] mb-1">
+          Félicitations {data.userName} ! 🎉
+        </h2>
+        <motion.p
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="text-4xl font-black text-white my-4"
+        >
+          +{data.credits} crédits
+        </motion.p>
+        <p className="text-sm text-white/60 mb-2">
+          Pack <span className="text-[#C9963A] font-bold">{data.label}</span> activé
+        </p>
+        <p className="text-xs text-white/40 mb-6">
+          Solde : <span className="text-white font-bold">{getCredits()} crédits</span>
+        </p>
+        <motion.div className="h-1 rounded-full bg-[#C9963A]/30 overflow-hidden mb-5">
+          <motion.div
+            className="h-full bg-[#C9963A]"
+            initial={{ width: '100%' }}
+            animate={{ width: '0%' }}
+            transition={{ duration: 4 }}
+          />
+        </motion.div>
+        <button
+          onClick={onClose}
+          className="w-full py-4 rounded-2xl font-black text-[#1A0A00]"
+          style={{ background: 'linear-gradient(135deg, #C9963A, #E8B96A)' }}
+        >
+          Lancer un essai ✨
+        </button>
+      </motion.div>
+    </motion.div>
+  )
+}
+
+function AnimatedRoutes() {
+  const location = useLocation()
+
+  const hideNav = [
+    '/camera',
+    '/analyze',
+    '/magic-link',
+    '/admin-reviews',
+    '/admin-partners',
+    '/admin-credits',
+    '/login',
+    '/debug',
+  ].includes(location.pathname)
+
+  return (
+    <>
+      <AnimatePresence mode="wait">
+        <Routes location={location} key={location.pathname}>
+          <Route path="/" element={<Home />} />
+          <Route path="/camera" element={<Camera />} />
+          <Route path="/analyze" element={<Analyze />} />
+          <Route path="/results" element={<Results />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/credits" element={<Credits />} />
+          <Route path="/debug" element={<AdminRoute><Debug /></AdminRoute>} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms-of-service" element={<TermsOfService />} />
+          <Route path="/cookie-policy" element={<CookiePolicy />} />
+          <Route path="/faq" element={<FAQ />} />
+          <Route path="/magic-link" element={<MagicLink />} />
+          <Route path="/library" element={<Library />} />
+          <Route path="/partners" element={<Partners />} />
+          <Route path="/admin-reviews" element={<AdminRoute><AdminReviews /></AdminRoute>} />
+          <Route path="/admin-partners" element={<AdminRoute><AdminPartners /></AdminRoute>} />
+          <Route path="/admin-credits" element={<AdminRoute><AdminCredits /></AdminRoute>} />
+          <Route path="/login" element={<Login />} />
+        </Routes>
+      </AnimatePresence>
+      {!hideNav && <BottomNav />}
+      <WhatsAppWidget />
+    </>
+  )
+}
+
+export default function App() {
+  const [creditSuccess, setCreditSuccess] = useState(null)
+
+  useEffect(() => {
+    getCurrentUser().then(async (user) => {
+      if (user) {
+        try {
+          await ensureUserExists(user.id, user.email)
+          await flushPendingCredits(user.id)
+          const balance = await getSupabaseCredits(user.id)
+          if (balance > 0) setCredits(balance)
+        } catch {}
+      } else {
+        syncCreditsFromServer().catch(() => {})
+      }
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user?.id) {
+          try {
+            await ensureUserExists(session.user.id, session.user.email)
+            await flushPendingCredits(session.user.id)
+            const balance = await getSupabaseCredits(session.user.id)
+            if (balance > 0) setCredits(balance)
+          } catch {}
+        }
+      }
+    )
+
+    return () => subscription?.unsubscribe()
+  }, [])
+
+  useEffect(() => {
+    const handler = (e) => setCreditSuccess(e.detail)
+    window.addEventListener('afrotresse:credit_success', handler)
+    return () => window.removeEventListener('afrotresse:credit_success', handler)
+  }, [])
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const raw = sessionStorage.getItem('afrotresse_credit_success')
+      if (raw) {
+        try {
+          const data = JSON.parse(raw)
+          sessionStorage.removeItem('afrotresse_credit_success')
+          setCreditSuccess(data)
+        } catch {}
+      }
+    }, 400)
+    return () => clearInterval(interval)
+  }, [])
+
+  return (
+    <BrowserRouter>
+      <div className="min-h-screen bg-black flex justify-center">
+        <div className="w-full max-w-[430px] relative bg-[#2C1A0E] min-h-screen shadow-2xl">
+          <AnimatePresence>
+            {creditSuccess && (
+              <CreditSuccessPopup
+                data={creditSuccess}
+                onClose={() => setCreditSuccess(null)}
               />
-            ) : (
-              <div className="relative h-[100dvh] w-full bg-black">
-                <img 
-                  src={capturedImage} 
-                  className="h-full w-full object-cover" 
-                  alt="Selfie de l'utilisatrice" 
-                />
-                
-                {/* Bouton pour annuler et reprendre la photo */}
-                <button 
-                  onClick={() => setCapturedImage(null)}
-                  className="absolute top-6 right-6 w-12 h-12 bg-black/50 rounded-full flex items-center justify-center z-50 text-white border border-white/20 active:scale-90 transition-transform"
-                >
-                  ✕
-                </button>
-
-                {/* BOUTON FLOTTANT GÉNÉRER */}
-                <AnimatePresence>
-                  <motion.button
-                    initial={{ y: 100, x: '-50%', opacity: 0 }}
-                    animate={{ y: 0, x: '-50%', opacity: 1 }}
-                    onClick={handleStartAnalysis}
-                    className="fixed bottom-12 left-1/2 z-50 bg-[#C9963A] text-[#1A0A00] px-14 py-5 rounded-full font-black uppercase tracking-[0.2em] shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-2 border-[#E8B96A]/30 active:scale-95 transition-transform whitespace-nowrap"
-                  >
-                    Générer mon style
-                  </motion.button>
-                </AnimatePresence>
-              </div>
             )}
-          </div>
-        } />
-
-        <Route path="/analyze" element={<Analyze />} />
-      </Routes>
-    </div>
-  );
+          </AnimatePresence>
+          <AnimatedRoutes />
+        </div>
+      </div>
+    </BrowserRouter>
+  )
 }
