@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "../services/supabase";
 import { motion, AnimatePresence } from "framer-motion";
+import AdminNav from "../components/AdminNav.jsx";
 
 const CATEGORIES = [
   { id: "all",       label: "Tous",      emoji: "✦" },
@@ -148,18 +149,9 @@ export default function AdminPartners() {
   return (
     <div className="min-h-screen bg-[#0F0500] text-white p-4 pb-40">
 
-      {/* Navbar Admin */}
-      <div className="fixed top-0 left-0 w-full z-[1000] bg-red-600 text-white p-4 flex justify-between items-center shadow-2xl">
-        <span className="text-[10px] font-black uppercase tracking-widest">Admin Panel · AfroTresse</span>
-        <button
-          onClick={() => supabase.auth.signOut().then(() => window.location.href = "/login")}
-          className="bg-white text-red-600 px-4 py-2 rounded-xl font-black text-[10px] uppercase"
-        >
-          Déconnexion
-        </button>
-      </div>
+      <AdminNav />
 
-      <div className="mt-20 px-2">
+      <div className="mt-24 px-2">
 
         {/* Header */}
         <header className="flex justify-between items-center mb-6">
