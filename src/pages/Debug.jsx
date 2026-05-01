@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { getCurrentUser, getSupabaseCredits } from '../services/useSupabaseCredits.js'
 import { getCredits } from '../services/credits.js'
 import { getSessionIdWithFp } from '../services/fingerprint.js'
+import { supabase } from '../services/supabase.js'
 
 export default function Debug() {
   const navigate = useNavigate()
@@ -22,18 +23,29 @@ export default function Debug() {
 
   useEffect(() => {
     checkStatus()
-    // Récupérer le sessionId fingerprint
     getSessionIdWithFp().then(id => setSessionId(id)).catch(() => {})
   }, [])
 
   const checkStatus = async () => {
     setLoading(true)
+    setLogs([])
     addLog('🔍 Vérification du statut...', 'info')
 
     try {
+      // ── Vérification session Supabase ──
+      const { data: { session } } = await supabase.auth.getSession()
+      addLog(
+        `Session: ${session ? session.access_token.substring(0, 20) + '...' : 'NULL'}`,
+        session ? 'success' : 'error'
+      )
+      if (session) {
+        addLog(`Token expire le: ${new Date(session.expires_at * 1000).toLocaleString('fr-FR')}`, 'info')
+      }
+
+      // ── Vérification user ──
       const currentUser = await getCurrentUser()
       setUser(currentUser)
-      
+
       if (currentUser) {
         addLog(`✅ User connecté: ${currentUser.email}`, 'success')
         addLog(`ID: ${currentUser.id}`, 'info')
@@ -46,8 +58,9 @@ export default function Debug() {
           setSupabaseBalance('Erreur')
         }
       } else {
-        addLog('❌ Aucun user connecté', 'error')
+        addLog('❌ Aucun user connecté — session expirée ou absente', 'error')
         setUser(null)
+        setSupabaseBalance(null)
       }
 
       const local = getCredits()
@@ -92,7 +105,7 @@ export default function Debug() {
   return (
     <div className="min-h-screen bg-[#1A0A00] text-white pb-32 pt-4">
       <div className="max-w-md mx-auto px-4">
-        
+
         {/* Header */}
         <div className="mb-6">
           <button onClick={() => navigate('/profile')} className="text-xs text-[#C9963A] font-bold mb-3 hover:opacity-70">
@@ -102,16 +115,12 @@ export default function Debug() {
           <p className="text-xs text-white/50 mt-1">Vérification complète du statut</p>
         </div>
 
-        {/* ── SESSION FINGERPRINT ── */}
-        <motion.div
-          className="p-4 rounded-2xl border border-[#C9963A]/60 bg-[#2b1810] mb-4"
-        >
+        {/* Session Fingerprint */}
+        <motion.div className="p-4 rounded-2xl border border-[#C9963A]/60 bg-[#2b1810] mb-4">
           <p className="text-xs opacity-60 uppercase tracking-widest mb-2">Session Fingerprint (fp_xxx)</p>
           {sessionId ? (
             <div>
-              <p className="text-[11px] font-mono text-[#E8B96A] break-all leading-relaxed">
-                {sessionId}
-              </p>
+              <p className="text-[11px] font-mono text-[#E8B96A] break-all leading-relaxed">{sessionId}</p>
               <button
                 onClick={() => copyToClipboard(sessionId)}
                 className="mt-2 px-3 py-1.5 rounded-lg text-[10px] font-black text-[#1A0A00]"
@@ -140,7 +149,10 @@ export default function Debug() {
                 <p className="text-[10px] text-white/50 mt-1">ID: {user.id.substring(0, 12)}...</p>
               </div>
             ) : (
-              <p className="font-black text-lg">❌ Non connecté</p>
+              <div>
+                <p className="font-black text-lg">❌ Non connecté</p>
+                <p className="text-[10px] text-white/50 mt-1">Session absente ou expirée — reconnecte-toi via Magic Link</p>
+              </div>
             )}
           </motion.div>
 
@@ -149,7 +161,7 @@ export default function Debug() {
             {supabaseBalance !== null ? (
               <p className="font-black text-2xl text-[#C9963A]">{supabaseBalance}</p>
             ) : (
-              <p className="text-xs text-white/50">Vérification...</p>
+              <p className="text-xs text-white/50">—</p>
             )}
             <p className="text-[10px] text-white/50 mt-1">Crédits payés stockés</p>
           </motion.div>
@@ -224,7 +236,7 @@ export default function Debug() {
               <div className="flex items-center justify-between p-2 bg-black/30 rounded">
                 <span className="text-white/60">ID:</span>
                 <button onClick={() => copyToClipboard(user.id)} className="text-[#C9963A] hover:text-[#E8B96A] truncate ml-2">
-                  {user.id.substring(0, 8)}...
+                  {user.id.substring(0, 8)}... (copier)
                 </button>
               </div>
             </div>
@@ -240,6 +252,7 @@ export default function Debug() {
             <li>Reviens ici et clique Rafraîchir</li>
           </ol>
         </div>
+
       </div>
     </div>
   )
