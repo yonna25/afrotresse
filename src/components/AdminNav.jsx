@@ -5,6 +5,7 @@ const TABS = [
   { path: '/admin-partners', label: 'Partenaires', emoji: '🤝' },
   { path: '/admin-reviews',  label: 'Avis',        emoji: '⭐' },
   { path: '/admin-credits',  label: 'Crédits',     emoji: '💎' },
+  { path: '/admin-users',    label: 'Clientes',     emoji: '👑' },
   { path: '/debug',          label: 'Debug',        emoji: '🔧' },
 ]
 
