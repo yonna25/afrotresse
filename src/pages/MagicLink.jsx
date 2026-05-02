@@ -5,8 +5,8 @@ import {
   sendMagicLink,
   getCurrentUser,
   ensureUserExists,
-  getOrCreateFingerprint,
 } from '../services/useSupabaseCredits.js'
+import { getSessionIdWithFp } from '../services/fingerprint.js'
 import { supabase } from '../services/supabase.js'
 
 // Restaurer les données de session sauvegardées avant le redirect Magic Link
@@ -29,12 +29,12 @@ export default function MagicLink() {
 
   useEffect(() => {
     // Créer le fingerprint dès l'ouverture
-    getOrCreateFingerprint()
+    getSessionIdWithFp()
 
     // ── Vérification initiale (retour direct via magic link) ──
     getCurrentUser().then(async user => {
       if (user) {
-        await ensureUserExists(user.id, user.email)
+        await ensureUserExists(user)
         restoreSessionBackup()
         navigate('/profile', { replace: true })
       }
@@ -44,7 +44,7 @@ export default function MagicLink() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
-          await ensureUserExists(session.user.id, session.user.email)
+          await ensureUserExists(session.user)
           restoreSessionBackup()
           navigate('/profile', { replace: true })
         }
@@ -59,7 +59,7 @@ export default function MagicLink() {
     setLoading(true)
     setError('')
     try {
-      getOrCreateFingerprint()
+      getSessionIdWithFp()
       await sendMagicLink(email.trim())
       setSent(true)
     } catch {
@@ -145,7 +145,6 @@ export default function MagicLink() {
               Clique dessus pour accéder à ton compte.
             </p>
 
-            {/* Indicateur d'attente de connexion */}
             <div
               className="flex items-center justify-center gap-2 py-3 rounded-2xl mb-4"
               style={{ background: 'rgba(201,150,58,0.08)', border: '1px solid rgba(201,150,58,0.2)' }}
