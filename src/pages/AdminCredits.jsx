@@ -63,45 +63,20 @@ export default function AdminCredits() {
     try {
       const creditsToAdd = parseInt(amount);
 
-      // 1. Récupérer le user_id via auth.users (admin API)
-      const { data: usersData, error: usersError } = await supabase.auth.admin.listUsers();
-      if (usersError) throw usersError;
+      const { data, error } = await supabase.rpc("add_credits_by_email", {
+        target_email: cleanEmail,
+        credits_to_add: creditsToAdd,
+      });
 
-      const matchedUser = usersData.users.find(u => u.email?.toLowerCase() === cleanEmail);
-      if (!matchedUser) {
+      if (error) throw error;
+
+      if (data === "USER_NOT_FOUND") {
         setMsg({ text: `❌ Aucun compte trouvé pour ${cleanEmail}. L'utilisatrice doit s'être connectée au moins une fois.`, type: "error" });
         setLoading(false);
         return;
       }
 
-      const targetUserId = matchedUser.id;
-
-      // 2. Lire le solde actuel dans usage_credits
-      const { data: record, error: fetchError } = await supabase
-        .from("usage_credits")
-        .select("credits")
-        .eq("user_id", targetUserId)
-        .maybeSingle();
-
-      if (fetchError) throw fetchError;
-
-      const currentCredits = record?.credits || 0;
-      const newBalance = currentCredits + creditsToAdd;
-
-      if (record) {
-        // Mise à jour
-        const { error: updateError } = await supabase
-          .from("usage_credits")
-          .update({ credits: newBalance, email: cleanEmail, updated_at: new Date().toISOString() })
-          .eq("user_id", targetUserId);
-        if (updateError) throw updateError;
-      } else {
-        // Insertion si pas encore de ligne
-        const { error: insertError } = await supabase
-          .from("usage_credits")
-          .insert({ user_id: targetUserId, email: cleanEmail, credits: creditsToAdd });
-        if (insertError) throw insertError;
-      }
+      const newBalance = parseInt(data);
 
       const entry = {
         email: cleanEmail,
