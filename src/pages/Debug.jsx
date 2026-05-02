@@ -11,6 +11,7 @@ export default function Debug() {
   const [session, setSession] = useState(null)
   const [loading, setLoading] = useState(false)
   const [storageData, setStorageData] = useState({})
+  const [syncMsg, setSyncMsg] = useState(null)
 
   useEffect(() => {
     refreshAllData()
@@ -41,6 +42,27 @@ export default function Debug() {
 
   const handleFullSync = async () => {
     setLoading(true)
+    setSyncMsg(null)
+
+    const { data: { session: currentSession } } = await supabase.auth.getSession()
+
+    if (currentSession?.user) {
+      const { data, error } = await supabase
+        .from('usage_credits')
+        .select('credits')
+        .eq('user_id', currentSession.user.id)
+        .maybeSingle()
+
+      if (!error && data?.credits >= 0) {
+        setCredits(data.credits) // ← écrit dans localStorage
+        setSyncMsg({ text: `✅ Synchronisé — ${data.credits} crédits appliqués.`, ok: true })
+      } else {
+        setSyncMsg({ text: '❌ Erreur lors de la synchronisation.', ok: false })
+      }
+    } else {
+      setSyncMsg({ text: '❌ Aucune session active.', ok: false })
+    }
+
     await refreshAllData()
     setLoading(false)
   }
@@ -80,10 +102,22 @@ export default function Debug() {
               <p className="text-[10px] text-white/40 uppercase mt-2">Serveur (Cloud)</p>
             </div>
           </div>
+
+          {syncMsg && (
+            <div className="mt-4 px-4 py-3 rounded-xl text-xs font-bold"
+              style={{
+                background: syncMsg.ok ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
+                border: `1px solid ${syncMsg.ok ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
+                color: syncMsg.ok ? '#22c55e' : '#ef4444',
+              }}>
+              {syncMsg.text}
+            </div>
+          )}
+
           <button
             onClick={handleFullSync}
             disabled={loading}
-            className="w-full mt-6 py-4 rounded-2xl bg-white/5 border border-[#C9963A]/30 text-[#C9963A] font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3"
+            className="w-full mt-4 py-4 rounded-2xl bg-white/5 border border-[#C9963A]/30 text-[#C9963A] font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all disabled:opacity-40"
           >
             <svg className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
