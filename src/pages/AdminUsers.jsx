@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "../services/supabase.js";
-import { Navigate } from "react-router-dom";
+import { Navigate } from "react-router-form";
 import AdminNav from "../components/AdminNav.jsx";
 
 const AuthLoader = () => (
@@ -41,7 +41,6 @@ function UserDetail({ user, onBack }) {
   useEffect(() => {
     const fetchDetails = async () => {
       setLoadingDetails(true);
-
       const [movRes, fpRes] = await Promise.all([
         supabase
           .from("credit_movements")
@@ -54,20 +53,17 @@ function UserDetail({ user, onBack }) {
           .select("*")
           .order("created_at", { ascending: false }),
       ]);
-
       setMovements(movRes.data || []);
-      // Les fingerprints ne sont pas liés par user_id dans la table — on affiche tous
       setFingerprints(fpRes.data || []);
       setLoadingDetails(false);
     };
-
     fetchDetails();
   }, [user.user_id]);
 
   const movTypeLabel = (type) => {
-    if (type === "free") return { label: "Offert", color: "#22c55e" };
-    if (type === "admin") return { label: "Admin", color: "#C9963A" };
-    if (type === "purchase") return { label: "Achat", color: "#60a5fa" };
+    if (type === "free")     return { label: "Offert", color: "#22c55e" };
+    if (type === "admin")    return { label: "Admin",  color: "#C9963A" };
+    if (type === "purchase") return { label: "Achat",  color: "#60a5fa" };
     return { label: type, color: "#ffffff" };
   };
 
@@ -75,12 +71,13 @@ function UserDetail({ user, onBack }) {
     <div className="min-h-screen bg-[#0F0500] text-white pb-20">
       <AdminNav />
 
-      <div className="mt-24 px-4 max-w-md mx-auto">
+      {/* mt-32 pour passer sous la double barre AdminNav */}
+      <div className="mt-32 px-4 max-w-md mx-auto">
 
-        {/* Bouton retour */}
+        {/* Bouton retour — padding vertical large pour zone tactile confortable */}
         <button
           onClick={onBack}
-          className="flex items-center gap-2 text-[#C9963A] text-xs font-black uppercase tracking-widest mb-6 active:opacity-60"
+          className="flex items-center gap-2 text-[#C9963A] text-xs font-black uppercase tracking-widest mb-6 py-3 w-full active:opacity-60"
         >
           ← Retour à la liste
         </button>
@@ -89,7 +86,7 @@ function UserDetail({ user, onBack }) {
         <div className="rounded-[2rem] p-6 mb-4"
           style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(201,150,58,0.3)" }}>
           <div className="flex items-center gap-4 mb-4">
-            <div className="w-12 h-12 rounded-full flex items-center justify-center text-xl font-black"
+            <div className="w-12 h-12 rounded-full flex items-center justify-center text-xl font-black flex-shrink-0"
               style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)", color: "#1A0A00" }}>
               {user.email?.[0]?.toUpperCase() || "?"}
             </div>
@@ -125,7 +122,6 @@ function UserDetail({ user, onBack }) {
           <p className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-3 px-1">
             Historique des crédits
           </p>
-
           {loadingDetails ? (
             <div className="flex justify-center py-8">
               <svg className="animate-spin w-5 h-5 text-[#C9963A]" viewBox="0 0 24 24" fill="none">
@@ -167,7 +163,7 @@ function UserDetail({ user, onBack }) {
         {/* Fingerprints */}
         <div>
           <p className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-3 px-1">
-            Appareils enregistrés (device_fingerprints)
+            Appareils enregistrés
           </p>
           {fingerprints.length === 0 ? (
             <div className="rounded-2xl p-6 text-center"
@@ -197,12 +193,15 @@ function UserDetail({ user, onBack }) {
 
 // ─── Liste principale ────────────────────────────────────────────────────────
 export default function AdminUsers() {
-  const [session, setSession] = useState(undefined);
-  const [users, setUsers] = useState([]);
-  const [filtered, setFiltered] = useState([]);
-  const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [session, setSession]           = useState(undefined);
+  const [users, setUsers]               = useState([]);
+  const [filtered, setFiltered]         = useState([]);
+  const [search, setSearch]             = useState("");
+  const [loading, setLoading]           = useState(true);
   const [selectedUser, setSelectedUser] = useState(null);
+
+  // Mémorise la position de scroll avant d'entrer dans le détail
+  const scrollRef = useRef(0);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -223,26 +222,34 @@ export default function AdminUsers() {
 
   useEffect(() => {
     const q = search.trim().toLowerCase();
-    if (!q) {
-      setFiltered(users);
-    } else {
-      setFiltered(users.filter(u => u.email?.toLowerCase().includes(q)));
-    }
+    setFiltered(q ? users.filter(u => u.email?.toLowerCase().includes(q)) : users);
   }, [search, users]);
 
-  if (session === undefined) return <AuthLoader />;
-  if (session === null) return <Navigate to="/login" replace />;
+  // Ouvre le détail en mémorisant le scroll
+  const openDetail = (u) => {
+    scrollRef.current = window.scrollY;
+    setSelectedUser(u);
+  };
 
-  // Vue détaillée
+  // Retour à la liste en restaurant le scroll
+  const handleBack = () => {
+    setSelectedUser(null);
+    setTimeout(() => window.scrollTo({ top: scrollRef.current }), 50);
+  };
+
+  if (session === undefined) return <AuthLoader />;
+  if (session === null)      return <Navigate to="/login" replace />;
+
   if (selectedUser) {
-    return <UserDetail user={selectedUser} onBack={() => setSelectedUser(null)} />;
+    return <UserDetail user={selectedUser} onBack={handleBack} />;
   }
 
   return (
     <div className="min-h-screen bg-[#0F0500] text-white pb-20">
       <AdminNav />
 
-      <div className="mt-24 px-4 max-w-md mx-auto">
+      {/* mt-32 pour passer sous la double barre AdminNav */}
+      <div className="mt-32 px-4 max-w-md mx-auto">
 
         {/* Header */}
         <div className="mb-6">
@@ -255,7 +262,7 @@ export default function AdminUsers() {
         {/* Recherche */}
         <div className="mb-4">
           <input
-            type="email"
+            type="text"
             placeholder="Rechercher par email..."
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -304,7 +311,7 @@ export default function AdminUsers() {
             {filtered.map((u) => (
               <button
                 key={u.user_id}
-                onClick={() => setSelectedUser(u)}
+                onClick={() => openDetail(u)}
                 className="w-full flex items-center justify-between px-4 py-4 rounded-2xl transition-all active:scale-95 text-left"
                 style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}
               >
