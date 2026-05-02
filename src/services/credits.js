@@ -1,114 +1,100 @@
-import { supabase } from "./supabase.js";
-import { getCurrentUser, getSupabaseCredits } from "./useSupabaseCredits.js";
+// src/services/credits.js
+// Synchronisation cr\u00e9dits — \u00e9crit dans usage_credits (plus profiles)
 
-export const PRICING = {
-  referral: { sender: 2, receiver: 2 }
-};
+import { supabase } from "../supabaseClient";
 
-// ── CRÉDITS ──
+const CREDITS_KEY = "afrotresse_credits";
 
-export const getCredits = () => {
-  return parseInt(localStorage.getItem("afrotresse_credits") || "0", 10);
-};
+// SYNCHRONE — ne pas awaiter
+export function setCredits(amount) {
+  localStorage.setItem(CREDITS_KEY, String(amount));
+}
 
-export const hasCredits = () => {
-  return getCredits() > 0;
-};
+export function getCredits() {
+  const val = localStorage.getItem(CREDITS_KEY);
+  return val !== null ? parseInt(val, 10) : 0;
+}
 
-export const consumeCredits = async () => {
-  return await useCredit();
-};
+// ASYNC — toujours awaiter
+export async function useCredit() {
+  const current = getCredits();
+  const newVal = Math.max(0, current - 1);
+  setCredits(newVal);
 
-// Écrit le solde en local ET dans usage_credits (source de vérité)
-export const setCredits = (amount) => {
-  const newTotal = parseInt(amount, 10);
-  localStorage.setItem("afrotresse_credits", newTotal.toString());
-  return newTotal;
-};
-
-// Sync depuis usage_credits → localStorage
-export const syncCreditsFromServer = async () => {
   try {
-    const user = await getCurrentUser();
-    if (user) {
-      const dbCredits = await getSupabaseCredits(user.id);
-      localStorage.setItem("afrotresse_credits", dbCredits.toString());
-      return dbCredits;
-    }
-    return getCredits();
-  } catch (err) {
-    console.error("Erreur syncCredits:", err);
-    return getCredits();
-  }
-};
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return newVal;
 
-// Déduit 1 crédit en local ET dans usage_credits
-export const useCredit = async () => {
-  try {
-    const currentCredits = getCredits();
-    if (currentCredits <= 0) return false;
+    const { data } = await supabase
+      .from("usage_credits")
+      .select("credits")
+      .eq("user_id", user.id)
+      .single();
 
-    const newTotal = currentCredits - 1;
-
-    // Mise à jour locale immédiate
-    localStorage.setItem("afrotresse_credits", newTotal.toString());
-
-    // Mise à jour Supabase usage_credits en arrière-plan
-    const user = await getCurrentUser();
-    if (user) {
+    if (data) {
       await supabase
-        .from('usage_credits')
-        .update({ credits: newTotal })
-        .eq('user_id', user.id);
+        .from("usage_credits")
+        .update({ credits: Math.max(0, data.credits - 1), updated_at: new Date().toISOString() })
+        .eq("user_id", user.id);
     }
-
-    return true;
-  } catch (err) {
-    console.error("Erreur useCredit:", err);
-    return false;
+  } catch (e) {
+    console.error("useCredit sync error:", e);
   }
-};
 
-// Ajoute des crédits en local ET dans usage_credits
-export const addCredits = async (amount) => {
+  return newVal;
+}
+
+// ASYNC — toujours awaiter
+export async function addCredits(amount) {
+  const current = getCredits();
+  const newVal = current + amount;
+  setCredits(newVal);
+
   try {
-    const currentCredits = getCredits();
-    const newTotal = currentCredits + amount;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return newVal;
 
-    localStorage.setItem("afrotresse_credits", newTotal.toString());
+    const { data } = await supabase
+      .from("usage_credits")
+      .select("credits")
+      .eq("user_id", user.id)
+      .single();
 
-    const user = await getCurrentUser();
-    if (user) {
+    if (data) {
       await supabase
-        .from('usage_credits')
-        .update({ credits: newTotal })
-        .eq('user_id', user.id);
+        .from("usage_credits")
+        .update({ credits: data.credits + amount, updated_at: new Date().toISOString() })
+        .eq("user_id", user.id);
+    } else {
+      await supabase
+        .from("usage_credits")
+        .insert({ user_id: user.id, email: user.email, credits: amount, updated_at: new Date().toISOString() });
     }
-
-    return newTotal;
-  } catch (err) {
-    console.error("Erreur addCredits:", err);
-    return getCredits();
-  }
-};
-
-// ── FAVORIS (Requis par Library.jsx) ──
-
-export const getSavedStyles = () => {
-  try {
-    return JSON.parse(localStorage.getItem("afrotresse_saved_styles") || "[]");
   } catch (e) {
-    return [];
+    console.error("addCredits sync error:", e);
   }
-};
 
-export const unsaveStyle = (styleId) => {
+  return newVal;
+}
+
+// ASYNC — lit depuis usage_credits et \u00e9crit en localStorage
+export async function syncCreditsFromServer() {
   try {
-    const styles = getSavedStyles();
-    const filtered = styles.filter(s => s.id !== styleId);
-    localStorage.setItem("afrotresse_saved_styles", JSON.stringify(filtered));
-    return true;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    const { data } = await supabase
+      .from("usage_credits")
+      .select("credits")
+      .eq("user_id", user.id)
+      .single();
+
+    if (data && typeof data.credits === "number") {
+      setCredits(data.credits);
+      return data.credits;
+    }
   } catch (e) {
-    return false;
+    console.error("syncCreditsFromServer error:", e);
   }
-};
+  return null;
+}
