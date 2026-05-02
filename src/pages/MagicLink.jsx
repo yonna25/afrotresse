@@ -1,13 +1,19 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import {
-  sendMagicLink,
-  getCurrentUser,
-  ensureUserExists,
-} from '../services/useSupabaseCredits.js'
+import { getCurrentUser, ensureUserExists } from '../services/useSupabaseCredits.js'
 import { getSessionIdWithFp } from '../services/fingerprint.js'
 import { supabase } from '../services/supabase.js'
+
+// sendMagicLink défini localement car non exporté par useSupabaseCredits
+async function sendMagicLink(email) {
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: `${window.location.origin}/magic-link` }
+  })
+  if (error) throw error
+  return true
+}
 
 // Restaurer les données de session sauvegardées avant le redirect Magic Link
 function restoreSessionBackup() {
