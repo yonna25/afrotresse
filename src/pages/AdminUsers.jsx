@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "../services/supabase.js";
-import { Navigate } from "react-router-form";
+import { Navigate } from "react-router-dom";
 import AdminNav from "../components/AdminNav.jsx";
 
 const AuthLoader = () => (
