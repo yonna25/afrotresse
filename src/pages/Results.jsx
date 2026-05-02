@@ -34,22 +34,20 @@ export default function Profile() {
   const [credits, setCredits] = useState(getCredits());
   const [userName, setUserName] = useState("Ma Reine");
   const [selfieUrl, setSelfieUrl] = useState(null);
-  const [aiTrials, setAiTrials] = useState(0);
   const [referralCode, setReferralCode] = useState("");
-  const [referralCount, setReferralCount] = useState(0);
   const [totalEarned, setTotalEarned] = useState(0);
   const [toastMsg, setToastMsg] = useState("");
   const [showReferralInfo, setShowReferralInfo] = useState(false);
   const [favoritesCount, setFavoritesCount] = useState(0);
   const [userEmail, setUserEmail] = useState("");
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    return localStorage.getItem('afrotresse_is_logged_in') === '1';
+  });
+  const [isLoadingAuth, setIsLoadingAuth] = useState(false);
   const [showLoginForm, setShowLoginForm] = useState(false);
 
   useEffect(() => {
-    setAiTrials(getAiTrials());
     setReferralCode(getReferralCode());
-    setReferralCount(getReferralCount());
     setTotalEarned(getTotalEarned());
     const savedName = localStorage.getItem("afrotresse_user_name");
     if (savedName) setUserName(savedName);
@@ -62,6 +60,7 @@ export default function Profile() {
         const user = await getCurrentUser();
         if (user) {
           setIsLoggedIn(true);
+          localStorage.setItem('afrotresse_is_logged_in', '1');
           setUserEmail(user.email || "");
 
           const { data } = await supabase
@@ -78,13 +77,12 @@ export default function Profile() {
           }
         } else {
           setIsLoggedIn(false);
+          localStorage.removeItem('afrotresse_is_logged_in');
           setCredits(getCredits());
         }
       } catch (err) {
         console.error("Erreur:", err);
         setCredits(getCredits());
-      } finally {
-        setIsLoadingAuth(false);
       }
     };
 
@@ -94,9 +92,11 @@ export default function Profile() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     localStorage.setItem("afrotresse_credits", "0");
+    localStorage.removeItem('afrotresse_is_logged_in');
     setIsLoggedIn(false);
+    setUserEmail("");
     setCredits(0);
-    showToast({'👋 D\u00e9connect\u00e9e'});
+    showToast('\ud83d\udc4b D\u00e9connect\u00e9e');
   };
 
   const showToast = (msg) => {
@@ -108,7 +108,7 @@ export default function Profile() {
     const referralLink = `${window.location.origin}?ref=${referralCode}`;
     const text = `${'👑 D\u00e9couvre AfroTresse ! Utilise mon code '}${referralCode}${' et re\u00e7ois '}${PRICING.referral?.receiver || 2}${' cr\u00e9dits offerts 🎁\n'}${referralLink}`;
     if (navigator.share) await navigator.share({ title: "AfroTresse", text, url: referralLink });
-    else { await navigator.clipboard.writeText(text); showToast("🔗 Lien copi\u00e9 !"); }
+    else { await navigator.clipboard.writeText(text); showToast('🔗 Lien copi\u00e9 !'); }
   };
 
   return (
@@ -141,6 +141,7 @@ export default function Profile() {
           </motion.button>
         </div>
 
+        {/* Avatar */}
         <div className="w-full relative">
           <div className="h-48 w-full bg-[#1A0A00]" />
           <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2">
@@ -157,14 +158,12 @@ export default function Profile() {
           <p className="text-[11px] text-[#C9963A] font-medium tracking-[0.2em] uppercase opacity-80 mt-0.5">Sublimez votre couronne</p>
         </div>
 
-        {/* Module Connectée / Déconnectée */}
+        {/* Module Connectée / Déconnectée — stable, sans spinner */}
         <div className="w-full max-w-sm px-5 mt-4">
-          {isLoadingAuth ? (
-            <div className="w-full rounded-2xl px-4 py-3 flex items-center justify-center" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}>
-              <div className="w-4 h-4 border-2 border-[#C9963A] border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : isLoggedIn ? (
-            <div className="w-full rounded-2xl px-4 py-3 flex items-center justify-between"
+          {isLoggedIn ? (
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              className="w-full rounded-2xl px-4 py-3 flex items-center justify-between"
               style={{ background: "rgba(39,174,96,0.1)", border: "1px solid rgba(39,174,96,0.25)" }}>
               <div className="flex items-center gap-2">
                 <span className="text-green-400 text-sm">✅</span>
@@ -173,12 +172,15 @@ export default function Profile() {
                   <p className="text-[10px] text-white/40">{userEmail}</p>
                 </div>
               </div>
-              <button onClick={handleLogout} className="text-[10px] font-semibold px-3 py-1.5 rounded-xl bg-white/10 text-white/50">
+              <button onClick={handleLogout}
+                className="text-[10px] font-semibold px-3 py-1.5 rounded-xl bg-white/10 text-white/50">
                 {'D\u00e9connexion'}
               </button>
-            </div>
+            </motion.div>
           ) : (
-            <div className="w-full rounded-2xl overflow-hidden border border-[#C9963A]/40 bg-[#C9963A]/10">
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              className="w-full rounded-2xl overflow-hidden border border-[#C9963A]/40 bg-[#C9963A]/10">
               <button onClick={() => setShowLoginForm(!showLoginForm)} className="w-full px-4 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="text-lg">🔐</span>
@@ -192,23 +194,26 @@ export default function Profile() {
               <AnimatePresence>
                 {showLoginForm && (
                   <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} exit={{ height: 0 }} className="px-4 pb-4 overflow-hidden">
-                    <button onClick={() => navigate("/magic-link")} className="w-full py-3 rounded-xl font-black text-sm text-[#1A0A00] bg-[#C9963A]">
+                    <button onClick={() => navigate("/magic-link")}
+                      className="w-full py-3 rounded-xl font-black text-sm text-[#1A0A00] bg-[#C9963A]">
                       Continuer par Email ✨
                     </button>
                   </motion.div>
                 )}
               </AnimatePresence>
-            </div>
+            </motion.div>
           )}
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-3 w-full max-w-sm mt-6 px-5 gap-3">
-          <div onClick={() => navigate("/credits")} className="bg-[#C9963A] rounded-3xl p-4 flex flex-col items-center shadow-lg cursor-pointer">
+          <div onClick={() => navigate("/credits")}
+            className="bg-[#C9963A] rounded-3xl p-4 flex flex-col items-center shadow-lg cursor-pointer">
             <p className="text-2xl font-black text-[#1A0A00]">{credits}</p>
             <p className="text-[8px] uppercase font-black text-[#1A0A00]/70">Solde</p>
           </div>
-          <div onClick={() => navigate("/library")} className="bg-white/5 border border-white/10 rounded-3xl p-4 flex flex-col items-center cursor-pointer">
+          <div onClick={() => navigate("/library")}
+            className="bg-white/5 border border-white/10 rounded-3xl p-4 flex flex-col items-center cursor-pointer">
             <p className="text-2xl font-black text-[#C9963A]">{favoritesCount}</p>
             <p className="text-[8px] uppercase font-black opacity-40">Favoris</p>
           </div>
@@ -220,17 +225,18 @@ export default function Profile() {
 
         {/* Actions */}
         <div className="w-full max-w-sm px-5 mt-6 flex flex-col gap-3">
-          <button onClick={() => navigate("/credits")} className="w-full py-4 rounded-2xl font-black text-[#1A0A00] bg-[#C9963A] flex justify-between px-5">
+          <button onClick={() => navigate("/credits")}
+            className="w-full py-4 rounded-2xl font-black text-[#1A0A00] bg-[#C9963A] flex justify-between px-5">
             <span>💳 Recharger</span><span>→</span>
           </button>
-          <button onClick={() => navigate("/camera")} className="w-full py-4 rounded-2xl font-black bg-white/5 border border-white/10 flex justify-between px-5">
+          <button onClick={() => navigate("/camera")}
+            className="w-full py-4 rounded-2xl font-black bg-white/5 border border-white/10 flex justify-between px-5">
             <span>📸 Nouveau selfie</span><span>→</span>
           </button>
-          <button onClick={() => navigate("/results")} className="w-full py-4 rounded-2xl font-black bg-white/5 border border-white/10 flex justify-between px-5">
+          <button onClick={() => navigate("/results")}
+            className="w-full py-4 rounded-2xl font-black bg-white/5 border border-white/10 flex justify-between px-5">
             <span>✨ {'R\u00e9sultats'}</span><span>→</span>
           </button>
-
-          {/* CTA Voir 3 autres styles */}
           <motion.button
             whileTap={{ scale: 0.97 }}
             onClick={() => navigate("/results")}
