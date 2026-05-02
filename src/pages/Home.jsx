@@ -159,7 +159,7 @@ export default function Home() {
               className="fixed top-10 left-1/2 -translate-x-1/2 z-[300] px-5 py-3 rounded-2xl font-black text-sm shadow-2xl text-center"
               style={{ background: '#C9963A', color: '#1A0A00', maxWidth: '280px' }}
             >
-              \ud83c\udf81 2 cr\u00e9dits offerts, Votre Majest\u00e9 !
+              {'\ud83c\udf81 2 cr\u00e9dits offerts, Votre Majest\u00e9 !'}
             </motion.div>
           )}
         </AnimatePresence>
@@ -208,7 +208,7 @@ export default function Home() {
             <h1 className="font-display text-2xl font-medium" style={{ lineHeight: 1.2, textShadow: '0 2px 12px rgba(0,0,0,0.65)' }}>
               <span style={{ color: '#C9963A', fontWeight: 600 }}>Un selfie, et</span>{' '}
               <span style={{ color: '#FFFFFF', fontWeight: 500 }}>
-                d\u00e9couvre<br />
+                {'d\u00e9couvre'}<br />
                 ta meilleure coiffure<br />
                 <span style={{ fontSize: '0.62em' }}>avant d'aller chez ta coiffeuse.</span>
               </span>
@@ -252,11 +252,11 @@ export default function Home() {
 
                 <div className="flex flex-col gap-0.5">
                   <div className="flex items-center gap-1">
-                    <span className="text-[11px]">\u2b50\u2b50\u2b50\u2b50\u2b50</span>
+                    <span className="text-[11px]">{'⭐⭐⭐⭐⭐'}</span>
                     <span className="text-[#C9963A] font-black text-xs">{socialProof.avg}</span>
                   </div>
                   <span className="text-white/55 text-[10px] font-medium">
-                    {socialProof.count}+ reines satisfaites
+                    {socialProof.count}{'+ reines satisfaites'}
                   </span>
                 </div>
               </motion.div>
