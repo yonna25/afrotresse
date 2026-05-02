@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 
 // Services
 import { setCredits, getCredits } from './services/credits.js'
-import { getCurrentUser, getSupabaseCredits } from './services/useSupabaseCredits.js'
+import { getCurrentUser } from './services/useSupabaseCredits.js'
 import { supabase } from './services/supabase.js'
 
 // Pages
@@ -32,10 +32,6 @@ import Login from './pages/Login.jsx'
 import BottomNav from './components/BottomNav.jsx'
 import WhatsAppWidget from './components/WhatsAppWidget.jsx'
 
-/**
- * Composant de Route Protégée (Admin)
- * Utilise un état 'undefined' pour éviter les redirections brutales pendant le chargement.
- */
 function AdminRoute({ children }) {
   const [session, setSession] = useState(undefined);
 
@@ -49,7 +45,7 @@ function AdminRoute({ children }) {
     <div className="min-h-screen bg-[#0F0500] flex items-center justify-center">
       <div className="flex flex-col items-center gap-3">
         <div className="w-6 h-6 border-2 border-[#C9963A] border-t-transparent rounded-full animate-spin"></div>
-        <span className="text-[#C9963A] text-[10px] font-black uppercase tracking-widest">Vérification...</span>
+        <span className="text-[#C9963A] text-[10px] font-black uppercase tracking-widest">V\u00e9rification...</span>
       </div>
     </div>
   );
@@ -58,10 +54,6 @@ function AdminRoute({ children }) {
   return children;
 }
 
-/**
- * Popup de succès pour l'achat ou l'attribution de crédits
- * Conserve ton design premium et tes animations.
- */
 function CreditSuccessPopup({ data, onClose }) {
   useEffect(() => {
     const timer = setTimeout(onClose, 4000)
@@ -87,16 +79,16 @@ function CreditSuccessPopup({ data, onClose }) {
         }}
         onClick={e => e.stopPropagation()}
       >
-        <div className="text-6xl mb-4">💎</div>
-        <h2 className="text-2xl font-black text-[#C9963A] mb-1">Félicitations {data.userName} ! 🎉</h2>
-        <p className="text-4xl font-black text-white my-4">+{data.credits} crédits</p>
+        <div className="text-6xl mb-4">\ud83d\udc8e</div>
+        <h2 className="text-2xl font-black text-[#C9963A] mb-1">F\u00e9licitations {data.userName} ! \ud83c\udf89</h2>
+        <p className="text-4xl font-black text-white my-4">+{data.credits} cr\u00e9dits</p>
         <p className="text-xs text-white/40 mb-6">Nouveau solde : <span className="text-white font-bold">{getCredits()}</span></p>
         <button
           onClick={onClose}
           className="w-full py-4 rounded-2xl font-black text-[#1A0A00]"
           style={{ background: 'linear-gradient(135deg, #C9963A, #E8B96A)' }}
         >
-          Lancer un essai ✨
+          Lancer un essai \u2728
         </button>
       </motion.div>
     </motion.div>
@@ -147,26 +139,26 @@ export default function App() {
   const [creditSuccess, setCreditSuccess] = useState(null)
 
   useEffect(() => {
-    // Fonction de synchronisation : récupère les crédits Supabase et les applique en local
-    // + met à jour last_seen à chaque connexion (4.3)
     const syncSession = async (user) => {
       if (!user) return;
 
-      // Sync crédits
-      const balance = await getSupabaseCredits(user.id);
-      if (balance > 0) setCredits(balance);
+      // Sync cr\u00e9dits depuis usage_credits (plus profiles)
+      const { data: creditData } = await supabase
+        .from('usage_credits')
+        .select('credits')
+        .eq('user_id', user.id)
+        .single();
+      if (creditData?.credits > 0) setCredits(creditData.credits);
 
-      // 4.3 — Mise à jour last_seen
+      // Mise \u00e0 jour last_seen
       await supabase
         .from('usage_credits')
         .update({ last_seen: new Date().toISOString() })
         .eq('user_id', user.id);
     };
 
-    // Initialisation au chargement
     supabase.auth.getUser().then(({ data }) => syncSession(data.user));
 
-    // Écouteur de changement d'état (Connexion / Refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         syncSession(session?.user);
@@ -176,7 +168,6 @@ export default function App() {
     return () => subscription?.unsubscribe();
   }, [])
 
-  // Écouteur pour les popups de succès (provenant de Stripe ou Admin)
   useEffect(() => {
     const handler = (e) => setCreditSuccess(e.detail);
     window.addEventListener('afrotresse:credit_success', handler);
