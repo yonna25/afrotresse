@@ -2,11 +2,10 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { addCredits, PRICING, getCredits } from "../services/credits.js";
-import { getCurrentUser, getSupabaseCredits } from "../services/useSupabaseCredits.js";
+import { getCurrentUser } from "../services/useSupabaseCredits.js";
 import Seo from "../components/Seo.jsx";
 import { supabase } from "../services/supabase.js";
 
-// ── Helpers localStorage ─────────────────────────────────────────────────────
 const getAiTrials = () => {
   const trials = parseInt(localStorage.getItem("afrotresse_ai_trials") || "0", 10);
   const generated = parseInt(localStorage.getItem("afrotresse_styles_generated") || "0", 10);
@@ -32,7 +31,6 @@ const getFavoritesCount = () => {
 
 export default function Profile() {
   const navigate = useNavigate();
-  // On initialise avec la valeur réelle en local
   const [credits, setCredits] = useState(getCredits());
   const [userName, setUserName] = useState("Ma Reine");
   const [selfieUrl, setSelfieUrl] = useState(null);
@@ -65,39 +63,41 @@ export default function Profile() {
         if (user) {
           setIsLoggedIn(true);
           setUserEmail(user.email || "");
-          const dbCredits = await getSupabaseCredits(user.id);
-          localStorage.setItem("afrotresse_credits", dbCredits.toString());
-          // Mise à jour immédiate de l'état pour l'affichage
-          setCredits(dbCredits);
+
+          // Lecture depuis usage_credits (plus profiles)
+          const { data } = await supabase
+            .from('usage_credits')
+            .select('credits')
+            .eq('user_id', user.id)
+            .single();
+
+          if (data?.credits != null) {
+            localStorage.setItem("afrotresse_credits", data.credits.toString());
+            setCredits(data.credits);
+          } else {
+            setCredits(getCredits());
+          }
         } else {
           setIsLoggedIn(false);
           setCredits(getCredits());
         }
       } catch (err) {
         console.error("Erreur:", err);
+        setCredits(getCredits());
       } finally {
         setIsLoadingAuth(false);
       }
     };
+
     loadProfileData();
-
-    // Optionnel : Un intervalle court pour vérifier le localStorage si une action a eu lieu ailleurs
-    const interval = setInterval(() => {
-        const currentLocal = getCredits();
-        if (currentLocal !== credits) {
-            setCredits(currentLocal);
-        }
-    }, 1000);
-    return () => clearInterval(interval);
-
-  }, [credits]);
+  }, []); // ← dépendances vides : s'exécute une seule fois
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     localStorage.setItem("afrotresse_credits", "0");
     setIsLoggedIn(false);
     setCredits(0);
-    showToast("👋 Déconnectée");
+    showToast("{'👋 D\u00e9connect\u00e9e'}");
   };
 
   const showToast = (msg) => {
@@ -107,9 +107,9 @@ export default function Profile() {
 
   const handleShare = async () => {
     const referralLink = `${window.location.origin}?ref=${referralCode}`;
-    const text = `👑 Découvre AfroTresse ! Utilise mon code ${referralCode} et reçois ${PRICING.referral?.receiver || 2} crédits offerts 🎁\n${referralLink}`;
+    const text = `${'👑 D\u00e9couvre AfroTresse ! Utilise mon code '}${referralCode}${' et re\u00e7ois '}${PRICING.referral?.receiver || 2}${' cr\u00e9dits offerts 🎁\n'}${referralLink}`;
     if (navigator.share) await navigator.share({ title: "AfroTresse", text, url: referralLink });
-    else { await navigator.clipboard.writeText(text); showToast("🔗 Lien copié !"); }
+    else { await navigator.clipboard.writeText(text); showToast("🔗 Lien copi\u00e9 !"); }
   };
 
   return (
@@ -143,14 +143,14 @@ export default function Profile() {
             <div className="w-full rounded-2xl px-4 py-3 flex items-center justify-between" style={{ background: "rgba(39,174,96,0.1)", border: "1px solid rgba(39,174,96,0.25)" }}>
               <div className="flex items-center gap-2">
                 <span className="text-green-400 text-sm">✅</span>
-                <div><p className="text-xs font-bold text-green-300">Connectée</p><p className="text-[10px] text-white/40">{userEmail}</p></div>
+                <div><p className="text-xs font-bold text-green-300">{'Connect\u00e9e'}</p><p className="text-[10px] text-white/40">{userEmail}</p></div>
               </div>
-              <button onClick={handleLogout} className="text-[10px] font-semibold px-3 py-1.5 rounded-xl bg-white/10 text-white/50">Déconnexion</button>
+              <button onClick={handleLogout} className="text-[10px] font-semibold px-3 py-1.5 rounded-xl bg-white/10 text-white/50">{'D\u00e9connexion'}</button>
             </div>
           ) : !isLoadingAuth && (
             <div className="w-full rounded-2xl overflow-hidden border border-[#C9963A]/40 bg-[#C9963A]/10">
               <button onClick={() => setShowLoginForm(!showLoginForm)} className="w-full px-4 py-3 flex items-center justify-between">
-                <div className="flex items-center gap-2"><span className="text-lg">🔐</span><div className="text-left"><p className="text-xs font-black text-[#C9963A]">Se connecter</p><p className="text-[10px] text-white/40">Retrouve tes crédits</p></div></div>
+                <div className="flex items-center gap-2"><span className="text-lg">🔐</span><div className="text-left"><p className="text-xs font-black text-[#C9963A]">Se connecter</p><p className="text-[10px] text-white/40">{'Retrouve tes cr\u00e9dits'}</p></div></div>
                 <motion.div animate={{ rotate: showLoginForm ? 90 : 0 }}>▶</motion.div>
               </button>
               <AnimatePresence>
@@ -175,14 +175,14 @@ export default function Profile() {
           </div>
           <div className="bg-white/5 border border-white/10 rounded-3xl p-4 flex flex-col items-center">
             <p className="text-2xl font-black text-[#C9963A]">{totalEarned}</p>
-            <p className="text-[8px] uppercase font-black opacity-40">Gagnés</p>
+            <p className="text-[8px] uppercase font-black opacity-40">{'Gagn\u00e9s'}</p>
           </div>
         </div>
 
         <div className="w-full max-w-sm px-5 mt-6 flex flex-col gap-3">
           <button onClick={() => navigate("/credits")} className="w-full py-4 rounded-2xl font-black text-[#1A0A00] bg-[#C9963A] flex justify-between px-5"><span>💳 Recharger</span><span>→</span></button>
           <button onClick={() => navigate("/camera")} className="w-full py-4 rounded-2xl font-black bg-white/5 border border-white/10 flex justify-between px-5"><span>📸 Nouveau selfie</span><span>→</span></button>
-          <button onClick={() => navigate("/results")} className="w-full py-4 rounded-2xl font-black bg-white/5 border border-white/10 flex justify-between px-5"><span>✨ Résultats</span><span>→</span></button>
+          <button onClick={() => navigate("/results")} className="w-full py-4 rounded-2xl font-black bg-white/5 border border-white/10 flex justify-between px-5"><span>✨ {'R\u00e9sultats'}</span><span>→</span></button>
         </div>
 
         <div className="w-full max-w-sm px-5 mt-6">
@@ -211,11 +211,11 @@ export default function Profile() {
 
         <div className="mt-10 flex flex-col items-center gap-2 opacity-30">
           <div className="flex gap-4 text-[9px] font-medium uppercase">
-            <button onClick={() => navigate("/privacy-policy")}>Mentions Légales</button>
+            <button onClick={() => navigate("/privacy-policy")}>Mentions {'L\u00e9gales'}</button>
             <span>•</span>
             <button onClick={() => navigate("/terms-of-service")}>CGU</button>
             <span>•</span>
-            <button onClick={() => navigate("/privacy-policy")}>Confidentialité</button>
+            <button onClick={() => navigate("/privacy-policy")}>{'Confidentialit\u00e9'}</button>
           </div>
           <p className="text-[8px] font-bold text-[#C9963A]">© 2024 AfroTresse · Fait avec amour 💛</p>
         </div>
