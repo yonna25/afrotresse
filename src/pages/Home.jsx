@@ -15,11 +15,10 @@ const SLIDES = [
   { id: 6, image: '/Afrotresse6.webp', style: 'Ghana Braids' },
 ];
 
-const MAINTENANCE_MESSAGE = "✨ AfroTresse évolue pour vous ! Travaux de maintenance en cours : merci de votre patience. ✨";
+const MAINTENANCE_MESSAGE = "\u2728 AfroTresse \u00e9volue pour vous ! Travaux de maintenance en cours : merci de votre patience. \u2728";
 
 const INTERVAL = 3500;
 
-// Génère un fingerprint basé sur les propriétés du navigateur
 async function generateFingerprint() {
   const existing = localStorage.getItem('afrotresse_fingerprint');
   if (existing) return existing;
@@ -34,7 +33,6 @@ async function generateFingerprint() {
     navigator.platform || '',
   ].join('|');
 
-  // Hash simple via SubtleCrypto
   try {
     const encoder = new TextEncoder();
     const data = encoder.encode(components);
@@ -44,7 +42,6 @@ async function generateFingerprint() {
     localStorage.setItem('afrotresse_fingerprint', fingerprint);
     return fingerprint;
   } catch {
-    // Fallback si SubtleCrypto indisponible
     const fingerprint = btoa(components).substring(0, 32).replace(/[^a-zA-Z0-9]/g, '0');
     localStorage.setItem('afrotresse_fingerprint', fingerprint);
     return fingerprint;
@@ -87,14 +84,12 @@ export default function Home() {
 
   useEffect(() => {
     syncCreditsFromServer()
-      .then(c => { if (c !== undefined) setCreditsState(c); })
+      .then(c => { if (c != null) setCreditsState(c); })
       .catch(() => {});
   }, []);
 
-  // Attribution des crédits gratuits au premier lancement
   useEffect(() => {
     const initFreeCredits = async () => {
-      // Ne pas redonner si déjà attribués lors de cette session
       if (sessionStorage.getItem('afrotresse_free_credits_checked')) return;
       sessionStorage.setItem('afrotresse_free_credits_checked', '1');
 
@@ -111,7 +106,6 @@ export default function Home() {
         if (error) throw error;
 
         if (data > 0) {
-          // Nouveaux crédits gratuits attribués
           const current = getCredits();
           const newBalance = current + data;
           localStorage.setItem('afrotresse_credits', newBalance.toString());
@@ -120,7 +114,7 @@ export default function Home() {
           setTimeout(() => setWelcomeToast(false), 4000);
         }
       } catch (err) {
-        console.error('Erreur crédits gratuits:', err);
+        console.error('Erreur cr\u00e9dits gratuits:', err);
       }
     };
 
@@ -156,7 +150,6 @@ export default function Home() {
       <div className="flex flex-col w-full overflow-hidden" style={{ height: '100dvh', background: '#2C1A0E' }}>
         <TickerBar />
 
-        {/* Toast crédits gratuits */}
         <AnimatePresence>
           {welcomeToast && (
             <motion.div
@@ -166,7 +159,7 @@ export default function Home() {
               className="fixed top-10 left-1/2 -translate-x-1/2 z-[300] px-5 py-3 rounded-2xl font-black text-sm shadow-2xl text-center"
               style={{ background: '#C9963A', color: '#1A0A00', maxWidth: '280px' }}
             >
-              🎁 2 crédits offerts, Votre Majesté !
+              \ud83c\udf81 2 cr\u00e9dits offerts, Votre Majest\u00e9 !
             </motion.div>
           )}
         </AnimatePresence>
@@ -215,7 +208,7 @@ export default function Home() {
             <h1 className="font-display text-2xl font-medium" style={{ lineHeight: 1.2, textShadow: '0 2px 12px rgba(0,0,0,0.65)' }}>
               <span style={{ color: '#C9963A', fontWeight: 600 }}>Un selfie, et</span>{' '}
               <span style={{ color: '#FFFFFF', fontWeight: 500 }}>
-                découvre<br />
+                d\u00e9couvre<br />
                 ta meilleure coiffure<br />
                 <span style={{ fontSize: '0.62em' }}>avant d'aller chez ta coiffeuse.</span>
               </span>
@@ -259,7 +252,7 @@ export default function Home() {
 
                 <div className="flex flex-col gap-0.5">
                   <div className="flex items-center gap-1">
-                    <span className="text-[11px]">⭐⭐⭐⭐⭐</span>
+                    <span className="text-[11px]">\u2b50\u2b50\u2b50\u2b50\u2b50</span>
                     <span className="text-[#C9963A] font-black text-xs">{socialProof.avg}</span>
                   </div>
                   <span className="text-white/55 text-[10px] font-medium">
