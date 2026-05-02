@@ -73,6 +73,7 @@ export default function Home() {
   const navigate = useNavigate();
   const [current, setCurrent] = useState(0);
   const timerRef = useRef(null);
+  const freeCreditsChecked = useRef(false);
 
   const storedName = localStorage.getItem('afrotresse_user_name');
   const userName = storedName || 'Reine';
@@ -90,7 +91,9 @@ export default function Home() {
 
   useEffect(() => {
     const initFreeCredits = async () => {
+      if (freeCreditsChecked.current) return;
       if (sessionStorage.getItem('afrotresse_free_credits_checked')) return;
+      freeCreditsChecked.current = true;
       sessionStorage.setItem('afrotresse_free_credits_checked', '1');
 
       try {
