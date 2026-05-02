@@ -25,6 +25,7 @@ import AdminReviews from './pages/AdminReviews.jsx'
 import Partners from './pages/Partners.jsx'
 import AdminPartners from './pages/AdminPartners.jsx'
 import AdminCredits from './pages/AdminCredits.jsx'
+import AdminUsers from './pages/AdminUsers.jsx'
 import Login from './pages/Login.jsx'
 
 // Composants
@@ -107,7 +108,7 @@ function AnimatedRoutes() {
   
   const hideNav = [
     '/camera', '/analyze', '/magic-link', '/admin-reviews', 
-    '/admin-partners', '/admin-credits', '/login', '/debug'
+    '/admin-partners', '/admin-credits', '/admin-users', '/login', '/debug'
   ].includes(location.pathname)
 
   return (
@@ -131,6 +132,7 @@ function AnimatedRoutes() {
           <Route path="/admin-reviews" element={<AdminRoute><AdminReviews /></AdminRoute>} />
           <Route path="/admin-partners" element={<AdminRoute><AdminPartners /></AdminRoute>} />
           <Route path="/admin-credits" element={<AdminRoute><AdminCredits /></AdminRoute>} />
+          <Route path="/admin-users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
           <Route path="/login" element={<Login />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
