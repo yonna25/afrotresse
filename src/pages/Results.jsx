@@ -430,6 +430,18 @@ export default function Results() {
             }
           </h1>
           <p className="text-[11px] opacity-80 leading-snug mt-1.5">{stableMsg.subtext}</p>
+          {/* Description morphologie */}
+          {faceShape && (
+            <div className="mt-2 flex items-center gap-1.5">
+              <span className="text-[9px] uppercase tracking-widest font-bold px-2.5 py-1 rounded-full"
+                style={{ background: "rgba(201,150,58,0.15)", color: "#C9963A", border: "1px solid rgba(201,150,58,0.3)" }}>
+                Visage {faceShape}
+              </span>
+              <span className="text-[9px] text-white/35 leading-tight">
+                · Styles sélectionnés pour ta morphologie
+              </span>
+            </div>
+          )}
         </div>
       </motion.div>
 
@@ -486,14 +498,20 @@ export default function Results() {
                   </button>
                 </div>
 
-                {/* Stats vues/likes */}
-                <div className="flex items-center gap-4 mb-3">
+                {/* Stats vues/likes + temps de pose */}
+                <div className="flex items-center gap-3 mb-3 flex-wrap">
                   <span className="text-[10px] text-white/30">
                     👁 {stats.views.toLocaleString("fr-FR")} vues
                   </span>
                   <span className="text-[10px] text-white/30">
                     ❤️ {stats.likes.toLocaleString("fr-FR")} likes
                   </span>
+                  {(style.duration || style.pose_time || style.time) && (
+                    <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                      style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                      ⏱ {style.duration || style.pose_time || style.time}
+                    </span>
+                  )}
                 </div>
 
                 <p className="text-[11px] opacity-60 mb-4 leading-relaxed">
@@ -511,30 +529,39 @@ export default function Results() {
                   </div>
                 )}
 
-                {/* Virtual Try-On */}
-                <button
-                  onClick={() => setShowVirtualTryOnModal(true)}
-                  className="w-full py-4 rounded-2xl font-semibold text-sm active:scale-[0.98] transition-all relative overflow-hidden"
-                  style={{
-                    background: "linear-gradient(135deg, rgba(201,150,58,0.08), rgba(201,150,58,0.03))",
-                    border: "1.5px solid rgba(201,150,58,0.25)",
-                  }}
-                >
-                  <motion.div
-                    className="absolute inset-0 -skew-x-12 pointer-events-none"
-                    style={{ background: "linear-gradient(90deg, transparent 0%, rgba(201,150,58,0.08) 50%, transparent 100%)" }}
-                    animate={{ x: ["-100%", "200%"] }}
-                    transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 3, ease: "easeInOut" }}
-                  />
-                  <span className="flex items-center justify-center gap-2 relative">
-                    <span className="text-lg">🧖‍♀️</span>
-                    <span className="text-white/50 font-semibold text-sm">Essayer virtuellement</span>
-                    <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
-                      style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)", color: "#2C1A0E" }}>
+                {/* Virtual Try-On CTA avec badge Bientôt à l'angle */}
+                <div className="relative">
+                  {/* Badge Bientôt — angle supérieur droit */}
+                  <div className="absolute -top-2.5 -right-2.5 z-10">
+                    <span className="flex items-center gap-1 text-[8px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-lg"
+                      style={{
+                        background: "linear-gradient(135deg, #C9963A, #E8B96A)",
+                        color: "#1A0A00",
+                        boxShadow: "0 0 12px rgba(201,150,58,0.5)",
+                      }}>
                       ⏳ Bientôt
                     </span>
-                  </span>
-                </button>
+                  </div>
+                  <button
+                    onClick={() => setShowVirtualTryOnModal(true)}
+                    className="w-full py-4 rounded-2xl font-semibold text-sm active:scale-[0.98] transition-all relative overflow-hidden"
+                    style={{
+                      background: "linear-gradient(135deg, rgba(201,150,58,0.08), rgba(201,150,58,0.03))",
+                      border: "1.5px solid rgba(201,150,58,0.25)",
+                    }}
+                  >
+                    <motion.div
+                      className="absolute inset-0 -skew-x-12 pointer-events-none"
+                      style={{ background: "linear-gradient(90deg, transparent 0%, rgba(201,150,58,0.08) 50%, transparent 100%)" }}
+                      animate={{ x: ["-100%", "200%"] }}
+                      transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 3, ease: "easeInOut" }}
+                    />
+                    <span className="flex items-center justify-center gap-2 relative">
+                      <span className="text-lg">🧖‍♀️</span>
+                      <span className="text-white/50 font-semibold text-sm">Essayer virtuellement</span>
+                    </span>
+                  </button>
+                </div>
               </div>
             </motion.div>
           );
@@ -605,16 +632,33 @@ export default function Results() {
         </motion.div>
       )}
 
-      {/* BOUTON FLOTTANT SOLDE */}
-      <div className="fixed bottom-24 right-4 z-[60] flex flex-col gap-3">
+      {/* BOUTONS FLOTTANTS : Solde + Générer */}
+      <div className="fixed bottom-24 right-4 z-[60] flex flex-col gap-2">
+        {/* Solde */}
         <motion.div
           initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.1 }}
           onClick={() => navigate("/credits")}
-          className="w-12 h-12 bg-[#FAF4EC] text-[#2C1A0E] rounded-lg flex flex-col items-center justify-center shadow-lg border border-[#C9963A]/30 cursor-pointer active:scale-95 transition-all"
+          className="w-12 h-12 bg-[#FAF4EC] text-[#2C1A0E] rounded-xl flex flex-col items-center justify-center shadow-lg border border-[#C9963A]/30 cursor-pointer active:scale-95 transition-all"
         >
           <div className="text-[5px] font-black uppercase opacity-60 leading-tight">Solde</div>
           <div className="text-xl font-black leading-none">{credits}</div>
         </motion.div>
+        {/* Générer — toujours visible */}
+        <motion.button
+          initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={handleGenerateMore}
+          className="w-12 h-12 rounded-xl flex flex-col items-center justify-center shadow-lg relative active:scale-95 transition-all"
+          style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}
+        >
+          <span className="text-[6px] font-black text-[#2C1A0E] uppercase leading-none mb-0.5">Gen</span>
+          <span className="text-base">✨</span>
+          <div className="absolute -top-1 -right-1 bg-[#1A0A00] text-[#C9963A] text-[7px] px-1 rounded-full font-bold border border-[#C9963A]">
+            -1
+          </div>
+        </motion.button>
       </div>
 
       {/* MODAL VIRTUAL TRY-ON */}
@@ -681,16 +725,27 @@ export default function Results() {
             onClick={() => setZoomImage(null)}
           >
             <div className="flex flex-col items-center w-full max-w-sm gap-4" onClick={(e) => e.stopPropagation()}>
+              {/* Bouton fermeture lightbox */}
+              <motion.button
+                initial={{ scale: 0 }} animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.1 }}
+                onClick={() => setZoomImage(null)}
+                className="self-end flex items-center justify-center w-10 h-10 rounded-full font-black text-lg"
+                style={{
+                  background: "rgba(255,255,255,0.12)",
+                  border: "1.5px solid rgba(255,255,255,0.2)",
+                  backdropFilter: "blur(8px)",
+                  color: "#fff",
+                }}
+              >
+                ✕
+              </motion.button>
               <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="w-full relative">
                 <img src={zoomImage} alt="Zoom"
                   className="w-full rounded-3xl shadow-2xl border border-white/10"
                   draggable={false} onContextMenu={(e) => e.preventDefault()}
                   style={{ objectFit: "cover", maxHeight: "52vh", userSelect: "none", WebkitUserSelect: "none" }} />
               </motion.div>
-              <button onClick={() => setZoomImage(null)}
-                className="w-full py-4 bg-white/10 text-white rounded-2xl font-bold backdrop-blur-md border border-white/10">
-                ✕ Fermer
-              </button>
             </div>
           </motion.div>
         )}
