@@ -59,7 +59,7 @@ function HeroLogoUploader() {
     const filename = `hero-logo/${Date.now()}.${ext}`;
 
     const { error: uploadError } = await supabase.storage
-      .from("partners-assets")
+      .from("assets")
       .upload(filename, file, { upsert: true, contentType: file.type });
 
     if (uploadError) {
@@ -69,7 +69,7 @@ function HeroLogoUploader() {
     }
 
     const { data } = supabase.storage
-      .from("partners-assets")
+      .from("assets")
       .getPublicUrl(filename);
 
     const publicUrl = data.publicUrl;
@@ -218,7 +218,7 @@ function LogoUploader({ currentUrl, onUploaded }) {
     const filename = `partner-logos/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
     const { error: uploadError } = await supabase.storage
-      .from("partners-assets")
+      .from("assets")
       .upload(filename, file, { upsert: true, contentType: file.type });
 
     if (uploadError) {
@@ -228,7 +228,7 @@ function LogoUploader({ currentUrl, onUploaded }) {
     }
 
     const { data } = supabase.storage
-      .from("partners-assets")
+      .from("assets")
       .getPublicUrl(filename);
 
     setPreview(data.publicUrl);
