@@ -233,25 +233,7 @@ export default function Results() {
 
   // ── Générer 3 autres styles — logique originale ───────────────────
   const handleGenerateMore = async () => {
-    // Lire directement depuis usage_credits (table réelle des crédits)
-    let realCredits = 0;
-    try {
-      const { getCurrentUser } = await import("../services/useSupabaseCredits.js");
-      const { supabase } = await import("../services/supabase.js");
-      const user = await getCurrentUser().catch(() => null);
-      if (user) {
-        const { data } = await supabase
-          .from("usage_credits")
-          .select("credits")
-          .eq("user_id", user.id)
-          .single();
-        realCredits = data?.credits ?? getCredits();
-      } else {
-        realCredits = getCredits();
-      }
-    } catch {
-      realCredits = getCredits();
-    }
+    const realCredits = await syncCreditsFromServer().catch(() => getCredits());
     setCreditsState(realCredits);
     if (realCredits <= 0) { navigate("/credits"); return; }
 
