@@ -1,8 +1,8 @@
 // api/consume.js — AfroTresse
 // Consommation d'un crédit validée côté serveur
 // Gère deux cas :
-//   - Utilisatrice connectée  → table `credits`  (user_id / balance)
-//   - Utilisatrice anonyme    → table `sessions` (session_id / credits)
+//   - Utilisatrice connectée  → table `usage_credits` (user_id / credits)
+//   - Utilisatrice anonyme    → table `sessions`      (session_id / credits)
 // ─────────────────────────────────────────────────────
 
 import { createClient } from "@supabase/supabase-js";
@@ -28,24 +28,26 @@ export default async function handler(req, res) {
 
   try {
 
-    // ── Utilisatrice connectée → table `credits` ─────────────
+    // ── Utilisatrice connectée → table `usage_credits` ───────────
     if (userId) {
       const { data, error } = await supabase
-        .from("credits")
-        .select("balance")
+        .from("usage_credits")
+        .select("credits")
         .eq("user_id", userId)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 
-      if (data.balance < amount) {
-        return res.status(402).json({ error: "Crédits insuffisants", credits: data.balance });
+      const currentBalance = data?.credits ?? 0;
+
+      if (currentBalance < amount) {
+        return res.status(402).json({ error: "Crédits insuffisants", credits: currentBalance });
       }
 
-      const newBalance = data.balance - amount;
+      const newBalance = currentBalance - amount;
       const { error: updateError } = await supabase
-        .from("credits")
-        .update({ balance: newBalance, updated_at: new Date().toISOString() })
+        .from("usage_credits")
+        .update({ credits: newBalance, updated_at: new Date().toISOString() })
         .eq("user_id", userId);
 
       if (updateError) throw updateError;
@@ -53,20 +55,22 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true, credits: newBalance });
     }
 
-    // ── Utilisatrice anonyme → table `sessions` ──────────────
+    // ── Utilisatrice anonyme → table `sessions` ──────────────────
     const { data, error } = await supabase
       .from("sessions")
       .select("credits")
       .eq("session_id", sessionId)
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
 
-    if (data.credits < amount) {
-      return res.status(402).json({ error: "Crédits insuffisants", credits: data.credits });
+    const currentBalance = data?.credits ?? 0;
+
+    if (currentBalance < amount) {
+      return res.status(402).json({ error: "Crédits insuffisants", credits: currentBalance });
     }
 
-    const newBalance = data.credits - amount;
+    const newBalance = currentBalance - amount;
     const { error: updateError } = await supabase
       .from("sessions")
       .update({ credits: newBalance, last_used: new Date().toISOString() })
