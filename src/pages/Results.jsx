@@ -543,7 +543,7 @@ export default function Results() {
               style={{ backgroundColor: "#22c55e", borderColor: "#2C1A0E" }} />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[11px] font-bold mb-0.5" style={{ color: "#C9963A" }}>
+            <p className="text-[13px] font-bold mb-0.5" style={{ color: "#C9963A" }}>
               {'Voici tes résultats ✨'}
             </p>
             <h1 className="font-black text-2xl text-white leading-tight truncate">
