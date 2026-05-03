@@ -586,7 +586,7 @@ export default function Partners() {
   const [selected, setSelected]         = useState(null);
   const [activeFilter, setActiveFilter] = useState("all");
   const [search, setSearch]             = useState("");
-  const [heroLogoUrl, setHeroLogoUrl]   = useState(null);
+  const [heroLogoUrl, setHeroLogoUrl]   = useState(undefined); // undefined = chargement, null = pas de logo, string = URL
   const searchRef = useRef(null);
 
   useEffect(() => {
@@ -599,7 +599,7 @@ export default function Partners() {
         .select("value")
         .eq("key", "partners_hero_logo")
         .single();
-      if (settingData?.value) setHeroLogoUrl(settingData.value);
+      setHeroLogoUrl(settingData?.value || null);
 
       const { data, error } = await supabase
         .from("partners").select("*")
@@ -697,9 +697,12 @@ export default function Partners() {
               boxShadow:`0 8px 32px rgba(200,135,58,0.25)`,
               animation:"float 4s ease-in-out infinite",
             }}>
-              {heroLogoUrl
-                ? <img src={heroLogoUrl} alt="AfroTresse" style={{ width:"100%", height:"100%", objectFit:"contain", padding:6 }} />
-             : "🌿" 
+              {heroLogoUrl === undefined
+                ? null
+                : heroLogoUrl
+                  ? <img src={heroLogoUrl} alt="AfroTresse" style={{ width:"100%", height:"100%", objectFit:"contain", padding:6 }} />
+                  : "🌿"
+              }
             </div>
 
             <div style={{
