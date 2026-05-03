@@ -1,11 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { getCurrentUser, ensureUserExists } from '../services/useSupabaseCredits.js'
 import { getSessionIdWithFp } from '../services/fingerprint.js'
 import { supabase } from '../services/supabase.js'
 
-// sendMagicLink défini localement car non exporté par useSupabaseCredits
 async function sendMagicLink(email) {
   const { error } = await supabase.auth.signInWithOtp({
     email,
@@ -15,7 +14,6 @@ async function sendMagicLink(email) {
   return true
 }
 
-// Restaurer les données de session sauvegardées avant le redirect Magic Link
 function restoreSessionBackup() {
   try {
     const raw = localStorage.getItem('afrotresse_session_backup')
@@ -27,36 +25,54 @@ function restoreSessionBackup() {
 }
 
 export default function MagicLink() {
-  const navigate  = useNavigate()
+  const navigate       = useNavigate()
   const [email,   setEmail]   = useState('')
   const [sent,    setSent]    = useState(false)
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState('')
+  const [verifying, setVerifying] = useState(false)
+
+  // Ref pour savoir si on vient d'envoyer le lien (évite la redirection immédiate)
+  const justSent = useRef(false)
 
   useEffect(() => {
-    // Créer le fingerprint dès l'ouverture
     getSessionIdWithFp()
 
-    // ── Vérification initiale (retour direct via magic link) ──
+    // ── Cas 1 : retour depuis le magic link (hash dans l'URL) ──────────────
+    // Supabase envoie #access_token=...&type=magiclink dans l'URL
+    const hash = window.location.hash
+    if (hash && hash.includes('access_token')) {
+      setVerifying(true)
+      // Supabase JS détecte automatiquement le hash et établit la session
+      // On écoute juste le SIGNED_IN qui va suivre
+      return
+    }
+
+    // ── Cas 2 : déjà connecté (session existante) ──────────────────────────
+    // Ne pas rediriger si on vient juste d'envoyer le lien
     getCurrentUser().then(async user => {
-      if (user) {
+      if (user && !justSent.current) {
         await ensureUserExists(user)
         restoreSessionBackup()
         navigate('/profile', { replace: true })
       }
     })
+  }, [navigate])
 
-    // ── Écoute temps réel — capte le SIGNED_IN après clic sur le lien ──
+  useEffect(() => {
+    // ── Écoute SIGNED_IN — déclenché après parsing du hash par Supabase ──
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
-          await ensureUserExists(session.user)
-          restoreSessionBackup()
-          navigate('/profile', { replace: true })
+          // Ne rediriger que si on n'est pas en train d'attendre un lien
+          if (!justSent.current) {
+            await ensureUserExists(session.user)
+            restoreSessionBackup()
+            navigate('/profile', { replace: true })
+          }
         }
       }
     )
-
     return () => subscription?.unsubscribe()
   }, [navigate])
 
@@ -66,13 +82,35 @@ export default function MagicLink() {
     setError('')
     try {
       getSessionIdWithFp()
+      justSent.current = true  // bloquer la redirection automatique
       await sendMagicLink(email.trim())
       setSent(true)
     } catch {
+      justSent.current = false
       setError("Erreur lors de l'envoi. Vérifie ton email et réessaie.")
     } finally {
       setLoading(false)
     }
+  }
+
+  // ── Écran de vérification (retour depuis le lien email) ──────────────────
+  if (verifying) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)' }}
+      >
+        <div className="text-center space-y-4">
+          <svg className="animate-spin w-8 h-8 mx-auto text-[#C9963A]" viewBox="0 0 24 24" fill="none">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+          </svg>
+          <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'rgba(201,150,58,0.7)' }}>
+            Connexion en cours...
+          </p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -129,7 +167,18 @@ export default function MagicLink() {
               className="w-full py-3 rounded-2xl font-display font-semibold text-sm disabled:opacity-50"
               style={{ background: 'linear-gradient(135deg,#C9963A,#E8B96A)', color: '#2C1A0E' }}
             >
-              {loading ? 'Envoi en cours...' : 'Recevoir mon lien de connexion'}
+              {loading
+                ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                    </svg>
+                    Envoi en cours...
+                  </span>
+                )
+                : 'Recevoir mon lien de connexion'
+              }
             </button>
 
             <button
@@ -152,7 +201,7 @@ export default function MagicLink() {
             </p>
 
             <div
-              className="flex items-center justify-center gap-2 py-3 rounded-2xl mb-4"
+              className="flex items-center justify-center gap-2 py-3 rounded-2xl mb-3"
               style={{ background: 'rgba(201,150,58,0.08)', border: '1px solid rgba(201,150,58,0.2)' }}
             >
               <svg className="animate-spin w-3 h-3 text-[#C9963A]" viewBox="0 0 24 24" fill="none">
@@ -164,8 +213,20 @@ export default function MagicLink() {
               </span>
             </div>
 
+            <div
+              className="rounded-2xl p-4 mb-4 space-y-1.5"
+              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+            >
+              <p className="text-[10px] font-black uppercase tracking-widest mb-2" style={{ color: 'rgba(250,244,236,0.25)' }}>
+                À savoir
+              </p>
+              <p className="text-xs" style={{ color: 'rgba(250,244,236,0.45)' }}>• Le lien expire dans 24h</p>
+              <p className="text-xs" style={{ color: 'rgba(250,244,236,0.45)' }}>• Vérifie aussi tes spams</p>
+              <p className="text-xs" style={{ color: 'rgba(250,244,236,0.45)' }}>• Clique le lien depuis ce même appareil</p>
+            </div>
+
             <button
-              onClick={() => navigate('/profile')}
+              onClick={() => { setSent(false); justSent.current = false; setEmail(''); }}
               className="w-full py-3 rounded-2xl font-display font-semibold text-sm"
               style={{
                 background: 'rgba(201,150,58,0.15)',
@@ -173,7 +234,7 @@ export default function MagicLink() {
                 color: '#C9963A',
               }}
             >
-              Retour
+              ← Changer d'email
             </button>
           </>
         )}
