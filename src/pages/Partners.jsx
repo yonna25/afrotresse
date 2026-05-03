@@ -91,6 +91,124 @@ function WarmDivider() {
   );
 }
 
+// ─── LOGO ZONE ────────────────────────────────────────────────────────────────
+function LogoZone({ logo, onUpload, onReset }) {
+  const inputRef = useRef(null);
+  const [drag, setDrag] = useState(false);
+  const [hovering, setHovering] = useState(false);
+
+  const handleFile = (file) => {
+    if (!file || !file.type.startsWith("image/")) return;
+    const url = URL.createObjectURL(file);
+    onUpload(url);
+  };
+
+  return (
+    <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:10 }}>
+
+      {/* Zone cliquable / drag-and-drop */}
+      <div
+        onClick={() => inputRef.current?.click()}
+        onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
+        onDragLeave={() => setDrag(false)}
+        onDrop={(e) => { e.preventDefault(); setDrag(false); handleFile(e.dataTransfer.files[0]); }}
+        onMouseEnter={() => setHovering(true)}
+        onMouseLeave={() => setHovering(false)}
+        style={{
+          width: 96, height: 96,
+          borderRadius: 24,
+          background: drag
+            ? `linear-gradient(145deg, ${T.amberPale}, ${T.amberDim})`
+            : `linear-gradient(145deg, ${T.bgDeep}, ${T.cream})`,
+          border: `2px dashed ${drag || hovering ? T.amber : T.amberLine}`,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          cursor: "pointer",
+          transition: "all 0.25s ease",
+          overflow: "hidden",
+          position: "relative",
+          boxShadow: drag ? `0 0 0 4px ${T.amberDim}` : "none",
+        }}
+      >
+        {logo ? (
+          <>
+            <img
+              src={logo}
+              alt="Logo"
+              style={{ width:"100%", height:"100%", objectFit:"contain", padding:8 }}
+            />
+            {/* Overlay survol */}
+            <div style={{
+              position:"absolute", inset:0,
+              background:"rgba(28,15,6,0.5)",
+              display:"flex", alignItems:"center", justifyContent:"center",
+              opacity: hovering ? 1 : 0,
+              transition:"opacity 0.2s",
+              fontSize:20, color: T.white,
+            }}>
+              ✎
+            </div>
+          </>
+        ) : (
+          <div style={{ textAlign:"center", pointerEvents:"none" }}>
+            <div style={{ fontSize:30, marginBottom:4 }}>🌿</div>
+            <div style={{
+              fontFamily:"'Jost', sans-serif",
+              fontSize:8, fontWeight:700,
+              letterSpacing:"0.22em", textTransform:"uppercase",
+              color: hovering ? T.amber : T.inkFade,
+              transition:"color 0.2s",
+            }}>
+              {hovering ? "Uploader" : "Logo"}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Boutons */}
+      <div style={{ display:"flex", gap:6 }}>
+        <button
+          onClick={() => inputRef.current?.click()}
+          style={{
+            padding:"5px 14px", borderRadius:99,
+            background: T.amberDim,
+            border:`1px solid ${T.amberLine}`,
+            fontFamily:"'Jost', sans-serif",
+            fontSize:9, fontWeight:700,
+            letterSpacing:"0.18em", textTransform:"uppercase",
+            color: T.amber, cursor:"pointer",
+          }}
+        >
+          {logo ? "Changer" : "Uploader"}
+        </button>
+        {logo && (
+          <button
+            onClick={onReset}
+            style={{
+              padding:"5px 14px", borderRadius:99,
+              background:"transparent",
+              border:`1px solid ${T.amberLine}`,
+              fontFamily:"'Jost', sans-serif",
+              fontSize:9, fontWeight:600,
+              letterSpacing:"0.18em", textTransform:"uppercase",
+              color: T.inkLight, cursor:"pointer",
+            }}
+          >
+            Réinitialiser
+          </button>
+        )}
+      </div>
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        style={{ display:"none" }}
+        onChange={(e) => handleFile(e.target.files[0])}
+      />
+    </div>
+  );
+}
+
 // ─── MODAL PREMIUM CLAIR ──────────────────────────────────────────────────────
 function Modal({ partner, onClose }) {
   const cd = useCountdown(partner.promo_deadline);
@@ -487,369 +605,307 @@ function FeaturedCard({ partner, onClick }) {
     >
       {/* Warm ambient top right */}
       <div style={{
-        position:"absolute", top:-30, right:-30,
-        width:150, height:150, borderRadius:"50%",
-        background:`radial-gradient(circle, ${T.amberPale}80 0%, transparent 70%)`,
-        pointerEvents:"none", transition:"opacity 0.3s",
-        opacity: hov ? 1 : 0.5,
+        position:"absolute", top:0, right:0,
+        width:120, height:120, pointerEvents:"none",
+        background:`radial-gradient(circle at 100% 0%, ${T.amberPale}80 0%, transparent 65%)`,
       }}/>
 
-      {/* Top amber stripe */}
-      <div style={{
-        position:"absolute", top:0, left:0, right:0, height:3,
-        background:`linear-gradient(90deg, ${T.amber}, ${T.amberLight}, ${T.amber})`,
-        borderRadius:"24px 24px 0 0",
-      }}/>
-
-      {/* Badge */}
-      <div style={{
-        position:"absolute", top:16, right:16,
-        padding:"4px 12px", borderRadius:99,
-        background:`linear-gradient(90deg, ${T.amber}, ${T.amberLight})`,
-        fontFamily:"'Jost', sans-serif",
-        fontSize:8, fontWeight:800,
-        letterSpacing:"0.22em", textTransform:"uppercase",
-        color:T.white,
-        boxShadow:`0 3px 12px ${T.amber}40`,
-      }}>✦ À la Une</div>
-
-      {/* Header row */}
-      <div style={{ display:"flex", alignItems:"center", gap:18, marginBottom:16, position:"relative", zIndex:1 }}>
-        <div style={{
-          width:72, height:72, borderRadius:20, flexShrink:0,
-          background:`linear-gradient(145deg, ${T.amberPale}, ${T.bgDeep})`,
-          border:`2px solid ${hov ? T.amber + "50" : T.amberLine}`,
-          display:"flex", alignItems:"center", justifyContent:"center",
-          fontSize:34, transition:"all 0.3s",
-          boxShadow: hov ? `0 6px 24px ${T.amberDim}` : `0 2px 8px ${T.amberDim}`,
-        }}>{partner.emoji}</div>
-
-        <div>
+      <div style={{ position:"relative", zIndex:1 }}>
+        <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:16 }}>
           <div style={{
+            width:64, height:64, borderRadius:18,
+            background:`linear-gradient(145deg, ${T.amberPale}, ${T.bgDeep})`,
+            border:`1.5px solid ${T.amberLine}`,
+            display:"flex", alignItems:"center", justifyContent:"center",
+            fontSize:32,
+          }}>{partner.emoji}</div>
+          <div style={{
+            padding:"4px 10px", borderRadius:99,
+            background:T.amberDim, border:`1px solid ${T.amberLine}`,
+            fontFamily:"'Jost', sans-serif",
+            fontSize:8, fontWeight:700,
+            letterSpacing:"0.25em", textTransform:"uppercase",
+            color:T.amber,
+          }}>✦ À la une</div>
+        </div>
+
+        <div style={{
+          fontFamily:"'Cormorant Garamond', Georgia, serif",
+          fontSize:26, fontWeight:700,
+          color:T.ink, lineHeight:1.15, marginBottom:4,
+        }}>{partner.name}</div>
+
+        <div style={{
+          fontFamily:"'Jost', sans-serif",
+          fontSize:9, fontWeight:600,
+          letterSpacing:"0.2em", textTransform:"uppercase",
+          color: hov ? T.amber : T.inkLight,
+          marginBottom:10, transition:"color 0.2s",
+        }}>{partner.city}</div>
+
+        {partner.description && (
+          <p style={{
+            fontFamily:"'Jost', sans-serif",
+            fontSize:12, fontWeight:300,
+            color:T.inkMid, lineHeight:1.7,
+            margin:"0 0 14px",
+            display:"-webkit-box",
+            WebkitLineClamp:2,
+            WebkitBoxOrient:"vertical",
+            overflow:"hidden",
+          }}>{partner.description}</p>
+        )}
+
+        {hasPromo && (
+          <div style={{
+            display:"inline-flex", alignItems:"center", gap:5,
+            padding:"5px 12px", borderRadius:99,
+            background:T.amberDim, border:`1px solid ${T.amberLine}`,
             fontFamily:"'Jost', sans-serif",
             fontSize:9, fontWeight:700,
-            letterSpacing:"0.3em", textTransform:"uppercase",
-            color:T.amber, marginBottom:5,
-          }}>{partner.categoryLabel || partner.category}</div>
-          <div style={{
-            fontFamily:"'Cormorant Garamond', Georgia, serif",
-            fontSize:27, fontWeight:700,
-            color:T.ink, lineHeight:1.1,
-          }}>{partner.name}</div>
-          <div style={{
-            fontFamily:"'Jost', sans-serif",
-            fontSize:10, fontWeight:500,
-            color:T.inkLight, marginTop:4, letterSpacing:"0.12em",
-          }}>{partner.city?.toUpperCase()}</div>
-        </div>
+            color:T.spice, letterSpacing:"0.08em",
+          }}>
+            ⏳ {partner.promo}
+          </div>
+        )}
       </div>
-
-      {/* Description */}
-      {partner.description && (
-        <p style={{
-          fontFamily:"'Jost', sans-serif",
-          fontSize:13, fontWeight:300,
-          color:T.inkMid, lineHeight:1.75,
-          margin:"0 0 16px", position:"relative", zIndex:1,
-          display:"-webkit-box", WebkitLineClamp:2,
-          WebkitBoxOrient:"vertical", overflow:"hidden",
-        }}>{partner.description}</p>
-      )}
-
-      {hasPromo && (
-        <div style={{
-          display:"inline-flex", alignItems:"center", gap:6,
-          padding:"5px 14px", borderRadius:99,
-          background:T.amberDim,
-          border:`1px solid ${T.amberLine}`,
-          fontFamily:"'Jost', sans-serif",
-          fontSize:10, fontWeight:700,
-          color:T.amber, letterSpacing:"0.08em",
-        }}>⏳ {partner.promo}</div>
-      )}
-
-      <div style={{
-        position:"absolute", bottom:20, right:20,
-        color: hov ? T.amber : T.inkFade,
-        fontSize:22, transition:"all 0.28s",
-        transform: hov ? "translateX(4px)" : "translateX(0)",
-        fontFamily:"serif",
-      }}>›</div>
     </div>
   );
 }
 
-// ─── MAIN ─────────────────────────────────────────────────────────────────────
+// ─── PAGE PRINCIPALE ──────────────────────────────────────────────────────────
 export default function Partners() {
-  const [partners, setPartners]         = useState([]);
-  const [loading, setLoading]           = useState(true);
-  const [selected, setSelected]         = useState(null);
-  const [activeFilter, setActiveFilter] = useState("all");
-  const [search, setSearch]             = useState("");
-  const searchRef = useRef(null);
+  const [partners, setPartners]     = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [activeCategory, setActive] = useState("all");
+  const [selected, setSelected]     = useState(null);
+  const [logo, setLogo]             = useState(null);
 
   useEffect(() => {
-    const fetch = async () => {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("partners").select("*")
-        .eq("active", true)
-        .order("is_featured", { ascending: false });
-      if (!error) setPartners(data.map(mapPartner));
-      setLoading(false);
-    };
-    fetch();
+    supabase
+      .from("partners")
+      .select("*")
+      .eq("active", true)
+      .order("featured", { ascending: false })
+      .then(({ data }) => {
+        setPartners((data || []).map(mapPartner));
+        setLoading(false);
+      });
   }, []);
 
-  const counts = {
-    all:       partners.length,
-    salon:     partners.filter(p => p.category === "salon").length,
-    produits:  partners.filter(p => p.category === "produits").length,
-    formation: partners.filter(p => p.category === "formation").length,
-  };
-
-  const filtered = partners.filter(p => {
-    const matchCat = activeFilter === "all" || p.category === activeFilter;
-    const q = search.trim().toLowerCase();
-    return matchCat && (!q || p.name?.toLowerCase().includes(q) || p.city?.toLowerCase().includes(q));
-  });
-
-  const featured = filtered.filter(p => p.is_featured);
-  const standard = filtered.filter(p => !p.is_featured);
+  const filtered = partners.filter(p =>
+    activeCategory === "all" || p.category === activeCategory
+  );
+  const featured = filtered.filter(p => p.featured);
+  const regular  = filtered.filter(p => !p.featured);
 
   return (
-    <div style={{
-      minHeight:"100vh",
-      background:T.bg,
-      display:"flex", justifyContent:"center",
-      color:T.ink,
-    }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,600;0,700;1,300;1,400&family=Jost:wght@300;400;500;600;700&display=swap');
-        * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
-        input::placeholder { color: rgba(92,53,32,0.35); font-family:'Jost',sans-serif; }
-        @keyframes fadeUp {
-          from { opacity:0; transform:translateY(16px); }
-          to   { opacity:1; transform:translateY(0); }
-        }
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50%       { transform: translateY(-6px); }
-        }
-      `}</style>
+    <div style={{ background:T.bg, minHeight:"100dvh", fontFamily:"'Jost', sans-serif" }}>
 
-      <div style={{ width:"100%", maxWidth:440, paddingBottom:100 }}>
+      {/* ── Fond décoratif ── */}
+      <div style={{
+        position:"fixed", inset:0, pointerEvents:"none", zIndex:0,
+        background:`
+          radial-gradient(ellipse 80% 40% at 50% -10%, ${T.amberPale}80 0%, transparent 70%),
+          radial-gradient(ellipse 40% 60% at 100% 50%, ${T.amberDim} 0%, transparent 60%)
+        `,
+      }}/>
 
-        {/* ── HEADER ─────────────────────────────────────────────── */}
+      {/* ── Motif géométrique discret ── */}
+      <svg style={{ position:"fixed", inset:0, width:"100%", height:"100%", opacity:0.035, pointerEvents:"none", zIndex:0 }}>
+        <defs>
+          <pattern id="grid" x="0" y="0" width="48" height="48" patternUnits="userSpaceOnUse">
+            <path d="M48 0L0 0 0 48" fill="none" stroke={T.amber} strokeWidth="0.5"/>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#grid)"/>
+      </svg>
+
+      {/* ── HERO ── */}
+      <div style={{
+        position:"relative", zIndex:1,
+        maxWidth:480, margin:"0 auto",
+        padding:"64px 28px 52px",
+        display:"flex", flexDirection:"column", alignItems:"center",
+        textAlign:"center",
+      }}>
+
+        {/* Pill supérieure */}
         <div style={{
-          position:"relative", overflow:"hidden",
-          padding:"56px 24px 80px",
-          textAlign:"center",
-          background:`linear-gradient(160deg, #3D1F0A 0%, #2C1A0E 60%, #1C0F06 100%)`,
-          borderRadius:"0 0 44px 44px",
-          boxShadow:`0 20px 60px rgba(28,15,6,0.20)`,
+          display:"inline-flex", alignItems:"center", gap:6,
+          padding:"5px 16px", borderRadius:99,
+          background:T.amberDim,
+          border:`1px solid ${T.amberLine}`,
+          fontSize:9, fontWeight:700,
+          letterSpacing:"0.35em", textTransform:"uppercase",
+          color:T.amber, marginBottom:32,
         }}>
-          {/* Decorative circles */}
-          <div style={{
-            position:"absolute", top:-60, right:-60,
-            width:200, height:200, borderRadius:"50%",
-            border:`1px solid ${T.amberLine}`,
-            opacity:0.3, pointerEvents:"none",
-          }}/>
-          <div style={{
-            position:"absolute", top:-30, right:-30,
-            width:120, height:120, borderRadius:"50%",
-            border:`1px solid ${T.amberLine}`,
-            opacity:0.4, pointerEvents:"none",
-          }}/>
-          <div style={{
-            position:"absolute", bottom:-40, left:-40,
-            width:140, height:140, borderRadius:"50%",
-            border:`1px solid ${T.amberLine}`,
-            opacity:0.25, pointerEvents:"none",
-          }}/>
-
-          {/* Amber top line */}
-          <div style={{
-            position:"absolute", top:0, left:0, right:0, height:2,
-            background:`linear-gradient(90deg, transparent, ${T.amber}, ${T.amberLight}, ${T.amber}, transparent)`,
-          }}/>
-
-          <div style={{ position:"relative", zIndex:2 }}>
-            {/* Logo */}
-            <div style={{
-              width:66, height:66, margin:"0 auto 20px",
-              borderRadius:20,
-              background:`linear-gradient(145deg, ${T.amberPale}, ${T.bgDeep})`,
-              border:`1.5px solid ${T.amberLine}`,
-              display:"flex", alignItems:"center", justifyContent:"center",
-              fontSize:30,
-              boxShadow:`0 8px 32px rgba(200,135,58,0.25)`,
-              animation:"float 4s ease-in-out infinite",
-            }}>🌿</div>
-
-            <div style={{
-              fontFamily:"'Jost', sans-serif",
-              fontSize:9, fontWeight:700,
-              letterSpacing:"0.4em", textTransform:"uppercase",
-              color:T.amber, marginBottom:12,
-            }}>Expertise & Excellence</div>
-
-            <h1 style={{
-              fontFamily:"'Cormorant Garamond', Georgia, serif",
-              fontSize:38, fontWeight:700,
-              color:T.cream, lineHeight:1.1, marginBottom:12,
-            }}>
-              Nos Partenaires<br/>
-              <span style={{
-                color:T.amberLight, fontStyle:"italic", fontWeight:300,
-              }}>de confiance</span>
-            </h1>
-
-            <p style={{
-              fontFamily:"'Jost', sans-serif",
-              fontSize:12.5, fontWeight:300,
-              color:"rgba(251,246,238,0.6)",
-              lineHeight:1.75, maxWidth:255, margin:"0 auto",
-            }}>
-              Une sélection rigoureuse pour sublimer votre beauté afro.
-            </p>
-
-            {/* Trust bar */}
-            <div style={{
-              display:"flex", justifyContent:"center", gap:20,
-              marginTop:22,
-              fontFamily:"'Jost', sans-serif",
-              fontSize:10, fontWeight:500,
-              color:"rgba(251,246,238,0.45)",
-            }}>
-              {["Vérifiés", "Engagés", "Excellence"].map((l, i) => (
-                <span key={l} style={{ display:"flex", alignItems:"center", gap:5 }}>
-                  {i > 0 && <span style={{ opacity:0.3 }}>·</span>}
-                  <span style={{ color:T.amberLight }}>✦</span> {l}
-                </span>
-              ))}
-            </div>
-          </div>
+          🌿 Expertise &amp; Excellence
         </div>
 
-        {/* ── SEARCH ─────────────────────────────────────────────── */}
-        <div style={{ padding:"0 20px", marginTop:"-30px", position:"relative", zIndex:20 }}>
-          <div style={{
-            display:"flex", alignItems:"center", gap:12,
-            background:T.white,
-            borderRadius:20, padding:"16px 20px",
-            border:`1px solid ${T.amberLine}`,
-            boxShadow:`0 16px 40px rgba(28,15,6,0.10)`,
-          }}>
-            <span style={{ fontSize:16, color:T.inkFade }}>🔍</span>
-            <input
-              ref={searchRef}
-              type="text"
-              placeholder="Chercher un salon, une ville..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              style={{
-                flex:1, border:"none", outline:"none",
-                background:"transparent",
-                fontFamily:"'Jost', sans-serif",
-                fontSize:13.5, fontWeight:300,
-                color:T.ink,
-              }}
-            />
-            {search && (
-              <button onClick={() => setSearch("")} style={{
-                border:"none", background:T.bgDeep,
-                color:T.amber, width:24, height:24, borderRadius:"50%",
-                fontWeight:800, fontSize:10, cursor:"pointer",
-                display:"flex", alignItems:"center", justifyContent:"center",
-              }}>✕</button>
-            )}
-          </div>
-        </div>
+        {/* Logo uploadable */}
+        <LogoZone
+          logo={logo}
+          onUpload={setLogo}
+          onReset={() => setLogo(null)}
+        />
 
-        {/* ── FILTERS ────────────────────────────────────────────── */}
-        <div style={{ padding:"22px 20px 8px" }}>
-          <div style={{ display:"flex", flexWrap:"wrap", justifyContent:"center", gap:8 }}>
-            {CATEGORIES.map(cat => {
-              const active = activeFilter === cat.id;
-              return (
-                <button key={cat.id} onClick={() => setActiveFilter(cat.id)} style={{
-                  display:"flex", alignItems:"center", gap:6,
-                  padding:"9px 18px", borderRadius:99,
-                  border:`1px solid ${active ? T.amber : T.amberLine}`,
-                  background: active
-                    ? `linear-gradient(135deg, ${T.amber}, ${T.spice})`
-                    : T.white,
-                  color: active ? T.white : T.inkMid,
-                  fontFamily:"'Jost', sans-serif",
-                  fontSize:11, fontWeight:600,
-                  letterSpacing:"0.05em",
-                  cursor:"pointer",
-                  boxShadow: active ? `0 4px 16px ${T.amber}35` : "none",
-                  transition:"all 0.22s ease",
-                }}>
-                  <span>{cat.emoji}</span>
-                  {cat.label}
-                  <span style={{ opacity:0.5, fontSize:10 }}>{counts[cat.id]}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          <div style={{
-            textAlign:"center", marginTop:16,
+        {/* Titre */}
+        <div style={{ marginTop:36 }}>
+          <p style={{
             fontFamily:"'Jost', sans-serif",
-            fontSize:9, fontWeight:600,
-            color:T.inkFade, letterSpacing:"0.2em", textTransform:"uppercase",
+            fontSize:10, fontWeight:700,
+            letterSpacing:"0.4em", textTransform:"uppercase",
+            color:T.amber, marginBottom:10, opacity:0.8,
           }}>
-            {loading ? "Chargement..." : `${filtered.length} partenaires disponibles`}
+            Nos Partenaires
+          </p>
+          <h1 style={{
+            fontFamily:"'Cormorant Garamond', Georgia, serif",
+            fontSize:42, fontWeight:700,
+            color:T.ink, lineHeight:1.1,
+            margin:"0 0 10px",
+          }}>
+            de confiance
+          </h1>
+
+          {/* Ligne décorative */}
+          <div style={{
+            display:"flex", alignItems:"center", gap:10,
+            margin:"18px auto", maxWidth:220,
+          }}>
+            <div style={{ flex:1, height:1, background:`linear-gradient(90deg, transparent, ${T.amberLine})` }}/>
+            <svg width="10" height="10" viewBox="0 0 12 12" fill={T.amber} opacity="0.6">
+              <polygon points="6,0 7,5 12,6 7,7 6,12 5,7 0,6 5,5"/>
+            </svg>
+            <div style={{ flex:1, height:1, background:`linear-gradient(90deg, ${T.amberLine}, transparent)` }}/>
           </div>
+
+          <p style={{
+            fontFamily:"'Cormorant Garamond', Georgia, serif",
+            fontSize:17, fontWeight:400, fontStyle:"italic",
+            color:T.inkMid, lineHeight:1.65,
+            margin:"0 0 28px",
+          }}>
+            Une sélection rigoureuse pour sublimer votre beauté afro.
+          </p>
         </div>
 
-        {/* ── LIST ───────────────────────────────────────────────── */}
-        <div style={{ padding:"12px 20px 0", display:"flex", flexDirection:"column", gap:12 }}>
-          {loading ? (
-            <div style={{
-              padding:"80px 0", textAlign:"center",
-              fontFamily:"'Cormorant Garamond', Georgia, serif",
-              fontSize:18, fontStyle:"italic", color:T.inkFade,
-            }}>Chargement des partenaires…</div>
-          ) : filtered.length === 0 ? (
-            <div style={{
-              padding:"60px 0", textAlign:"center",
-              fontFamily:"'Cormorant Garamond', Georgia, serif",
-              fontSize:20, fontStyle:"italic", color:T.inkFade,
-            }}>Aucun partenaire trouvé</div>
-          ) : (
-            <>
-              {featured.map(p => (
-                <FeaturedCard key={p.id} partner={p} onClick={() => setSelected(p)}/>
-              ))}
-              {featured.length > 0 && standard.length > 0 && (
-                <div style={{ margin:"4px 0 8px" }}>
-                  <WarmDivider/>
-                </div>
-              )}
-              {standard.map(p => (
-                <PartnerCard key={p.id} partner={p} onClick={() => setSelected(p)}/>
-              ))}
-            </>
-          )}
-        </div>
-
-        {/* ── FOOTER ─────────────────────────────────────────────── */}
-        <div style={{
-          textAlign:"center", padding:"40px 28px 20px",
-          fontFamily:"'Cormorant Garamond', Georgia, serif",
-          fontSize:13, fontStyle:"italic",
-          color:T.inkFade, letterSpacing:"0.06em",
-        }}>
-          AfroTresse · Partenaires certifiés ✦
+        {/* Pills de confiance */}
+        <div style={{ display:"flex", flexWrap:"wrap", gap:8, justifyContent:"center" }}>
+          {[
+            { icon:"✦", label:"Vérifiés" },
+            { icon:"✦", label:"Engagés" },
+            { icon:"✦", label:"Excellence" },
+          ].map(({ icon, label }) => (
+            <div key={label} style={{
+              display:"inline-flex", alignItems:"center", gap:5,
+              padding:"6px 14px", borderRadius:99,
+              background:T.white,
+              border:`1px solid ${T.amberLine}`,
+              boxShadow:`0 2px 10px rgba(28,15,6,0.05)`,
+              fontFamily:"'Jost', sans-serif",
+              fontSize:10, fontWeight:600,
+              letterSpacing:"0.12em", textTransform:"uppercase",
+              color:T.inkMid,
+            }}>
+              <span style={{ color:T.amber, fontSize:8 }}>{icon}</span>
+              {label}
+            </div>
+          ))}
         </div>
       </div>
 
-      {selected && <Modal partner={selected} onClose={() => setSelected(null)}/>}
+      {/* ── FILTRES CATÉGORIES ── */}
+      <div style={{
+        position:"sticky", top:0, zIndex:50,
+        background:`${T.bg}f0`,
+        backdropFilter:"blur(12px)",
+        borderBottom:`1px solid ${T.amberLine}`,
+        padding:"12px 20px",
+      }}>
+        <div style={{ display:"flex", gap:8, overflowX:"auto", maxWidth:480, margin:"0 auto" }}>
+          {CATEGORIES.map(cat => {
+            const active = activeCategory === cat.id;
+            return (
+              <button
+                key={cat.id}
+                onClick={() => setActive(cat.id)}
+                style={{
+                  display:"flex", alignItems:"center", gap:6,
+                  padding:"8px 16px", borderRadius:99, flexShrink:0,
+                  background: active ? T.amber : T.white,
+                  border:`1px solid ${active ? T.amber : T.amberLine}`,
+                  color: active ? T.white : T.inkMid,
+                  fontFamily:"'Jost', sans-serif",
+                  fontSize:11, fontWeight:active ? 700 : 500,
+                  letterSpacing:"0.08em",
+                  cursor:"pointer",
+                  transition:"all 0.22s ease",
+                  boxShadow: active ? `0 4px 16px ${T.amber}40` : "none",
+                }}
+              >
+                <span>{cat.emoji}</span> {cat.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── LISTE ── */}
+      <div style={{ position:"relative", zIndex:1, maxWidth:480, margin:"0 auto", padding:"28px 20px 100px" }}>
+
+        {loading && (
+          <div style={{ textAlign:"center", padding:"60px 0", color:T.inkFade, fontFamily:"'Jost', sans-serif", fontSize:13 }}>
+            Chargement…
+          </div>
+        )}
+
+        {!loading && filtered.length === 0 && (
+          <div style={{ textAlign:"center", padding:"60px 0" }}>
+            <div style={{ fontSize:40, marginBottom:12 }}>🌿</div>
+            <p style={{ fontFamily:"'Cormorant Garamond', Georgia, serif", fontSize:20, color:T.inkMid }}>
+              Aucun partenaire dans cette catégorie.
+            </p>
+          </div>
+        )}
+
+        {/* Featured */}
+        {featured.length > 0 && (
+          <div style={{ marginBottom:28 }}>
+            <div style={{
+              fontFamily:"'Jost', sans-serif",
+              fontSize:9, fontWeight:700,
+              letterSpacing:"0.3em", textTransform:"uppercase",
+              color:T.amber, marginBottom:14, opacity:0.7,
+            }}>✦ À la une</div>
+            <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+              {featured.map(p => (
+                <FeaturedCard key={p.id} partner={p} onClick={() => setSelected(p)} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Divider */}
+        {featured.length > 0 && regular.length > 0 && (
+          <div style={{ margin:"24px 0" }}>
+            <WarmDivider/>
+          </div>
+        )}
+
+        {/* Regular */}
+        {regular.length > 0 && (
+          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+            {regular.map(p => (
+              <PartnerCard key={p.id} partner={p} onClick={() => setSelected(p)} />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── MODAL ── */}
+      {selected && <Modal partner={selected} onClose={() => setSelected(null)} />}
     </div>
   );
 }
