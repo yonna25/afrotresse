@@ -16,20 +16,147 @@ const CATEGORY_COLORS = {
   formation: { bg: "rgba(100,140,220,0.15)", border: "rgba(100,140,220,0.4)", text: "#6496DC" },
 };
 
+// ─── LOGO UPLOADER ────────────────────────────────────────────────────────────
+function LogoUploader({ currentUrl, onUploaded }) {
+  const inputRef   = useRef(null);
+  const [drag, setDrag]         = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [preview, setPreview]   = useState(currentUrl || null);
+  const [error, setError]       = useState("");
+
+  // Sync si l'URL externe change (ex: édition d'un partenaire existant)
+  useEffect(() => { setPreview(currentUrl || null); }, [currentUrl]);
+
+  const upload = async (file) => {
+    if (!file || !file.type.startsWith("image/")) {
+      setError("Fichier non valide. PNG, JPG ou WebP uniquement.");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setError("Fichier trop lourd (max 2 Mo).");
+      return;
+    }
+    setError("");
+    setUploading(true);
+
+    const ext      = file.name.split(".").pop();
+    const filename = `partner-logos/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("partners-assets")       // ← nom de ton bucket Supabase Storage
+      .upload(filename, file, { upsert: true, contentType: file.type });
+
+    if (uploadError) {
+      setError("Erreur upload : " + uploadError.message);
+      setUploading(false);
+      return;
+    }
+
+    const { data } = supabase.storage
+      .from("partners-assets")
+      .getPublicUrl(filename);
+
+    setPreview(data.publicUrl);
+    onUploaded(data.publicUrl);
+    setUploading(false);
+  };
+
+  const handleRemove = () => {
+    setPreview(null);
+    onUploaded("");
+  };
+
+  return (
+    <div>
+      <p className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-2">Logo du partenaire</p>
+
+      <div
+        onClick={() => !uploading && inputRef.current?.click()}
+        onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
+        onDragLeave={() => setDrag(false)}
+        onDrop={(e) => {
+          e.preventDefault(); setDrag(false);
+          upload(e.dataTransfer.files[0]);
+        }}
+        className="relative flex items-center justify-center rounded-2xl border-2 border-dashed transition-all cursor-pointer overflow-hidden"
+        style={{
+          height: 100,
+          borderColor: drag ? "#C9963A" : preview ? "rgba(201,150,58,0.4)" : "rgba(255,255,255,0.08)",
+          background: drag ? "rgba(201,150,58,0.08)" : preview ? "rgba(201,150,58,0.05)" : "rgba(0,0,0,0.3)",
+        }}
+      >
+        {uploading ? (
+          <div className="flex flex-col items-center gap-2">
+            <div className="w-5 h-5 border-2 border-[#C9963A] border-t-transparent rounded-full animate-spin" />
+            <span className="text-[9px] text-white/40 uppercase tracking-widest">Upload en cours…</span>
+          </div>
+        ) : preview ? (
+          <>
+            <img src={preview} alt="Logo" className="max-h-full max-w-full object-contain p-3" />
+            {/* Overlay survol */}
+            <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+              <span className="text-[10px] text-white font-bold uppercase tracking-wider">Changer</span>
+            </div>
+          </>
+        ) : (
+          <div className="flex flex-col items-center gap-1 pointer-events-none">
+            <span className="text-2xl">🖼️</span>
+            <span className="text-[9px] text-white/30 uppercase tracking-widest">Glisser ou cliquer</span>
+            <span className="text-[8px] text-white/20">PNG · JPG · WebP · max 2 Mo</span>
+          </div>
+        )}
+      </div>
+
+      {/* Actions sous la zone */}
+      {preview && !uploading && (
+        <div className="flex gap-2 mt-2">
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            className="flex-1 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider border border-white/10 text-white/40 hover:text-white/70 transition-all"
+          >
+            Remplacer
+          </button>
+          <button
+            type="button"
+            onClick={handleRemove}
+            className="flex-1 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider border border-red-500/20 text-red-400/60 hover:text-red-400 transition-all"
+          >
+            Supprimer
+          </button>
+        </div>
+      )}
+
+      {error && (
+        <p className="text-[9px] text-red-400 mt-1.5">{error}</p>
+      )}
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => upload(e.target.files[0])}
+      />
+    </div>
+  );
+}
+
+// ─── PAGE ADMIN ───────────────────────────────────────────────────────────────
 export default function AdminPartners() {
-  const [partners, setPartners]         = useState([]);
-  const [filtered, setFiltered]         = useState([]);
-  const [loading, setLoading]           = useState(true);
-  const [showForm, setShowForm]         = useState(false);
-  const [search, setSearch]             = useState("");
+  const [partners, setPartners]           = useState([]);
+  const [filtered, setFiltered]           = useState([]);
+  const [loading, setLoading]             = useState(true);
+  const [showForm, setShowForm]           = useState(false);
+  const [search, setSearch]               = useState("");
   const [searchHistory, setSearchHistory] = useState(() => {
     try { return JSON.parse(localStorage.getItem("admin_partners_search_history") || "[]"); }
     catch { return []; }
   });
-  const [showHistory, setShowHistory]   = useState(false);
-  const [activeFilter, setActiveFilter] = useState("all");
-  const [isEditing, setIsEditing]       = useState(null);
-  const [isAdmin, setIsAdmin]           = useState(false);
+  const [showHistory, setShowHistory]     = useState(false);
+  const [activeFilter, setActiveFilter]   = useState("all");
+  const [isEditing, setIsEditing]         = useState(null);
+  const [isAdmin, setIsAdmin]             = useState(false);
   const searchRef = useRef(null);
 
   const initialForm = {
@@ -37,6 +164,7 @@ export default function AdminPartners() {
     description: "", emoji: "👑", badge: "", rating: "", reviews: 0,
     whatsapp: "", instagram_url: "", tiktok_url: "",
     is_featured: false, promo_text: "", promo_end_date: "", active: true,
+    logo_url: "",   // ← nouveau champ
   };
   const [formData, setFormData] = useState(initialForm);
 
@@ -111,7 +239,6 @@ export default function AdminPartners() {
     }
   };
 
-  // ── Historique de recherche ───────────────────────────────────────────────
   const saveSearch = (q) => {
     if (!q.trim()) return;
     const updated = [q, ...searchHistory.filter(h => h !== q)].slice(0, 8);
@@ -187,9 +314,9 @@ export default function AdminPartners() {
               onBlur={() => setTimeout(() => setShowHistory(false), 200)}
               onKeyDown={e => { if (e.key === "Enter") { saveSearch(search); setShowHistory(false); } }}
             />
-            {search ? (
+            {search && (
               <button onClick={clearSearch} className="text-white/30 hover:text-white/60 text-sm flex-shrink-0 transition-all">✕</button>
-            ) : null}
+            )}
           </div>
 
           {/* Dropdown historique */}
@@ -340,6 +467,12 @@ export default function AdminPartners() {
                 className="w-full bg-black/40 p-4 rounded-xl border border-white/5 outline-none text-[10px]"
                 onChange={e => setFormData({...formData, tiktok_url: e.target.value})} />
 
+              {/* ── LOGO ── */}
+              <LogoUploader
+                currentUrl={formData.logo_url}
+                onUploaded={(url) => setFormData({ ...formData, logo_url: url })}
+              />
+
               {/* Offre Flash */}
               <div className="bg-black/20 p-4 rounded-2xl border border-[#C9963A]/10 space-y-3">
                 <p className="text-[9px] font-black text-[#C9963A] uppercase tracking-widest">Offre Flash</p>
@@ -391,10 +524,17 @@ export default function AdminPartners() {
                 <div key={p.id}
                   className={`bg-zinc-900/40 p-4 rounded-[2rem] border flex items-center justify-between shadow-xl transition-all ${p.is_featured ? "border-[#C9963A]/40" : "border-white/5"}`}>
                   <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 text-2xl relative flex-shrink-0">
-                      {p.emoji || "👑"}
+
+                    {/* Avatar : logo si dispo, sinon emoji */}
+                    <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 relative flex-shrink-0 overflow-hidden">
+                      {p.logo_url ? (
+                        <img src={p.logo_url} alt={p.name} className="w-full h-full object-contain p-1.5" />
+                      ) : (
+                        <span className="text-2xl">{p.emoji || "👑"}</span>
+                      )}
                       {p.is_featured && <span className="absolute -top-1 -right-1 text-[10px]">📌</span>}
                     </div>
+
                     <div>
                       <h3 className="font-bold text-sm text-white">{p.name}</h3>
                       <p className="text-[9px] text-white/30 uppercase tracking-widest">{p.city}</p>
@@ -408,6 +548,7 @@ export default function AdminPartners() {
                         )}
                         <span className={`w-1.5 h-1.5 rounded-full ${p.active ? "bg-green-500" : "bg-red-500"}`} />
                         {p.promo_text && <span className="w-1.5 h-1.5 rounded-full bg-[#C9963A] animate-pulse" />}
+                        {p.logo_url && <span className="text-[8px] text-[#C9963A]/60 font-bold">🖼 Logo</span>}
                       </div>
                     </div>
                   </div>
