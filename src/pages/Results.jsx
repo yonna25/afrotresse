@@ -717,7 +717,7 @@ export default function Results() {
               <button onClick={() => setShowVirtualTryOnModal(false)}
                 className="w-full py-3.5 rounded-2xl font-bold text-sm text-[#2C1A0E]"
                 style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}>
-                {'OK, j'attends ! 🙌'}
+                {'OK, j\u2019attends ! 🙌'}
               </button>
             </motion.div>
           </motion.div>
