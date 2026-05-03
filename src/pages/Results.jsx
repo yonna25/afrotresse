@@ -14,8 +14,8 @@ const STYLES_PER_PAGE = 3;
 
 const EMPTY_STEPS = [
   { icon: "📸", num: "01", label: "Selfie", sub: "Prends ou upload une photo" },
-  { icon: "🔍", num: "02", label: "Analyse IA", sub: "Morphologie d\u00e9tect\u00e9e en 3s" },
-  { icon: "✨", num: "03", label: "Styles sur-mesure", sub: "3 tresses taill\u00e9es pour toi" },
+  { icon: "🔍", num: "02", label: "Analyse", sub: "Morphologie détectée en 3s" },
+  { icon: "✨", num: "03", label: "Styles sur-mesure", sub: "3 tresses taillées pour toi" },
 ];
 
 const ProtectedImg = ({ src, alt, className, onClick }) => (
@@ -106,7 +106,7 @@ export default function Results() {
   const [errorMsg, setErrorMsg]           = useState("");
   const [showFireworks, setShowFireworks] = useState(false);
   const [showVirtualTryOnModal, setShowVirtualTryOnModal] = useState(false);
-  const [stableMsg, setStableMsg]         = useState({ headline: "Voici tes r\u00e9sultats \u2728", subtext: "" });
+  const [stableMsg, setStableMsg]         = useState({ headline: "Voici tes résultats ✨", subtext: "" });
   const [displayName, setDisplayName]     = useState(() => localStorage.getItem("afrotresse_user_name") || "");
   const [generating, setGenerating]       = useState(false);
   const [crownReady, setCrownReady]       = useState(false);
@@ -369,7 +369,7 @@ export default function Results() {
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
             style={{ textAlign: "center", padding: "0 24px" }}>
             <p style={{ fontSize: 11, letterSpacing: "0.38em", textTransform: "uppercase", color: "rgba(201,150,58,0.65)", fontFamily: "sans-serif", fontWeight: 600, marginBottom: 8 }}>
-              AfroTresse · IA
+              AfroTresse
             </p>
             <h1 style={{ fontSize: 26, fontWeight: 800, lineHeight: 1.25, color: "#FAF4EC", margin: 0, fontFamily: "sans-serif" }}>
               Ton visage,{" "}
@@ -380,7 +380,7 @@ export default function Results() {
                 WebkitTextFillColor: "transparent",
                 animation: "shimmerBtn 3s linear infinite",
               }}>
-                {'tes styles \u2728'}
+                {'tes styles ✨'}
               </span>
             </h1>
           </motion.div>
@@ -393,7 +393,7 @@ export default function Results() {
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}
             style={{ textAlign: "center", margin: "20px 0 24px" }}>
             <p style={{ fontSize: 16, fontWeight: 700, color: "#FAF4EC", marginBottom: 6, fontFamily: "sans-serif", lineHeight: 1.4 }}>
-              {'D\u00e9couvre les tresses adapt\u00e9es'}<br />{'à ton visage 💛'}
+              {'Découvre les tresses adaptées'}<br />{'à ton visage 💛'}
             </p>
             <p style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", fontStyle: "italic", fontFamily: "sans-serif", lineHeight: 1.6 }}>
               {'« Un selfie suffit pour trouver la coiffure qui te correspond. »'}
@@ -488,7 +488,7 @@ export default function Results() {
               ))}
             </div>
             <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontFamily: "sans-serif" }}>
-              +240 reines ont {`d\u00e9j\u00e0`} essay\u00e9
+              +240 reines ont {`déjà`} essayé
             </p>
           </motion.div>
         </div>
@@ -533,7 +533,7 @@ export default function Results() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-[11px] font-semibold mb-0.5" style={{ color: "rgba(201,150,58,0.7)" }}>
-              {'Voici tes r\u00e9sultats'}
+              {'Voici tes résultats'}
             </p>
             <h1 className="font-black text-2xl text-white leading-tight truncate">
               {displayName || "Ma Reine"} ✨
@@ -545,7 +545,7 @@ export default function Results() {
           <div className="w-1 self-stretch rounded-full shrink-0"
             style={{ background: "linear-gradient(to bottom, #C9963A, rgba(201,150,58,0.1))" }} />
           <p className="text-[11px] leading-relaxed" style={{ color: "rgba(250,244,236,0.55)" }}>
-            {stableMsg.subtext || "Ton visage est un terrain de jeu sans limites. Aucune contrainte, toutes les libert\u00e9s."}
+            {stableMsg.subtext || "Ton visage est un terrain de jeu sans limites. Aucune contrainte, toutes les libertés."}
           </p>
         </div>
       </motion.div>
@@ -603,7 +603,7 @@ export default function Results() {
                   )}
                 </div>
                 <p className="text-[11px] opacity-60 mb-4 leading-relaxed">
-                  {style.description || "Un style unique adapt\u00e9 à ta morphologie"}
+                  {style.description || "Un style unique adapté à ta morphologie"}
                 </p>
                 {style.tags && (
                   <div className="flex gap-2 flex-wrap mb-4">
@@ -616,7 +616,7 @@ export default function Results() {
                   <div className="absolute -top-2.5 -right-2.5 z-10">
                     <span className="text-[8px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-lg"
                       style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)", color: "#1A0A00", boxShadow: "0 0 10px rgba(201,150,58,0.5)" }}>
-                      ⏳ {'Bient\u00f4t'}
+                      ⏳ {'Bientôt'}
                     </span>
                   </div>
                   <button onClick={() => setShowVirtualTryOnModal(true)}
@@ -648,10 +648,10 @@ export default function Results() {
           className="w-full py-4 rounded-2xl font-semibold text-sm disabled:opacity-50 transition-all"
           style={{ background: "rgba(201,150,58,0.06)", border: "1px solid rgba(201,150,58,0.2)" }}>
           <span className="flex items-center justify-center gap-2 text-[#C9963A]/80">
-            {generating ? '⏳ G\u00e9n\u00e9ration...' : '✨ Voir 3 autres styles'}
-            <span className="text-[9px] bg-[#C9963A]/10 border border-[#C9963A]/20 text-[#C9963A]/70 px-2 py-0.5 rounded-full font-bold">1 cr\u00e9dit</span>
+            {generating ? '⏳ Génération...' : '✨ Voir 3 autres styles'}
+            <span className="text-[9px] bg-[#C9963A]/10 border border-[#C9963A]/20 text-[#C9963A]/70 px-2 py-0.5 rounded-full font-bold">1 crédit</span>
           </span>
-          <p className="text-[10px] text-white/20 mt-1 font-normal">Solde : {credits} cr\u00e9dit{credits > 1 ? "s" : ""}</p>
+          <p className="text-[10px] text-white/20 mt-1 font-normal">Solde : {credits} crédit{credits > 1 ? "s" : ""}</p>
         </motion.button>
       </motion.div>
 
@@ -710,14 +710,14 @@ export default function Results() {
               style={{ background: "linear-gradient(160deg, #2C1A0E 0%, #3D2616 100%)", border: "1.5px solid rgba(201,150,58,0.4)", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}
               onClick={(e) => e.stopPropagation()}>
               <div className="text-4xl mb-3">✨</div>
-              <h2 className="font-black text-xl text-white mb-2">{'Bient\u00f4t disponible'}</h2>
+              <h2 className="font-black text-xl text-white mb-2">{'Bientôt disponible'}</h2>
               <p className="text-sm leading-relaxed mb-6" style={{ color: "rgba(250,244,236,0.55)" }}>
                 Votre essayage virtuel arrive prochainement.
               </p>
               <button onClick={() => setShowVirtualTryOnModal(false)}
                 className="w-full py-3.5 rounded-2xl font-bold text-sm text-[#2C1A0E]"
                 style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}>
-                {'OK, j\u2019attends ! 🙌'}
+                {'OK, j'attends ! 🙌'}
               </button>
             </motion.div>
           </motion.div>
