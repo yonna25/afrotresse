@@ -95,6 +95,67 @@ function CreditSuccessPopup({ data, onClose }) {
   )
 }
 
+function CreditErrorPopup({ onClose, onRetry }) {
+  useEffect(() => {
+    const timer = setTimeout(onClose, 7000)
+    return () => clearTimeout(timer)
+  }, [onClose])
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[200] flex items-center justify-center px-6"
+      style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)' }}
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.8, y: 40, opacity: 0 }}
+        animate={{ scale: 1, y: 0, opacity: 1 }}
+        exit={{ scale: 0.8, y: 40, opacity: 0 }}
+        className="w-full max-w-sm rounded-[2.5rem] p-8 text-center relative overflow-hidden"
+        style={{
+          background: 'linear-gradient(160deg, #1A0A0A 0%, #2E1010 100%)',
+          border: '2px solid #C93A3A',
+          boxShadow: '0 0 60px rgba(201,58,58,0.35)',
+        }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="text-6xl mb-4">⚠️</div>
+        <h2 className="text-2xl font-black mb-2" style={{ color: '#E87A7A' }}>
+          Paiement non abouti
+        </h2>
+        <p className="text-sm mb-6" style={{ color: 'rgba(255,255,255,0.55)', lineHeight: 1.7 }}>
+          Une erreur interne s'est produite lors de la validation de votre paiement.
+          Aucun montant n'a été débité. Réessayez ou contactez le support.
+        </p>
+        <div className="flex flex-col gap-3">
+          <button
+            onClick={onRetry}
+            className="w-full py-4 rounded-2xl font-black text-white"
+            style={{ background: 'linear-gradient(135deg, #C93A3A, #E87A7A)' }}
+          >
+            Réessayer le paiement
+          </button>
+          <button
+            onClick={onClose}
+            className="w-full py-3 rounded-2xl font-semibold text-sm"
+            style={{
+              background: 'transparent',
+              border: '1px solid rgba(255,255,255,0.15)',
+              color: 'rgba(255,255,255,0.5)',
+            }}
+          >
+            Fermer
+          </button>
+        </div>
+        <p className="text-[10px] mt-4" style={{ color: 'rgba(255,255,255,0.25)' }}>
+          Si le problème persiste, contactez-nous via WhatsApp.
+        </p>
+      </motion.div>
+    </motion.div>
+  )
+}
+
 function AnimatedRoutes() {
   const location = useLocation()
   
@@ -137,12 +198,13 @@ function AnimatedRoutes() {
 
 export default function App() {
   const [creditSuccess, setCreditSuccess] = useState(null)
+  const [creditError, setCreditError]     = useState(false)
 
   useEffect(() => {
     const syncSession = async (user) => {
       if (!user) return;
 
-      // Sync cr\u00e9dits depuis usage_credits (plus profiles)
+      // Sync crédits depuis usage_credits (plus profiles)
       const { data: creditData } = await supabase
         .from('usage_credits')
         .select('credits')
@@ -150,7 +212,7 @@ export default function App() {
         .single();
       if (creditData?.credits > 0) setCredits(creditData.credits);
 
-      // Mise \u00e0 jour last_seen
+      // Mise à jour last_seen
       await supabase
         .from('usage_credits')
         .update({ last_seen: new Date().toISOString() })
@@ -168,11 +230,38 @@ export default function App() {
     return () => subscription?.unsubscribe();
   }, [])
 
+  // Écoute succès crédits
   useEffect(() => {
     const handler = (e) => setCreditSuccess(e.detail);
     window.addEventListener('afrotresse:credit_success', handler);
     return () => window.removeEventListener('afrotresse:credit_success', handler);
   }, [])
+
+  // Écoute erreur paiement (événement custom depuis Credits.jsx ou webhook)
+  useEffect(() => {
+    const handler = () => setCreditError(true);
+    window.addEventListener('afrotresse:credit_error', handler);
+    return () => window.removeEventListener('afrotresse:credit_error', handler);
+  }, [])
+
+  // Détection retour Stripe échoué via paramètres URL
+  // Ex: /credits?payment_status=failed ou /credits?canceled=true
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const status   = params.get('payment_status') || params.get('status');
+    const canceled = params.get('canceled');
+    if (status === 'failed' || status === 'error' || canceled === 'true') {
+      setCreditError(true);
+      // Nettoyer l'URL sans recharger
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [])
+
+  const handleRetry = () => {
+    setCreditError(false);
+    // Redirige vers la page crédits pour réessayer
+    window.location.href = '/credits';
+  }
 
   return (
     <BrowserRouter>
@@ -183,6 +272,12 @@ export default function App() {
               <CreditSuccessPopup 
                 data={creditSuccess} 
                 onClose={() => setCreditSuccess(null)} 
+              />
+            )}
+            {creditError && (
+              <CreditErrorPopup
+                onClose={() => setCreditError(false)}
+                onRetry={handleRetry}
               />
             )}
           </AnimatePresence>
