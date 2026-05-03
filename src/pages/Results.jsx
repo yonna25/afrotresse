@@ -13,7 +13,7 @@ import { useFavorites } from "../hooks/useFavorites.js";
 const STYLES_PER_PAGE = 3;
 
 const EMPTY_STEPS = [
-  { icon: "📸", num: "01", label: "Selfie", sub: "Prends ou uploade une photo" },
+  { icon: "📸", num: "01", label: "Selfie", sub: "Prends ou upload une photo" },
   { icon: "🔍", num: "02", label: "Analyse IA", sub: "Morphologie d\u00e9tect\u00e9e en 3s" },
   { icon: "✨", num: "03", label: "Styles sur-mesure", sub: "3 tresses taill\u00e9es pour toi" },
 ];
