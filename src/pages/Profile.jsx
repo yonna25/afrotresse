@@ -162,7 +162,7 @@ export default function Profile() {
           <p className="text-[11px] text-[#C9963A] font-medium tracking-[0.2em] uppercase opacity-80 mt-0.5">Sublimez votre couronne</p>
         </div>
 
-        {/* Module auth — stable sans clignotement */}
+        {/* Module auth */}
         <div className="w-full max-w-sm px-5 mt-4">
           {isLoggedIn ? (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
@@ -232,12 +232,6 @@ export default function Profile() {
           <button onClick={() => navigate("/results")} className="w-full py-4 rounded-2xl font-black bg-white/5 border border-white/10 flex justify-between px-5">
             <span>✨ {'R\u00e9sultats'}</span><span>→</span>
           </button>
-          <motion.button whileTap={{ scale: 0.97 }} onClick={() => navigate("/results")}
-            className="w-full py-5 rounded-2xl font-black text-base flex items-center justify-between px-5 shadow-lg"
-            style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)", color: "#1A0A00" }}>
-            <span>{'✨ Voir 3 autres styles'}</span>
-            <span className="text-xl">→</span>
-          </motion.button>
         </div>
 
         {/* Parrainage */}
