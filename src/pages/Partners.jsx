@@ -586,11 +586,21 @@ export default function Partners() {
   const [selected, setSelected]         = useState(null);
   const [activeFilter, setActiveFilter] = useState("all");
   const [search, setSearch]             = useState("");
+  const [heroLogoUrl, setHeroLogoUrl]   = useState(null);
   const searchRef = useRef(null);
 
   useEffect(() => {
     const fetch = async () => {
       setLoading(true);
+
+      // Charger le logo hero AfroTresse depuis settings
+      const { data: settingData } = await supabase
+        .from("settings")
+        .select("value")
+        .eq("key", "partners_hero_logo")
+        .single();
+      if (settingData?.value) setHeroLogoUrl(settingData.value);
+
       const { data, error } = await supabase
         .from("partners").select("*")
         .eq("active", true)
@@ -676,17 +686,22 @@ export default function Partners() {
           }}/>
 
           <div style={{ position:"relative", zIndex:2 }}>
-            {/* Logo */}
+            {/* Logo AfroTresse — chargé depuis Supabase settings ou emoji fallback */}
             <div style={{
               width:66, height:66, margin:"0 auto 20px",
               borderRadius:20,
               background:`linear-gradient(145deg, ${T.amberPale}, ${T.bgDeep})`,
               border:`1.5px solid ${T.amberLine}`,
               display:"flex", alignItems:"center", justifyContent:"center",
-              fontSize:30,
+              fontSize:30, overflow:"hidden",
               boxShadow:`0 8px 32px rgba(200,135,58,0.25)`,
               animation:"float 4s ease-in-out infinite",
-            }}>🌿</div>
+            }}>
+              {heroLogoUrl
+                ? <img src={heroLogoUrl} alt="AfroTresse" style={{ width:"100%", height:"100%", objectFit:"contain", padding:6 }} />
+                : "🌿"
+              }
+            </div>
 
             <div style={{
               fontFamily:"'Jost', sans-serif",
