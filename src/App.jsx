@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
+import { Analytics } from '@vercel/analytics/react'
 
 // Services
 import { setCredits, getCredits } from './services/credits.js'
@@ -265,6 +266,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      <Analytics />
       <div className="min-h-screen bg-black flex justify-center font-sans">
         <div className="w-full max-w-[430px] relative bg-[#2C1A0E] min-h-screen shadow-2xl overflow-x-hidden">
           <AnimatePresence>
