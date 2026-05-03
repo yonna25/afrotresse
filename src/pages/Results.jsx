@@ -217,13 +217,24 @@ export default function Results() {
     const total = styles.length;
     if (total === 0) return [];
     const baseSeed = userName.split("").reduce((acc, c) => acc + c.charCodeAt(0), 12345);
-    const stylesPerShuffle = Math.floor(total / STYLES_PER_PAGE) * STYLES_PER_PAGE || STYLES_PER_PAGE;
-    const shuffleIndex = Math.floor(((page - 1) * STYLES_PER_PAGE) / stylesPerShuffle);
-    const positionInShuffle = ((page - 1) * STYLES_PER_PAGE) % stylesPerShuffle;
-    const shuffled = getShuffledStyles(baseSeed + shuffleIndex * 9973);
-    const result = [];
-    for (let i = 0; i < STYLES_PER_PAGE; i++) result.push(shuffled[(positionInShuffle + i) % total]);
-    return result;
+
+    // Construire un pool sans doublon sur toutes les pages
+    const pool = [];
+    while (pool.length < page * STYLES_PER_PAGE) {
+      const cycle = Math.floor(pool.length / total);
+      const shuffled = getShuffledStyles(baseSeed + cycle * 9973);
+      pool.push(...shuffled);
+    }
+
+    // Extraire la tranche de la page courante et dédupliquer
+    const start = (page - 1) * STYLES_PER_PAGE;
+    const pageSlice = pool.slice(start, start + STYLES_PER_PAGE);
+    const seen = new Set();
+    return pageSlice.filter(s => {
+      if (seen.has(s.id)) return false;
+      seen.add(s.id);
+      return true;
+    });
   };
 
   const displayedStyles = getPageStyles(currentPage);
@@ -532,8 +543,8 @@ export default function Results() {
               style={{ backgroundColor: "#22c55e", borderColor: "#2C1A0E" }} />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[11px] font-semibold mb-0.5" style={{ color: "rgba(201,150,58,0.7)" }}>
-              {'Voici tes résultats'}
+            <p className="text-[11px] font-bold mb-0.5" style={{ color: "#C9963A" }}>
+              {'Voici tes résultats ✨'}
             </p>
             <h1 className="font-black text-2xl text-white leading-tight truncate">
               {displayName || "Ma Reine"} ✨
