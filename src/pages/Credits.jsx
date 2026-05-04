@@ -315,7 +315,7 @@ export default function Credits() {
         >
           <span className="text-lg flex-shrink-0">✨</span>
           <p className="text-sm" style={{ color: 'rgba(255,255,255,0.75)', lineHeight: 1.4 }}>
-            Tes crédits sont épuisés — recharge pour continuer tes analyses
+            Tes crédits sont épuisés! Recharge pour continuer tes analyses
           </p>
         </div>
 
