@@ -10,9 +10,7 @@ const AuthLoader = () => (
         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
       </svg>
-      <span className="text-[#C9963A] text-[10px] font-black uppercase tracking-widest">
-        Vérification...
-      </span>
+      <span className="text-[#C9963A] text-[10px] font-black uppercase tracking-widest">Vérification...</span>
     </div>
   </div>
 );
@@ -32,29 +30,30 @@ const formatDateShort = (iso) => {
   });
 };
 
-// ─── Vue détaillée d'une utilisatrice ───────────────────────────────────────
+const getBadge = (consumed) => {
+  if (consumed >= 20) return { label: "👑 VIP",     color: "#C9963A" };
+  if (consumed >= 10) return { label: "⭐ Active",  color: "#60a5fa" };
+  if (consumed >= 3)  return { label: "🌱 Engagée", color: "#22c55e" };
+  return null;
+};
+
+// ─── Vue détaillée ────────────────────────────────────────────────────────────
 function UserDetail({ user, onBack }) {
-  const [movements, setMovements] = useState([]);
-  const [fingerprints, setFingerprints] = useState([]);
+  const [movements, setMovements]       = useState([]);
   const [loadingDetails, setLoadingDetails] = useState(true);
+  const consumed = movements.filter(m => m.amount < 0).reduce((s, m) => s + Math.abs(m.amount), 0);
+  const earned   = movements.filter(m => m.amount > 0).reduce((s, m) => s + m.amount, 0);
 
   useEffect(() => {
     const fetchDetails = async () => {
       setLoadingDetails(true);
-      const [movRes, fpRes] = await Promise.all([
-        supabase
-          .from("credit_movements")
-          .select("*")
-          .eq("user_id", user.user_id)
-          .order("created_at", { ascending: false })
-          .limit(20),
-        supabase
-          .from("device_fingerprints")
-          .select("*")
-          .order("created_at", { ascending: false }),
-      ]);
-      setMovements(movRes.data || []);
-      setFingerprints(fpRes.data || []);
+      const { data } = await supabase
+        .from("credit_movements")
+        .select("*")
+        .eq("user_id", user.user_id)
+        .order("created_at", { ascending: false })
+        .limit(30);
+      setMovements(data || []);
       setLoadingDetails(false);
     };
     fetchDetails();
@@ -64,21 +63,19 @@ function UserDetail({ user, onBack }) {
     if (type === "free")     return { label: "Offert", color: "#22c55e" };
     if (type === "admin")    return { label: "Admin",  color: "#C9963A" };
     if (type === "purchase") return { label: "Achat",  color: "#60a5fa" };
+    if (type === "use")      return { label: "Analyse", color: "#f87171" };
     return { label: type, color: "#ffffff" };
   };
+
+  const badge = getBadge(consumed);
 
   return (
     <div className="min-h-screen bg-[#0F0500] text-white pb-20">
       <AdminNav />
-
-      {/* mt-32 pour passer sous la double barre AdminNav */}
       <div className="mt-32 px-4 max-w-md mx-auto">
 
-        {/* Bouton retour — padding vertical large pour zone tactile confortable */}
-        <button
-          onClick={onBack}
-          className="flex items-center gap-2 text-[#C9963A] text-xs font-black uppercase tracking-widest mb-6 py-3 w-full active:opacity-60"
-        >
+        <button onClick={onBack}
+          className="flex items-center gap-2 text-[#C9963A] text-xs font-black uppercase tracking-widest mb-6 py-3 w-full active:opacity-60">
           ← Retour à la liste
         </button>
 
@@ -90,9 +87,17 @@ function UserDetail({ user, onBack }) {
               style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)", color: "#1A0A00" }}>
               {user.email?.[0]?.toUpperCase() || "?"}
             </div>
-            <div className="overflow-hidden">
+            <div className="overflow-hidden flex-1">
               <p className="text-white font-black text-sm truncate">{user.email}</p>
-              <p className="text-white/30 text-[9px] uppercase tracking-widest">Utilisatrice</p>
+              <div className="flex items-center gap-2 mt-0.5">
+                <p className="text-white/30 text-[9px] uppercase tracking-widest">Utilisatrice</p>
+                {badge && (
+                  <span className="text-[9px] font-black px-2 py-0.5 rounded-full"
+                    style={{ background: `${badge.color}20`, color: badge.color }}>
+                    {badge.label}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
@@ -100,27 +105,40 @@ function UserDetail({ user, onBack }) {
             <div className="rounded-xl p-3 bg-black/30">
               <p className="text-[9px] text-white/30 uppercase tracking-widest mb-1">Solde actuel</p>
               <p className="text-[#C9963A] text-xl font-black">{user.credits ?? 0}</p>
-              <p className="text-white/20 text-[9px]">crédits</p>
+              <p className="text-white/20 text-[9px]">crédits restants</p>
             </div>
             <div className="rounded-xl p-3 bg-black/30">
-              <p className="text-[9px] text-white/30 uppercase tracking-widest mb-1">Dernière connexion</p>
-              <p className="text-white text-xs font-bold">{formatDateShort(user.last_seen)}</p>
+              <p className="text-[9px] text-white/30 uppercase tracking-widest mb-1">Consommés</p>
+              <p className="text-red-400 text-xl font-black">{consumed}</p>
+              <p className="text-white/20 text-[9px]">crédits utilisés</p>
+            </div>
+            <div className="rounded-xl p-3 bg-black/30">
+              <p className="text-[9px] text-white/30 uppercase tracking-widest mb-1">Total reçus</p>
+              <p className="text-green-400 text-xl font-black">{earned}</p>
+              <p className="text-white/20 text-[9px]">crédits gagnés</p>
+            </div>
+            <div className="rounded-xl p-3 bg-black/30">
+              <p className="text-[9px] text-white/30 uppercase tracking-widest mb-1">Analyses</p>
+              <p className="text-white text-xl font-black">
+                {movements.filter(m => m.type === "use").length}
+              </p>
+              <p className="text-white/20 text-[9px]">effectuées</p>
             </div>
             <div className="rounded-xl p-3 bg-black/30">
               <p className="text-[9px] text-white/30 uppercase tracking-widest mb-1">Inscrite le</p>
               <p className="text-white text-xs font-bold">{formatDateShort(user.created_at)}</p>
             </div>
             <div className="rounded-xl p-3 bg-black/30">
-              <p className="text-[9px] text-white/30 uppercase tracking-widest mb-1">Mouvements</p>
-              <p className="text-white text-xl font-black">{movements.length}</p>
+              <p className="text-[9px] text-white/30 uppercase tracking-widest mb-1">Dernière activité</p>
+              <p className="text-white text-xs font-bold">{formatDateShort(user.last_seen)}</p>
             </div>
           </div>
         </div>
 
-        {/* Historique des mouvements */}
+        {/* Historique */}
         <div className="mb-4">
           <p className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-3 px-1">
-            Historique des crédits
+            Historique des crédits ({movements.length})
           </p>
           {loadingDetails ? (
             <div className="flex justify-center py-8">
@@ -138,6 +156,7 @@ function UserDetail({ user, onBack }) {
             <div className="space-y-2">
               {movements.map((m) => {
                 const { label, color } = movTypeLabel(m.type);
+                const isNeg = m.amount < 0;
                 return (
                   <div key={m.id}
                     className="flex items-center justify-between px-4 py-3 rounded-xl"
@@ -147,7 +166,9 @@ function UserDetail({ user, onBack }) {
                       <p className="text-[9px] text-white/30">{formatDate(m.created_at)}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-black" style={{ color }}>+{m.amount}</p>
+                      <p className="text-sm font-black" style={{ color: isNeg ? "#f87171" : "#22c55e" }}>
+                        {isNeg ? "" : "+"}{m.amount}
+                      </p>
                       <p className="text-[9px] font-bold px-2 py-0.5 rounded-full"
                         style={{ background: `${color}20`, color }}>
                         {label}
@@ -159,48 +180,28 @@ function UserDetail({ user, onBack }) {
             </div>
           )}
         </div>
-
-        {/* Fingerprints */}
-        <div>
-          <p className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-3 px-1">
-            Appareils enregistrés
-          </p>
-          {fingerprints.length === 0 ? (
-            <div className="rounded-2xl p-6 text-center"
-              style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
-              <p className="text-white/20 text-xs">Aucun appareil enregistré</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {fingerprints.map((fp, i) => (
-                <div key={i}
-                  className="flex items-center justify-between px-4 py-3 rounded-xl"
-                  style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                  <p className="text-[10px] text-white/40 font-mono truncate max-w-[200px]">{fp.fingerprint}</p>
-                  <div className="text-right">
-                    <p className="text-[9px] text-white/30">{formatDateShort(fp.created_at)}</p>
-                    <p className="text-[9px] text-[#C9963A] font-bold">{fp.credits_given} crédits</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );
 }
 
-// ─── Liste principale ────────────────────────────────────────────────────────
+// ─── Liste principale ─────────────────────────────────────────────────────────
+const SORTS = [
+  { key: "consumed", label: "🔥 Consommation" },
+  { key: "credits",  label: "💰 Solde"        },
+  { key: "last_seen",label: "🕐 Activité"     },
+  { key: "created_at",label: "📅 Inscription" },
+];
+
 export default function AdminUsers() {
   const [session, setSession]           = useState(undefined);
   const [users, setUsers]               = useState([]);
   const [filtered, setFiltered]         = useState([]);
+  const [consumed, setConsumed]         = useState({});  // user_id → crédits consommés
   const [search, setSearch]             = useState("");
+  const [sortKey, setSortKey]           = useState("consumed");
   const [loading, setLoading]           = useState(true);
   const [selectedUser, setSelectedUser] = useState(null);
-
-  // Mémorise la position de scroll avant d'entrer dans le détail
   const scrollRef = useRef(0);
 
   useEffect(() => {
@@ -212,43 +213,63 @@ export default function AdminUsers() {
 
   const fetchUsers = async () => {
     setLoading(true);
-    const { data, error } = await supabase.rpc("get_all_users_with_credits");
-    if (!error && data) {
-      setUsers(data);
-      setFiltered(data);
-    }
+
+    const [usersRes, movRes] = await Promise.all([
+      supabase.rpc("get_all_users_with_credits"),
+      supabase.from("credit_movements").select("user_id, amount").lt("amount", 0),
+    ]);
+
+    const usersData = usersRes.data || [];
+
+    // Calculer crédits consommés par user
+    const consumedMap = {};
+    (movRes.data || []).forEach(m => {
+      consumedMap[m.user_id] = (consumedMap[m.user_id] || 0) + Math.abs(m.amount);
+    });
+
+    setConsumed(consumedMap);
+    setUsers(usersData);
     setLoading(false);
   };
 
+  // Filtrage + tri
   useEffect(() => {
     const q = search.trim().toLowerCase();
-    setFiltered(q ? users.filter(u => u.email?.toLowerCase().includes(q)) : users);
-  }, [search, users]);
+    let res = q ? users.filter(u => u.email?.toLowerCase().includes(q)) : [...users];
 
-  // Ouvre le détail en mémorisant le scroll
+    res.sort((a, b) => {
+      if (sortKey === "consumed")   return (consumed[b.user_id] || 0) - (consumed[a.user_id] || 0);
+      if (sortKey === "credits")    return (b.credits || 0) - (a.credits || 0);
+      if (sortKey === "last_seen")  return new Date(b.last_seen || 0) - new Date(a.last_seen || 0);
+      if (sortKey === "created_at") return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+      return 0;
+    });
+
+    setFiltered(res);
+  }, [search, users, sortKey, consumed]);
+
   const openDetail = (u) => {
     scrollRef.current = window.scrollY;
     setSelectedUser(u);
   };
 
-  // Retour à la liste en restaurant le scroll
   const handleBack = () => {
     setSelectedUser(null);
     setTimeout(() => window.scrollTo({ top: scrollRef.current }), 50);
   };
 
+  const totalConsumed = Object.values(consumed).reduce((s, v) => s + v, 0);
+  const activeThisWeek = users.filter(u =>
+    u.last_seen && new Date(u.last_seen) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+  ).length;
+
   if (session === undefined) return <AuthLoader />;
   if (session === null)      return <Navigate to="/login" replace />;
-
-  if (selectedUser) {
-    return <UserDetail user={selectedUser} onBack={handleBack} />;
-  }
+  if (selectedUser)          return <UserDetail user={selectedUser} onBack={handleBack} />;
 
   return (
     <div className="min-h-screen bg-[#0F0500] text-white pb-20">
       <AdminNav />
-
-      {/* mt-32 pour passer sous la double barre AdminNav */}
       <div className="mt-32 px-4 max-w-md mx-auto">
 
         {/* Header */}
@@ -259,19 +280,8 @@ export default function AdminUsers() {
           </p>
         </div>
 
-        {/* Recherche */}
-        <div className="mb-4">
-          <input
-            type="text"
-            placeholder="Rechercher par email..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="w-full bg-black/40 p-4 rounded-xl border border-white/10 outline-none text-sm text-white focus:border-[#C9963A]/50 transition-all"
-          />
-        </div>
-
         {/* Stats rapides */}
-        <div className="grid grid-cols-3 gap-2 mb-6">
+        <div className="grid grid-cols-3 gap-2 mb-5">
           <div className="rounded-2xl p-3 text-center"
             style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(201,150,58,0.15)" }}>
             <p className="text-[#C9963A] text-lg font-black">{users.length}</p>
@@ -279,18 +289,37 @@ export default function AdminUsers() {
           </div>
           <div className="rounded-2xl p-3 text-center"
             style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(201,150,58,0.15)" }}>
-            <p className="text-[#C9963A] text-lg font-black">
-              {users.filter(u => u.last_seen && new Date(u.last_seen) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)).length}
-            </p>
+            <p className="text-[#C9963A] text-lg font-black">{activeThisWeek}</p>
             <p className="text-white/30 text-[8px] uppercase tracking-widest">7 jours</p>
           </div>
           <div className="rounded-2xl p-3 text-center"
             style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(201,150,58,0.15)" }}>
-            <p className="text-[#C9963A] text-lg font-black">
-              {users.reduce((sum, u) => sum + (u.credits || 0), 0)}
-            </p>
-            <p className="text-white/30 text-[8px] uppercase tracking-widest">Crédits</p>
+            <p className="text-red-400 text-lg font-black">{totalConsumed}</p>
+            <p className="text-white/30 text-[8px] uppercase tracking-widest">Consommés</p>
           </div>
+        </div>
+
+        {/* Recherche */}
+        <div className="mb-3">
+          <input type="text" placeholder="Rechercher par email..."
+            value={search} onChange={e => setSearch(e.target.value)}
+            className="w-full bg-black/40 p-4 rounded-xl border border-white/10 outline-none text-sm text-white focus:border-[#C9963A]/50 transition-all"
+          />
+        </div>
+
+        {/* Tri */}
+        <div className="flex gap-2 overflow-x-auto pb-1 mb-5">
+          {SORTS.map(s => (
+            <button key={s.key} onClick={() => setSortKey(s.key)}
+              className="flex-shrink-0 px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider border transition-all"
+              style={{
+                background: sortKey === s.key ? "rgba(201,150,58,0.15)" : "transparent",
+                borderColor: sortKey === s.key ? "rgba(201,150,58,0.4)" : "rgba(255,255,255,0.08)",
+                color: sortKey === s.key ? "#C9963A" : "rgba(255,255,255,0.3)",
+              }}>
+              {s.label}
+            </button>
+          ))}
         </div>
 
         {/* Liste */}
@@ -308,40 +337,54 @@ export default function AdminUsers() {
           </div>
         ) : (
           <div className="space-y-2">
-            {filtered.map((u) => (
-              <button
-                key={u.user_id}
-                onClick={() => openDetail(u)}
-                className="w-full flex items-center justify-between px-4 py-4 rounded-2xl transition-all active:scale-95 text-left"
-                style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}
-              >
-                <div className="flex items-center gap-3 overflow-hidden">
-                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-black flex-shrink-0"
-                    style={{ background: "linear-gradient(135deg, #C9963A33, #E8B96A33)", color: "#C9963A" }}>
-                    {u.email?.[0]?.toUpperCase() || "?"}
+            {filtered.map((u, i) => {
+              const userConsumed = consumed[u.user_id] || 0;
+              const badge = getBadge(userConsumed);
+              const isTop3 = sortKey === "consumed" && i < 3 && userConsumed > 0;
+              const medals = ["🥇", "🥈", "🥉"];
+              return (
+                <button key={u.user_id} onClick={() => openDetail(u)}
+                  className="w-full flex items-center justify-between px-4 py-4 rounded-2xl transition-all active:scale-95 text-left"
+                  style={{
+                    background: isTop3 ? "rgba(201,150,58,0.07)" : "rgba(255,255,255,0.03)",
+                    border: isTop3 ? "1px solid rgba(201,150,58,0.3)" : "1px solid rgba(255,255,255,0.07)",
+                  }}>
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    {/* Avatar ou médaille */}
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-black flex-shrink-0"
+                      style={{ background: "linear-gradient(135deg, #C9963A33, #E8B96A33)", color: "#C9963A" }}>
+                      {isTop3 ? medals[i] : (u.email?.[0]?.toUpperCase() || "?")}
+                    </div>
+                    <div className="overflow-hidden">
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-white text-xs font-bold truncate">{u.email}</p>
+                        {badge && (
+                          <span className="text-[8px] font-black px-1.5 py-0.5 rounded-full flex-shrink-0"
+                            style={{ background: `${badge.color}20`, color: badge.color }}>
+                            {badge.label}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-white/30 text-[9px]">
+                        {u.last_seen ? `Vu ${formatDateShort(u.last_seen)}` : "Jamais connectée"}
+                        {userConsumed > 0 && ` · ${userConsumed} consommés`}
+                      </p>
+                    </div>
                   </div>
-                  <div className="overflow-hidden">
-                    <p className="text-white text-xs font-bold truncate">{u.email}</p>
-                    <p className="text-white/30 text-[9px]">
-                      {u.last_seen ? `Vu ${formatDateShort(u.last_seen)}` : "Jamais connectée"}
-                    </p>
+                  <div className="text-right flex-shrink-0 ml-2">
+                    <p className="text-[#C9963A] font-black text-sm">{u.credits ?? 0}</p>
+                    <p className="text-white/20 text-[9px]">restants</p>
                   </div>
-                </div>
-                <div className="text-right flex-shrink-0 ml-2">
-                  <p className="text-[#C9963A] font-black text-sm">{u.credits ?? 0}</p>
-                  <p className="text-white/20 text-[9px]">crédits</p>
-                </div>
-              </button>
-            ))}
+                </button>
+              );
+            })}
           </div>
         )}
 
         {/* Refresh */}
-        <button
-          onClick={fetchUsers}
+        <button onClick={fetchUsers}
           className="w-full mt-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all active:scale-95"
-          style={{ background: "rgba(201,150,58,0.1)", color: "#C9963A", border: "1px solid rgba(201,150,58,0.2)" }}
-        >
+          style={{ background: "rgba(201,150,58,0.1)", color: "#C9963A", border: "1px solid rgba(201,150,58,0.2)" }}>
           ↻ Actualiser
         </button>
       </div>
