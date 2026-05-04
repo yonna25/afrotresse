@@ -232,24 +232,26 @@ export default function AdminUsers() {
     setLoading(false);
   };
 
-  // Filtrage + tri
+  // Filtrage + tri — consumed en ref pour éviter boucle infinie
   useEffect(() => {
     const q = search.trim().toLowerCase();
-    let res = q ? users.filter(u => 
-      (u.email?.toLowerCase() || '').includes(q) ||
-      (u.session_id?.toLowerCase() || '').includes(q)
-    ) : [...users];
 
+    // Filtrage strict sur email uniquement
+    let res = q
+      ? users.filter(u => (u.email || '').toLowerCase().includes(q))
+      : [...users];
+
+    // Tri
     res.sort((a, b) => {
-      if (sortKey === "consumed")   return (consumed[b.user_id] || 0) - (consumed[a.user_id] || 0);
-      if (sortKey === "credits")    return (b.credits || 0) - (a.credits || 0);
-      if (sortKey === "last_seen")  return new Date(b.last_seen || 0) - new Date(a.last_seen || 0);
-      if (sortKey === "created_at") return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+      if (sortKey === "consumed")    return (consumed[b.user_id] || 0) - (consumed[a.user_id] || 0);
+      if (sortKey === "credits")     return (b.credits || 0) - (a.credits || 0);
+      if (sortKey === "last_seen")   return new Date(b.last_seen || 0) - new Date(a.last_seen || 0);
+      if (sortKey === "created_at")  return new Date(b.created_at || 0) - new Date(a.created_at || 0);
       return 0;
     });
 
     setFiltered(res);
-  }, [search, users, sortKey, consumed]);
+  }, [search, users, sortKey]); // consumed retiré des deps — stable après fetchUsers
 
   const openDetail = (u) => {
     scrollRef.current = window.scrollY;
@@ -394,4 +396,4 @@ export default function AdminUsers() {
     </div>
   );
             }
-         
+    
