@@ -393,18 +393,19 @@ export default function AdminUsers() {
                       </p>
                     </div>
                   </div>
-                  <div className="text-right flex-shrink-0 ml-2">
-                    <p className="text-[#C9963A] font-black text-lg">{u.credits ?? 0}</p>
-                    <p className="text-white/50 text-[10px] font-bold">restants</p>
+                  <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                    <div className="text-right">
+                      <p className="text-[#C9963A] font-black text-lg">{u.credits ?? 0}</p>
+                      <p className="text-white/50 text-[10px] font-bold">restants</p>
+                    </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDelete(u.user_id, u.email); }}
+                      className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 active:scale-90 transition-all"
+                      style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)" }}
+                    >
+                      <span className="text-xs">🗑️</span>
+                    </button>
                   </div>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleDelete(u.user_id, u.email); }}
-                    className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 active:scale-90 transition-all"
-                    style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)" }}
-                  >
-                    <span className="text-xs">🗑️</span>
-                  </button>
-                </div>
                 </button>
               );
             })}
@@ -420,4 +421,5 @@ export default function AdminUsers() {
       </div>
     </div>
   );
-}
+                  }
+        
