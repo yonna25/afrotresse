@@ -236,9 +236,10 @@ export default function AdminUsers() {
   useEffect(() => {
     const q = search.trim().toLowerCase();
 
-    // Filtrage strict sur email uniquement
-    let res = q
-      ? users.filter(u => (u.email || '').toLowerCase().includes(q))
+    // Filtrage strict sur email — trim des espaces des deux côtés
+    const qClean = search.trim().toLowerCase();
+    let res = qClean
+      ? users.filter(u => (u.email || '').toLowerCase().includes(qClean))
       : [...users];
 
     // Tri
@@ -251,7 +252,14 @@ export default function AdminUsers() {
     });
 
     setFiltered(res);
-  }, [search, users, sortKey]); // consumed retiré des deps — stable après fetchUsers
+  }, [search, users, sortKey]); // consumed retiré des deps
+
+  const handleDelete = async (userId, email) => {
+    if (!window.confirm(`Supprimer définitivement ${email} ?`)) return;
+    await supabase.from("usage_credits").delete().eq("user_id", userId);
+    await supabase.from("credit_movements").delete().eq("user_id", userId);
+    setUsers(prev => prev.filter(u => u.user_id !== userId));
+  };
 
   const openDetail = (u) => {
     scrollRef.current = window.scrollY;
@@ -305,11 +313,20 @@ export default function AdminUsers() {
         </div>
 
         {/* Recherche */}
-        <div className="mb-3">
+        <div className="mb-3 relative">
           <input type="text" placeholder="Rechercher par email..."
             value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full bg-black/40 p-4 rounded-xl border border-white/10 outline-none text-sm text-white focus:border-[#C9963A]/50 transition-all"
+            className="w-full bg-black/40 p-4 pr-10 rounded-xl border border-white/10 outline-none text-sm text-white focus:border-[#C9963A]/50 transition-all"
           />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center"
+              style={{ background: "rgba(255,255,255,0.1)" }}
+            >
+              <span className="text-white/50 text-xs font-black">✕</span>
+            </button>
+          )}
         </div>
 
         {/* Tri */}
@@ -362,7 +379,7 @@ export default function AdminUsers() {
                     </div>
                     <div className="overflow-hidden">
                       <div className="flex items-center gap-1.5">
-                        <p className="text-white text-xs font-bold truncate">{u.email}</p>
+                        <p className="text-white text-sm font-black truncate">{u.email}</p>
                         {badge && (
                           <span className="text-[8px] font-black px-1.5 py-0.5 rounded-full flex-shrink-0"
                             style={{ background: `${badge.color}20`, color: badge.color }}>
@@ -370,16 +387,24 @@ export default function AdminUsers() {
                           </span>
                         )}
                       </div>
-                      <p className="text-white/30 text-[9px]">
+                      <p className="text-white/55 text-[10px] font-medium">
                         {u.last_seen ? `Vu ${formatDateShort(u.last_seen)}` : "Jamais connectée"}
                         {userConsumed > 0 && ` · ${userConsumed} consommés`}
                       </p>
                     </div>
                   </div>
                   <div className="text-right flex-shrink-0 ml-2">
-                    <p className="text-[#C9963A] font-black text-sm">{u.credits ?? 0}</p>
-                    <p className="text-white/20 text-[9px]">restants</p>
+                    <p className="text-[#C9963A] font-black text-lg">{u.credits ?? 0}</p>
+                    <p className="text-white/50 text-[10px] font-bold">restants</p>
                   </div>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleDelete(u.user_id, u.email); }}
+                    className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 active:scale-90 transition-all"
+                    style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)" }}
+                  >
+                    <span className="text-xs">🗑️</span>
+                  </button>
+                </div>
                 </button>
               );
             })}
@@ -395,5 +420,4 @@ export default function AdminUsers() {
       </div>
     </div>
   );
-            }
-    
+}
