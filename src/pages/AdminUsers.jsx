@@ -235,7 +235,10 @@ export default function AdminUsers() {
   // Filtrage + tri
   useEffect(() => {
     const q = search.trim().toLowerCase();
-    let res = q ? users.filter(u => u.email?.toLowerCase().includes(q)) : [...users];
+    let res = q ? users.filter(u => 
+      (u.email?.toLowerCase() || '').includes(q) ||
+      (u.session_id?.toLowerCase() || '').includes(q)
+    ) : [...users];
 
     res.sort((a, b) => {
       if (sortKey === "consumed")   return (consumed[b.user_id] || 0) - (consumed[a.user_id] || 0);
@@ -308,10 +311,10 @@ export default function AdminUsers() {
         </div>
 
         {/* Tri */}
-        <div className="flex gap-2 overflow-x-auto pb-1 mb-5">
+        <div className="grid grid-cols-2 gap-2 mb-5">
           {SORTS.map(s => (
             <button key={s.key} onClick={() => setSortKey(s.key)}
-              className="flex-shrink-0 px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider border transition-all"
+              className="py-2.5 px-3 rounded-xl text-[9px] font-black uppercase tracking-wider border transition-all w-full"
               style={{
                 background: sortKey === s.key ? "rgba(201,150,58,0.15)" : "transparent",
                 borderColor: sortKey === s.key ? "rgba(201,150,58,0.4)" : "rgba(255,255,255,0.08)",
@@ -390,4 +393,5 @@ export default function AdminUsers() {
       </div>
     </div>
   );
-}
+            }
+         
