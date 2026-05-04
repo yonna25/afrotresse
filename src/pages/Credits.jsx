@@ -28,6 +28,9 @@ const PACKS_CONFIG = {
   },
 };
 
+// Calcul prix par crédit
+const pricePerCredit = (pack) => Math.round(pack.price / pack.credits);
+
 function matchFedaError(msg = '') {
   if (!msg) return 'Une erreur est survenue. Veuillez réessayer.';
   const lower = msg.toLowerCase();
@@ -302,6 +305,20 @@ export default function Credits() {
 
       <div className="max-w-lg mx-auto px-4 pt-10">
 
+        {/* ── MODIF 1 : Bandeau contextuel ── */}
+        <div
+          className="rounded-2xl px-5 py-3 flex items-center gap-3 mb-6"
+          style={{
+            background: 'linear-gradient(135deg, rgba(194,144,54,0.15), rgba(194,144,54,0.05))',
+            border: '1px solid rgba(194,144,54,0.3)',
+          }}
+        >
+          <span className="text-lg flex-shrink-0">✨</span>
+          <p className="text-sm" style={{ color: 'rgba(255,255,255,0.75)', lineHeight: 1.4 }}>
+            Tes crédits sont épuisés — recharge pour continuer tes analyses
+          </p>
+        </div>
+
         {/* Titre */}
         <h1
           className="text-3xl font-bold text-center mb-10"
@@ -311,7 +328,7 @@ export default function Credits() {
         </h1>
 
         {/* Packs */}
-        <div className="flex flex-col gap-5 mb-10">
+        <div className="flex flex-col gap-5 mb-8">
           {Object.entries(PACKS_CONFIG).map(([key, pack]) => {
             const isSelected = selected === key;
             return (
@@ -366,25 +383,53 @@ export default function Credits() {
                       </p>
                     </div>
                   </div>
-                  {/* Prix */}
+                  {/* ── MODIF 2 : Prix + prix par crédit ── */}
                   <div className="text-right flex-shrink-0 ml-4">
-                    <span
-                      className="text-2xl font-bold leading-none"
-                      style={{ color: '#C29036' }}
-                    >
-                      {pack.price}
-                    </span>
-                    <span
-                      className="text-[10px] font-medium ml-1"
-                      style={{ color: '#C29036', verticalAlign: 'super' }}
-                    >
-                      FCFA
-                    </span>
+                    <div>
+                      <span
+                        className="text-2xl font-bold leading-none"
+                        style={{ color: '#C29036' }}
+                      >
+                        {pack.price}
+                      </span>
+                      <span
+                        className="text-[10px] font-medium ml-1"
+                        style={{ color: '#C29036', verticalAlign: 'super' }}
+                      >
+                        FCFA
+                      </span>
+                    </div>
+                    <p className="text-[10px] mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                      = {pricePerCredit(pack)} FCFA/analyse
+                    </p>
                   </div>
                 </motion.div>
               </div>
             );
           })}
+        </div>
+
+        {/* ── MODIF 3 : Parrainage remonté avant le bouton payer ── */}
+        <div
+          className="rounded-2xl px-5 py-4 flex items-center gap-4 mb-6"
+          style={{
+            background: 'linear-gradient(135deg, #2C1A0E, #3a2010)',
+            border: '1px solid rgba(194,144,54,0.18)',
+          }}
+        >
+          <span className="text-xl flex-shrink-0">👥</span>
+          <div className="flex-1">
+            <p className="font-medium text-white text-sm">Parrainage</p>
+            <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
+              Invite une amie et gagne des crédits
+            </p>
+          </div>
+          <span
+            className="font-semibold text-xs px-3 py-1 rounded-full flex-shrink-0"
+            style={{ backgroundColor: 'rgba(194,144,54,0.15)', color: '#C29036' }}
+          >
+            +2 crédits
+          </span>
         </div>
 
         {/* Bouton paiement */}
@@ -416,28 +461,6 @@ export default function Credits() {
                 Commence gratuitement dès ton arrivée
               </p>
             </div>
-          </div>
-
-          <div
-            className="rounded-2xl px-5 py-4 flex items-center gap-4"
-            style={{
-              background: 'linear-gradient(135deg, #2C1A0E, #3a2010)',
-              border: '1px solid rgba(194,144,54,0.18)',
-            }}
-          >
-            <span className="text-xl flex-shrink-0">👥</span>
-            <div className="flex-1">
-              <p className="font-medium text-white text-sm">Parrainage</p>
-              <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                Invite une amie et gagne des crédits
-              </p>
-            </div>
-            <span
-              className="font-semibold text-xs px-3 py-1 rounded-full flex-shrink-0"
-              style={{ backgroundColor: 'rgba(194,144,54,0.15)', color: '#C29036' }}
-            >
-              +2 crédits
-            </span>
           </div>
 
           <div
