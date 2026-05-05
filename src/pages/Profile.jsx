@@ -129,22 +129,6 @@ export default function Profile() {
           )}
         </AnimatePresence>
 
-        {/* Boutons flottants */}
-        <div className="fixed bottom-24 right-4 z-[60] flex flex-col gap-3">
-          <motion.div onClick={() => navigate("/credits")}
-            className="w-12 h-12 bg-[#FAF4EC] text-[#2C1A0E] rounded-lg flex flex-col items-center justify-center shadow-lg border border-[#C9963A]/30 cursor-pointer">
-            <div className="text-[5px] font-black uppercase opacity-60 leading-tight">Solde</div>
-            <div className="text-xl font-black leading-none">{credits}</div>
-          </motion.div>
-          <motion.button initial={{ scale: 0 }} animate={{ scale: 1 }} whileTap={{ scale: 0.9 }}
-            onClick={() => navigate("/camera")}
-            className="w-12 h-12 rounded-lg flex flex-col items-center justify-center shadow-lg border border-white/10"
-            style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}>
-            <span className="text-[6px] font-black text-[#2C1A0E] uppercase leading-none mb-1">{'G\u00e9n\u00e9rer'}</span>
-            <span className="text-xl">✨</span>
-          </motion.button>
-        </div>
-
         {/* Avatar */}
         <div className="w-full relative">
           <div className="h-48 w-full bg-[#1A0A00]" />
