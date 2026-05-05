@@ -454,4 +454,313 @@ export default function Results() {
                   fontSize: 20, boxShadow: "0 2px 10px rgba(201,150,58,0.08)",
                 }}>{step.icon}</div>
                 {/* text */}
-         
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontWeight: 700, fontSize: 13, color: "#FAF4EC", marginBottom: 2, fontFamily: "sans-serif" }}>{step.label}</p>
+                  <p style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", fontFamily: "sans-serif" }}>{step.sub}</p>
+                </div>
+                {/* arrow */}
+                <div style={{
+                  width: 22, height: 22, borderRadius: "50%",
+                  background: "rgba(201,150,58,0.1)", flexShrink: 0,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 10, color: "#C9963A",
+                }}>→</div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* CTA */}
+          <motion.button
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.05, type: "spring", stiffness: 200, damping: 20 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={() => navigate("/camera")}
+            style={{
+              width: "100%", padding: "18px 24px", borderRadius: 18, border: "none", cursor: "pointer",
+              background: "linear-gradient(90deg, #C9963A 0%, #E8B96A 50%, #C9963A 100%)",
+              backgroundSize: "200% auto",
+              animation: "shimmerBtn 3s linear infinite",
+              color: "#1A0A00", fontWeight: 900, fontSize: 16,
+              fontFamily: "sans-serif",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+              boxShadow: "0 8px 28px rgba(201,150,58,0.45), 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.25)",
+            }}>
+            <span style={{ fontSize: 20 }}>📸</span>
+            <span>Prendre mon selfie</span>
+          </motion.button>
+
+          {/* Social proof */}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }}
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 14 }}>
+            <div style={{ display: "flex" }}>
+              {["#C9963A","#8B5E3C","#A0522D"].map((bg, i) => (
+                <div key={i} style={{
+                  width: 20, height: 20, borderRadius: "50%", background: bg,
+                  border: "2px solid #1A0A00", marginLeft: i > 0 ? -6 : 0,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 8, color: "#FAF4EC", fontWeight: 900, fontFamily: "sans-serif",
+                }}>{["A","F","K"][i]}</div>
+              ))}
+            </div>
+            <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontFamily: "sans-serif" }}>
+              +240 reines ont {`déjà`} essayé
+            </p>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── RÉSULTATS (inchangé) ─────────────────────────────────────────────────
+  return (
+    <div className="min-h-[100dvh] bg-[#1A0A00] text-[#FAF4EC] p-4 sm:p-6 pb-40 relative">
+      <Seo title="Tes résultats — AfroTresse" />
+      {showFireworks && <Fireworks onDone={() => setShowFireworks(false)} />}
+      <div ref={topRef} />
+
+      {errorMsg && (
+        <motion.div ref={errorRef}
+          className="mb-4 px-5 py-3 rounded-2xl bg-red-900/30 border border-red-500/30 text-red-300 text-[11px] font-bold text-center">
+          {errorMsg}
+        </motion.div>
+      )}
+
+      <motion.div
+        initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 200, damping: 24 }}
+        className="mb-8 rounded-[2rem] overflow-hidden"
+        style={{
+          background: "linear-gradient(135deg, rgba(44,26,14,0.9) 0%, rgba(61,38,22,0.95) 100%)",
+          border: "1px solid rgba(201,150,58,0.25)",
+          boxShadow: "0 8px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(201,150,58,0.08)",
+        }}>
+        <div className="flex items-center gap-4 p-4 pb-3">
+          <div className="relative shrink-0">
+            {selfieUrl ? (
+              <ProtectedImg src={selfieUrl}
+                className="w-16 h-16 rounded-2xl object-cover"
+                style={{ border: "2px solid rgba(201,150,58,0.6)" }} />
+            ) : (
+              <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-2xl">👤</div>
+            )}
+            <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2"
+              style={{ backgroundColor: "#22c55e", borderColor: "#2C1A0E" }} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[16px] font-bold mb-0.5" style={{ color: "#C9963A" }}>
+              {'Voici tes résultats ✨'}
+            </p>
+            <h1 className="font-black text-2xl text-white leading-tight truncate">
+              {displayName || "Ma Reine"} ✨
+            </h1>
+          </div>
+        </div>
+        <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "0 16px" }} />
+        <div className="px-4 py-3 flex items-start gap-3">
+          <div className="w-1 self-stretch rounded-full shrink-0"
+            style={{ background: "linear-gradient(to bottom, #C9963A, rgba(201,150,58,0.1))" }} />
+          <p className="text-[11px] leading-relaxed" style={{ color: "rgba(250,244,236,0.55)" }}>
+            {stableMsg.subtext || "Ton visage est un terrain de jeu sans limites. Aucune contrainte, toutes les libertés."}
+          </p>
+        </div>
+      </motion.div>
+
+      <div className="flex flex-col gap-8">
+        {displayedStyles.map((style, index) => {
+          const styleId    = style.id?.replace(/-/g, "");
+          const isFavorited = isFav(style.id);
+          const stats      = styleStats[style.id] || { views: 0, likes: 0 };
+          const poseTime   = style.duration || style.pose_time || style.time;
+
+          return (
+            <motion.div key={style.id || index}
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.08 }}
+              className="bg-[#3D2616] rounded-[2.5rem] overflow-hidden border border-[#C9963A]/20 shadow-2xl">
+              <div className="grid grid-cols-3 gap-0.5 h-72 bg-black/40">
+                <div className="col-span-2 h-full overflow-hidden">
+                  <ProtectedImg
+                    src={style.views?.face || `/styles/${styleId}-face.webp`}
+                    className="w-full h-full object-cover cursor-zoom-in"
+                    onClick={() => setZoomImage(style.views?.face || `/styles/${styleId}-face.webp`)} />
+                </div>
+                <div className="col-span-1 grid grid-rows-2 gap-0.5">
+                  <ProtectedImg
+                    src={style.views?.back || `/styles/${styleId}-back.webp`}
+                    className="w-full h-full object-cover cursor-zoom-in"
+                    onClick={() => setZoomImage(style.views?.back || `/styles/${styleId}-back.webp`)} />
+                  <ProtectedImg
+                    src={style.views?.top || `/styles/${styleId}-top.webp`}
+                    className="w-full h-full object-cover cursor-zoom-in"
+                    onClick={() => setZoomImage(style.views?.top || `/styles/${styleId}-top.webp`)} />
+                </div>
+              </div>
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-bold text-xl text-white">{style.name}</h3>
+                  <button onClick={() => handleToggleFav(style)}
+                    className="w-9 h-9 rounded-full flex items-center justify-center transition-all"
+                    style={{
+                      background: isFavorited ? "rgba(201,150,58,0.2)" : "rgba(255,255,255,0.05)",
+                      border: isFavorited ? "1.5px solid #C9963A" : "1.5px solid rgba(255,255,255,0.1)",
+                    }}>
+                    <span className="text-base">{isFavorited ? "❤️" : "🤍"}</span>
+                  </button>
+                </div>
+                <div className="flex items-center gap-3 mb-3 flex-wrap">
+                  <span className="text-[10px] text-white/30">👁 {stats.views.toLocaleString("fr-FR")} vues</span>
+                  <span className="text-[10px] text-white/30">❤️ {stats.likes.toLocaleString("fr-FR")} likes</span>
+                  {poseTime && (
+                    <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                      style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.55)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                      ⏱ {poseTime}
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] opacity-60 mb-4 leading-relaxed">
+                  {style.description || "Un style unique adapté à ta morphologie"}
+                </p>
+                {style.tags && (
+                  <div className="flex gap-2 flex-wrap mb-4">
+                    {style.tags.slice(0, 3).map((tag, i) => (
+                      <span key={i} className="text-[10px] bg-white/10 text-white/70 px-3 py-1 rounded-full">{tag}</span>
+                    ))}
+                  </div>
+                )}
+                <div className="relative">
+                  <div className="absolute -top-2.5 -right-2.5 z-10">
+                    <span className="text-[8px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-lg"
+                      style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)", color: "#1A0A00", boxShadow: "0 0 10px rgba(201,150,58,0.5)" }}>
+                      ⏳ {'Bientôt'}
+                    </span>
+                  </div>
+                  <button onClick={() => setShowVirtualTryOnModal(true)}
+                    className="w-full py-4 rounded-2xl font-semibold text-sm active:scale-[0.98] transition-all relative overflow-hidden"
+                    style={{ background: "linear-gradient(135deg, rgba(201,150,58,0.08), rgba(201,150,58,0.03))", border: "1.5px solid rgba(201,150,58,0.25)" }}>
+                    <motion.div className="absolute inset-0 -skew-x-12 pointer-events-none"
+                      style={{ background: "linear-gradient(90deg, transparent 0%, rgba(201,150,58,0.08) 50%, transparent 100%)" }}
+                      animate={{ x: ["-100%", "200%"] }}
+                      transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 3, ease: "easeInOut" }} />
+                    <span className="flex items-center justify-center relative">
+                      <span className="text-white/60 font-semibold text-sm">Tester ce style</span>
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }} className="mt-10 flex flex-col items-center gap-3">
+        <div className="flex items-center gap-3 w-full">
+          <div className="flex-1 h-px bg-white/10" />
+          <span className="text-[10px] text-white/30 uppercase tracking-widest whitespace-nowrap">Envie de plus ?</span>
+          <div className="flex-1 h-px bg-white/10" />
+        </div>
+        <motion.button whileTap={{ scale: 0.97 }} onClick={handleGenerateMore} disabled={generating}
+          className="w-full py-4 rounded-2xl font-semibold text-sm disabled:opacity-50 transition-all"
+          style={{ background: "rgba(201,150,58,0.06)", border: "1px solid rgba(201,150,58,0.2)" }}>
+          <span className="flex items-center justify-center gap-2 text-[#C9963A]/80">
+            {generating ? '⏳ Génération...' : '✨ Voir 3 autres styles'}
+            <span className="text-[9px] bg-[#C9963A]/10 border border-[#C9963A]/20 text-[#C9963A]/70 px-2 py-0.5 rounded-full font-bold">1 crédit</span>
+          </span>
+          <p className="text-[10px] text-white/20 mt-1 font-normal">Solde : {credits} crédit{credits > 1 ? "s" : ""}</p>
+        </motion.button>
+      </motion.div>
+
+      {unlockedPages > 1 && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+          className="mt-8 flex flex-col items-center gap-4">
+          <p className="text-[11px] text-white/40 uppercase tracking-widest">Page {currentPage} / {unlockedPages}</p>
+          <div className="flex items-center gap-2 flex-wrap justify-center">
+            <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}
+              className="w-10 h-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center disabled:opacity-30 active:scale-95">
+              <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6" /></svg>
+            </button>
+            {Array.from({ length: unlockedPages }, (_, i) => i + 1).map((page) => (
+              <button key={page} onClick={() => goToPage(page)}
+                className={`w-10 h-10 rounded-xl font-bold text-sm transition-all active:scale-95 ${page === currentPage ? "text-[#2C1A0E] shadow-lg" : "bg-white/10 border border-white/10 text-white/60"}`}
+                style={page === currentPage ? { background: "linear-gradient(135deg, #C9963A, #E8B96A)" } : {}}>
+                {page}
+              </button>
+            ))}
+            <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === unlockedPages}
+              className="w-10 h-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center disabled:opacity-30 active:scale-95">
+              <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6" /></svg>
+            </button>
+          </div>
+        </motion.div>
+      )}
+
+      <div className="fixed bottom-24 right-4 z-[60] flex flex-col gap-2">
+        <div className="flex flex-col items-center justify-center shadow-xl"
+          style={{ width: 52, height: 52, background: "linear-gradient(135deg, #FAF4EC, #fff)", borderRadius: 14, border: "2px solid rgba(201,150,58,0.5)", boxShadow: "0 4px 16px rgba(0,0,0,0.3), 0 0 0 1px rgba(201,150,58,0.15)" }}>
+          <div className="text-[8px] font-black uppercase leading-tight" style={{ color: "rgba(44,26,14,0.5)" }}>Solde</div>
+          <div className="font-black leading-none" style={{ fontSize: 22, color: "#2C1A0E" }}>{credits}</div>
+        </div>
+        <motion.button initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.2 }} whileTap={{ scale: 0.9 }} disabled={generating}
+          onClick={handleGenerateMore}
+          className="w-12 h-12 rounded-xl flex flex-col items-center justify-center shadow-lg relative active:scale-95 transition-all disabled:opacity-60"
+          style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}>
+          <span className="text-[6px] font-black text-[#2C1A0E] uppercase leading-none mb-0.5">{generating ? "..." : "Gen"}</span>
+          <span className="text-base">✨</span>
+          <div className="absolute -top-1 -right-1 bg-[#1A0A00] text-[#C9963A] text-[7px] px-1 rounded-full font-bold border border-[#C9963A]">-1</div>
+        </motion.button>
+      </div>
+
+      <AnimatePresence>
+        {showVirtualTryOnModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[150] flex items-center justify-center px-6"
+            style={{ background: "rgba(0,0,0,0.70)", backdropFilter: "blur(8px)" }}
+            onClick={() => setShowVirtualTryOnModal(false)}>
+            <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.85, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 26 }}
+              className="w-full max-w-xs rounded-3xl p-7 text-center"
+              style={{ background: "linear-gradient(160deg, #2C1A0E 0%, #3D2616 100%)", border: "1.5px solid rgba(201,150,58,0.4)", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}
+              onClick={(e) => e.stopPropagation()}>
+              <div className="text-4xl mb-3">✨</div>
+              <h2 className="font-black text-xl text-white mb-2">{'Bientôt disponible'}</h2>
+              <p className="text-sm leading-relaxed mb-6" style={{ color: "rgba(250,244,236,0.55)" }}>
+                Votre essayage virtuel arrive prochainement.
+              </p>
+              <button onClick={() => setShowVirtualTryOnModal(false)}
+                className="w-full py-3.5 rounded-2xl font-bold text-sm text-[#2C1A0E]"
+                style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}>
+                {'OK, j\u2019attends ! 🙌'}
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {zoomImage && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black/98 flex flex-col items-center justify-center backdrop-blur-xl"
+            style={{ padding: "16px", paddingBottom: "96px" }}
+            onClick={() => setZoomImage(null)}>
+            <div className="flex flex-col items-center w-full max-w-sm gap-4" onClick={(e) => e.stopPropagation()}>
+              <motion.button initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.1 }}
+                onClick={() => setZoomImage(null)}
+                className="self-end w-10 h-10 rounded-full flex items-center justify-center font-black text-lg"
+                style={{ background: "rgba(255,255,255,0.12)", border: "1.5px solid rgba(255,255,255,0.25)", backdropFilter: "blur(8px)", color: "#fff", boxShadow: "0 4px 16px rgba(0,0,0,0.4)" }}>
+                ✕
+              </motion.button>
+              <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="w-full">
+                <img src={zoomImage} alt="Zoom"
+                  className="w-full rounded-3xl shadow-2xl border border-white/10"
+                  draggable={false} onContextMenu={(e) => e.preventDefault()}
+                  style={{ objectFit: "cover", maxHeight: "60dvh", userSelect: "none", WebkitUserSelect: "none" }} />
+              </motion.div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
