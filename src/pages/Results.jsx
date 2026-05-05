@@ -220,16 +220,13 @@ export default function Results() {
 
     const baseSeed = userName.split("").reduce((acc, c) => acc + c.charCodeAt(0), 12345);
 
-    // Construire un ordre global : on épuise tous les styles (cycle complet)
-    // avant de remélanger aléatoirement pour un nouveau cycle.
-    // Aucun style ne peut apparaître deux fois dans le même cycle.
+    // Cycle complet : on épuise tous les styles avant de remélanger.
+    // Aucun doublon tant que le cycle n'est pas terminé.
     const buildFullOrder = () => {
       const result = [];
       let cycle = 0;
       while (result.length < page * STYLES_PER_PAGE) {
-        // Nouveau mélange à chaque cycle, avec une graine différente
         const shuffled = getShuffledStyles(baseSeed + cycle * 9973);
-        // On pousse TOUS les styles du cycle — pas de filtre inter-cycle ici
         for (const s of shuffled) {
           result.push(s);
           if (result.length >= page * STYLES_PER_PAGE) break;
@@ -453,4 +450,8 @@ export default function Results() {
                   width: 44, height: 44, borderRadius: 13, flexShrink: 0,
                   background: "linear-gradient(145deg, rgba(201,150,58,0.18), rgba(201,150,58,0.06))",
                   border: "1px solid rgba(201,150,58,0.22)",
-       
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 20, boxShadow: "0 2px 10px rgba(201,150,58,0.08)",
+                }}>{step.icon}</div>
+                {/* text */}
+         
