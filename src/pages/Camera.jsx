@@ -44,6 +44,45 @@ async function checkImageQuality(dataUrl) {
   })
 }
 
+// ─── PERSISTANCE PHOTO 1H ─────────────────────────────────────────────────────
+const PHOTO_KEY    = 'afrotresse_photo'
+const PHOTO_EXP_KEY = 'afrotresse_photo_exp'
+const PHOTO_TTL    = 60 * 60 * 1000 // 1 heure en ms
+
+function savePhoto(dataUrl) {
+  try {
+    localStorage.setItem(PHOTO_KEY, dataUrl)
+    localStorage.setItem(PHOTO_EXP_KEY, String(Date.now() + PHOTO_TTL))
+    // Garder aussi sessionStorage pour compatibilité avec Results.jsx
+    sessionStorage.setItem(PHOTO_KEY, dataUrl)
+  } catch {
+    // localStorage plein (base64 peut être lourd) → fallback sessionStorage
+    sessionStorage.setItem(PHOTO_KEY, dataUrl)
+  }
+}
+
+function loadPhoto() {
+  const exp = parseInt(localStorage.getItem(PHOTO_EXP_KEY) || '0', 10)
+  if (exp && Date.now() < exp) {
+    const data = localStorage.getItem(PHOTO_KEY)
+    if (data) {
+      sessionStorage.setItem(PHOTO_KEY, data) // sync sessionStorage
+      return data
+    }
+  }
+  // Expirée ou absente : nettoyer
+  localStorage.removeItem(PHOTO_KEY)
+  localStorage.removeItem(PHOTO_EXP_KEY)
+  return sessionStorage.getItem(PHOTO_KEY) || null
+}
+
+export function clearPhoto() {
+  localStorage.removeItem(PHOTO_KEY)
+  localStorage.removeItem(PHOTO_EXP_KEY)
+  sessionStorage.removeItem(PHOTO_KEY)
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 export default function Camera() {
   const navigate = useNavigate()
   const [photo,   setPhoto]   = useState(null)
@@ -55,6 +94,9 @@ export default function Camera() {
 
   useEffect(() => {
     setCreditsState(getCredits())
+    // Restaurer la photo si encore valide
+    const saved = loadPhoto()
+    if (saved) setPhoto({ url: saved })
   }, [])
 
   const handleCapture = (data) => {
@@ -74,11 +116,12 @@ export default function Camera() {
       return
     }
     setPhotoError("")
-    sessionStorage.setItem('afrotresse_photo', photoData)
+    savePhoto(photoData)
     navigate('/analyze')
   }
 
   const handleRetake = () => {
+    clearPhoto()
     setPhoto(null)
     setPhotoError("")
   }
@@ -232,4 +275,5 @@ function UploadIcon() {
       <line x1="12" y1="3" x2="12" y2="15"/>
     </svg>
   )
-}
+         }
+              
