@@ -216,25 +216,32 @@ export default function Results() {
   const getPageStyles = (page) => {
     const total = styles.length;
     if (total === 0) return [];
+    if (total <= STYLES_PER_PAGE) return styles.slice(0, STYLES_PER_PAGE);
+
     const baseSeed = userName.split("").reduce((acc, c) => acc + c.charCodeAt(0), 12345);
 
-    // Construire un pool sans doublon sur toutes les pages
-    const pool = [];
-    while (pool.length < page * STYLES_PER_PAGE) {
-      const cycle = Math.floor(pool.length / total);
-      const shuffled = getShuffledStyles(baseSeed + cycle * 9973);
-      pool.push(...shuffled);
-    }
+    // Construire un ordre global : on épuise tous les styles (cycle complet)
+    // avant de remélanger aléatoirement pour un nouveau cycle.
+    // Aucun style ne peut apparaître deux fois dans le même cycle.
+    const buildFullOrder = () => {
+      const result = [];
+      let cycle = 0;
+      while (result.length < page * STYLES_PER_PAGE) {
+        // Nouveau mélange à chaque cycle, avec une graine différente
+        const shuffled = getShuffledStyles(baseSeed + cycle * 9973);
+        // On pousse TOUS les styles du cycle — pas de filtre inter-cycle ici
+        for (const s of shuffled) {
+          result.push(s);
+          if (result.length >= page * STYLES_PER_PAGE) break;
+        }
+        cycle++;
+      }
+      return result;
+    };
 
-    // Extraire la tranche de la page courante et dédupliquer
+    const fullOrder = buildFullOrder();
     const start = (page - 1) * STYLES_PER_PAGE;
-    const pageSlice = pool.slice(start, start + STYLES_PER_PAGE);
-    const seen = new Set();
-    return pageSlice.filter(s => {
-      if (seen.has(s.id)) return false;
-      seen.add(s.id);
-      return true;
-    });
+    return fullOrder.slice(start, start + STYLES_PER_PAGE);
   };
 
   const displayedStyles = getPageStyles(currentPage);
@@ -503,11 +510,21 @@ export default function Results() {
             </p>
           </motion.div>
         </div>
+
+        {/* Bouton solde flottant — toujours visible */}
+        <div className="fixed bottom-24 right-4 z-[60]">
+          <div className="flex flex-col items-center justify-center shadow-xl"
+            style={{ width: 52, height: 52, background: "linear-gradient(135deg, #FAF4EC, #fff)", borderRadius: 14, border: "2px solid rgba(201,150,58,0.5)", boxShadow: "0 4px 16px rgba(0,0,0,0.3), 0 0 0 1px rgba(201,150,58,0.15)" }}>
+            <div className="text-[8px] font-black uppercase leading-tight" style={{ color: "rgba(44,26,14,0.5)" }}>Solde</div>
+            <div className="font-black leading-none" style={{ fontSize: 22, color: "#2C1A0E" }}>{credits}</div>
+          </div>
+        </div>
+
       </div>
     );
   }
 
-  // ── RÉSULTATS (inchangé) ─────────────────────────────────────────────────
+  // ── RÉSULTATS ─────────────────────────────────────────────────
   return (
     <div className="min-h-[100dvh] bg-[#1A0A00] text-[#FAF4EC] p-4 sm:p-6 pb-40 relative">
       <Seo title="Tes résultats — AfroTresse" />
