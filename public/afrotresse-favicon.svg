@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F5D9A0"/>
+      <stop offset="50%" stop-color="#C29036"/>
+      <stop offset="100%" stop-color="#A87B28"/>
+    </linearGradient>
+    <linearGradient id="goldGradLight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFE9A0"/>
+      <stop offset="100%" stop-color="#C29036"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Crown body fill -->
+  <path d="M8 44 L12 20 L24 34 L32 8 L40 34 L52 20 L56 44 Z"
+    fill="url(#goldGrad)" opacity="0.18"/>
+
+  <!-- Crown outline -->
+  <path d="M8 44 L12 20 L24 34 L32 8 L40 34 L52 20 L56 44"
+    stroke="url(#goldGrad)" stroke-width="3.5"
+    stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+
+  <!-- Base band -->
+  <rect x="8" y="44" width="48" height="8" rx="2.5" fill="url(#goldGrad)"/>
+
+  <!-- Top center gem -->
+  <circle cx="32" cy="8" r="4" fill="url(#goldGradLight)"/>
+  <!-- Side gems -->
+  <circle cx="12" cy="20" r="2.8" fill="url(#goldGrad)" opacity="0.85"/>
+  <circle cx="52" cy="20" r="2.8" fill="url(#goldGrad)" opacity="0.85"/>
+
+  <!-- Inner accent lines on base -->
+  <line x1="18" y1="44" x2="18" y2="52" stroke="url(#goldGradLight)" stroke-width="1" opacity="0.35"/>
+  <line x1="46" y1="44" x2="46" y2="52" stroke="url(#goldGradLight)" stroke-width="1" opacity="0.35"/>
+</svg>
