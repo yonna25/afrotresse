@@ -256,7 +256,9 @@ export default function Results() {
     try {
       const { getSessionIdWithFp } = await import("../services/fingerprint.js");
       const { getCurrentUser }     = await import("../services/useSupabaseCredits.js");
-      const sessionId = await getSessionIdWithFp();
+      // Priorité au cache localStorage pour garantir le même sessionId qu'à l'inscription
+      const cachedFp = localStorage.getItem("afrotresse_fp");
+      const sessionId = cachedFp ? `fp_${cachedFp}` : await getSessionIdWithFp();
       const user      = await getCurrentUser().catch(() => null);
       const userId    = user?.id || null;
 
