@@ -45,6 +45,8 @@ export default function Profile() {
   });
   const [isLoadingAuth, setIsLoadingAuth] = useState(false);
   const [showLoginForm, setShowLoginForm] = useState(false);
+  const [reviewDone, setReviewDone] = useState(() => localStorage.getItem("afrotresse_review_done") === "true");
+  const [showReviewConfirm, setShowReviewConfirm] = useState(false);
 
   useEffect(() => {
     setReferralCode(getReferralCode());
@@ -113,6 +115,22 @@ export default function Profile() {
       await navigator.clipboard.writeText(`${text}\n${referralLink}`);
       showToast('🔗 Lien copi\u00e9 !');
     }
+  };
+
+  const handleOpenReview = () => {
+    window.open("https://bit.ly/afrotresse-avis", "_blank");
+    setShowReviewConfirm(true);
+  };
+
+  const handleClaimReview = async () => {
+    if (reviewDone) return;
+    await addCredits(2);
+    localStorage.setItem("afrotresse_review_done", "true");
+    setReviewDone(true);
+    setShowReviewConfirm(false);
+    setCredits(getCredits());
+    setTotalEarned(getTotalEarned());
+    showToast("⭐ Merci ! +2 crédits ajoutés 🎁");
   };
 
   return (
@@ -233,6 +251,46 @@ export default function Profile() {
                 <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} exit={{ height: 0 }} className="px-5 pb-5 overflow-hidden flex flex-col gap-3">
                   <div className="bg-white/10 rounded-xl p-3 text-center font-black text-[#C9963A] tracking-widest">{referralCode}</div>
                   <button onClick={handleShare} className="w-full py-3 rounded-2xl font-black text-[#1A0A00] bg-[#C9963A]">Inviter 💌</button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+
+        {/* Avis Google */}
+        <div className="w-full max-w-sm px-5 mt-3">
+          <div className="rounded-3xl border border-[#C9963A]/30 bg-[#1A0A00] p-5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-[#C9963A]/20 flex items-center justify-center">⭐</div>
+                <div>
+                  <p className="font-black text-sm">Laisser un avis</p>
+                  <p className="text-[10px] text-white/40">+2 crédits offerts</p>
+                </div>
+              </div>
+              {reviewDone ? (
+                <span className="text-xs font-bold text-green-400">✅ Fait</span>
+              ) : (
+                <button onClick={handleOpenReview}
+                  className="text-xs font-black px-3 py-2 rounded-xl text-[#1A0A00] bg-[#C9963A]">
+                  Y aller →
+                </button>
+              )}
+            </div>
+            <AnimatePresence>
+              {showReviewConfirm && !reviewDone && (
+                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden mt-4 flex flex-col gap-2">
+                  <p className="text-xs text-white/60 text-center">Tu as laissé ton avis ? Clique pour recevoir tes crédits 🎁</p>
+                  <a
+                    href="https://wa.me/22964649117?text=Bonjour%20%F0%9F%91%91%20J'ai%20laiss%C3%A9%20mon%20avis%20AfroTresse%20%E2%AD%90%20Voici%20ma%20capture%20en%20pi%C3%A8ce%20jointe.%20Merci%20de%20cr%C3%A9diter%20mon%20compte%20%F0%9F%8E%81"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-full py-3 rounded-2xl font-black text-[#1A0A00] bg-[#C9963A] flex items-center justify-center gap-2"
+                    style={{ textDecoration: "none" }}
+                  >
+                    <span>💬</span> Envoyer ma capture WhatsApp
+                  </a>
                 </motion.div>
               )}
             </AnimatePresence>
