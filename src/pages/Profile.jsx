@@ -118,7 +118,7 @@ export default function Profile() {
   };
 
   const handleOpenReview = () => {
-    window.open("https://bit.ly/afrotresse-avis", "_blank");
+    window.open("https://g.page/r/CdkDzMsFvx4PEBM/review", "_blank");
     setShowReviewConfirm(true);
   };
 
