@@ -9,7 +9,7 @@ const OG_IMAGE  = `${BASE_URL}/og-image.png`; // 1200x630px — à créer dans /
 
 const DEFAULTS = {
   title:       "AfroTresse — Votre Majesté",
-  description: "Découvre les tresses faites pour la forme de ton visage. Analyse gratuite, recommandations personnalisées en quelques secondes.",
+  description: "Chaque visage est unique. Chaque couronne aussi. Trouve ton style de tresse en 3 secondes, sur-mesure, 2 essais gratuits. Votre Majesté 👑",
   image:       OG_IMAGE,
 };
 
