@@ -21,11 +21,11 @@ const T = {
   white:      "#FFFFFF",
 };
 
-// ─── CATEGORIES ───────────────────────────────────────────────────────────────
+// ─── CATEGORIES (Indépendante ajoutée) ────────────────────────────────────────
 const CATEGORIES = [
   { id: "all",         label: "Tous",          emoji: "✦" },
   { id: "salon",       label: "Salon",         emoji: "💇🏾‍♀️" },
-  { id: "independante",label: "Indépendante",  emoji: "✨" }, // Ajout demandé
+  { id: "independante",label: "Indépendante",  emoji: "✨" },
   { id: "domicile",    label: "À domicile",    emoji: "🏠" },
   { id: "produits",    label: "Produits",      emoji: "🧴" },
   { id: "formation",   label: "Formation",     emoji: "🎓" },
@@ -93,7 +93,7 @@ function WarmDivider() {
   );
 }
 
-// ─── MODAL ────────────────────────────────────────────────────────────────────
+// ─── MODAL (Avec WhatsApp flouté pour Freemium) ───────────────────────────────
 function Modal({ partner, onClose }) {
   const cd = useCountdown(partner.promo_deadline);
   const hasPromo = partner.promo && !cd.expired;
@@ -102,10 +102,11 @@ function Modal({ partner, onClose }) {
 
   useEffect(() => { requestAnimationFrame(() => setVis(true)); }, []);
   const close = () => { setVis(false); setTimeout(onClose, 420); };
-  const wa = () => window.open(
-    `https://wa.me/${((partner.whatsapp || partner.phone)||"").replace(/\D/g,"")}?text=${encodeURIComponent("Bonjour, je vous contacte via AfroTresse 👑")}`,
-    "_blank"
-  );
+  const wa = () => {
+    if (!partner.is_premium) return;
+    window.open(`https://wa.me/${(partner.whatsapp || "").replace(/\D/g,"")}?text=${encodeURIComponent("Bonjour, je vous contacte via AfroTresse 👑")}`, "_blank");
+  };
+
   return (
     <div onClick={close} style={{
       position:"fixed", inset:0, zIndex:100,
@@ -115,137 +116,65 @@ function Modal({ partner, onClose }) {
       transition:"all 0.45s cubic-bezier(0.23,1,0.32,1)",
     }}>
       <div onClick={e => e.stopPropagation()} style={{
-        width:"100%", maxWidth:460,
-        maxHeight:"94vh", overflowY:"auto",
-        background:T.white,
-        borderRadius:"32px 32px 0 0",
+        width:"100%", maxWidth:460, maxHeight:"94vh", overflowY:"auto",
+        background:T.white, borderRadius:"32px 32px 0 0",
         transform: vis ? "translateY(0)" : "translateY(105%)",
         transition:"transform 0.55s cubic-bezier(0.19,1,0.22,1)",
-        position:"relative",
-        border:`1px solid ${T.amberLine}`,
-        borderBottom:"none",
-        boxShadow:"0 -32px 80px rgba(28,15,6,0.18), 0 -1px 0 rgba(200,135,58,0.3)",
-        overflow:"hidden",
+        position:"relative", border:`1px solid ${T.amberLine}`, borderBottom:"none",
+        boxShadow:"0 -32px 80px rgba(28,15,6,0.18)", overflow:"hidden",
       }}>
-
         <div style={{ position:"relative", zIndex:2 }}>
           <div style={{ display:"flex", justifyContent:"center", paddingTop:16 }}>
             <div style={{ width:40, height:4, borderRadius:2, background:T.amberLine }}/>
           </div>
 
           <button onClick={close} style={{
-            position:"absolute", top:16, right:18,
-            width:34, height:34, borderRadius:"50%",
-            background:T.bgDeep, border:`1px solid ${T.amberLine}`,
-            color:T.inkMid, fontSize:12, cursor:"pointer",
+            position:"absolute", top:16, right:18, width:34, height:34, borderRadius:"50%",
+            background:T.bgDeep, border:`1px solid ${T.amberLine}`, color:T.inkMid, cursor:"pointer",
             display:"flex", alignItems:"center", justifyContent:"center",
-            transition:"all 0.2s",
           }}>✕</button>
 
           <div style={{ textAlign:"center", padding:"28px 28px 0" }}>
             <div style={{
-              display:"inline-flex", alignItems:"center", gap:5,
-              padding:"4px 12px", borderRadius:99,
-              background:T.amberDim,
-              border:`1px solid ${T.amberLine}`,
-              fontFamily:"'Jost', sans-serif",
-              fontSize:9, fontWeight:700,
-              letterSpacing:"0.3em", textTransform:"uppercase",
-              color:T.amber, marginBottom:20,
-            }}>
-              ✦ {partner.categoryLabel || partner.category}
-            </div>
+              display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 12px", borderRadius: 99,
+              background: T.amberDim, border: `1px solid ${T.amberLine}`, fontFamily: "'Jost', sans-serif",
+              fontSize: 9, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color: T.amber, marginBottom: 20,
+            }}>✦ {partner.categoryLabel}</div>
 
             <div style={{
-              width:88, height:88, margin:"0 auto 20px",
-              borderRadius:24,
+              width:88, height:88, margin:"0 auto 20px", borderRadius:24,
               background:`linear-gradient(145deg, ${T.amberPale}, ${T.bgDeep})`,
-              border:`2px solid ${T.amberLine}`,
-              display:"flex", alignItems:"center", justifyContent:"center",
-              fontSize:40,
-              boxShadow:`0 8px 32px ${T.amberDim}, 0 2px 0 ${T.white}`,
+              border:`2px solid ${T.amberLine}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:40,
             }}>{partner.emoji}</div>
 
-            <h2 style={{
-              fontFamily:"'Cormorant Garamond', Georgia, serif",
-              fontSize:34, fontWeight:700,
-              color:T.ink, margin:0, lineHeight:1.1,
-            }}>{partner.name}</h2>
-
-            <div style={{
-              fontFamily:"'Jost', sans-serif",
-              fontSize:11, fontWeight:500,
-              color:T.inkLight, marginTop:6, letterSpacing:"0.15em",
-              textTransform:"uppercase",
-            }}>{partner.city}</div>
+            <h2 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:34, fontWeight:700, color:T.ink, margin:0 }}>{partner.name}</h2>
+            <div style={{ fontFamily:"'Jost', sans-serif", fontSize:11, fontWeight:500, color:T.inkLight, marginTop:6, letterSpacing:"0.15em", textTransform:"uppercase" }}>{partner.city}</div>
           </div>
 
-          <div style={{ margin:"24px 0 20px" }}>
-            <WarmDivider/>
-          </div>
+          <div style={{ margin:"24px 0 20px" }}><WarmDivider/></div>
 
-          {/* Description */}
-          <p style={{
-            fontFamily:"'Jost', sans-serif",
-            fontSize:14, fontWeight:300,
-            color:T.inkMid, lineHeight:1.8,
-            margin:"0 0 24px", padding:"0 28px",
-            textAlign:"center",
-          }}>{partner.description}</p>
+          <p style={{ padding:"0 28px", textAlign:"center", fontSize:14, color:T.inkMid, lineHeight:1.8 }}>{partner.description}</p>
 
-          {/* ── CTA CONTACT — conditionnel premium (Floutage Freemium) ── */}
-          <div style={{ padding:"0 24px 16px" }}>
-            {partner.is_premium ? (
-              <button
-                onClick={wa}
-                onMouseEnter={() => setHovWa(true)}
-                onMouseLeave={() => setHovWa(false)}
-                style={{
-                  width:"100%", padding:"18px",
-                  borderRadius:16, border:"none",
-                  background: hovWa
-                    ? `linear-gradient(135deg, ${T.amberLight}, ${T.amber})`
-                    : `linear-gradient(135deg, ${T.amber}, ${T.spice})`,
-                  color:T.white,
-                  fontFamily:"'Jost', sans-serif",
-                  fontSize:11, fontWeight:700,
-                  letterSpacing:"0.2em", textTransform:"uppercase",
-                  cursor:"pointer",
-                  boxShadow: hovWa ? `0 10px 36px ${T.amber}55` : `0 6px 24px ${T.amber}35`,
-                  transition:"all 0.3s ease",
-                  display:"flex", alignItems:"center", justifyContent:"center", gap:10,
-                }}>
-                <span style={{ fontSize:18 }}>💬</span>
-                Contacter via WhatsApp
-              </button>
-            ) : (
-              <div style={{
-                borderRadius:16,
-                border:`1.5px dashed ${T.amberLine}`,
-                background:T.bgDeep,
-                overflow:"hidden",
+          <div style={{ padding:"24px 24px 32px" }}>
+            <button
+              onClick={wa}
+              onMouseEnter={() => setHovWa(true)}
+              onMouseLeave={() => setHovWa(false)}
+              style={{
+                width:"100%", padding:"18px", borderRadius:16, border:"none",
+                background: partner.is_premium ? `linear-gradient(135deg, ${T.amber}, ${T.spice})` : T.bgDeep,
+                color: partner.is_premium ? T.white : T.inkFade,
+                fontFamily:"'Jost', sans-serif", fontSize:11, fontWeight:700,
+                letterSpacing:"0.2em", textTransform:"uppercase",
+                cursor: partner.is_premium ? "pointer" : "default",
+                boxShadow: (hovWa && partner.is_premium) ? `0 10px 36px ${T.amber}55` : "none",
+                transition:"all 0.3s", display:"flex", alignItems:"center", justifyContent:"center", gap:10,
               }}>
-                <div style={{ padding:"18px 20px 12px", textAlign:"center", position:"relative" }}>
-                  <div style={{ fontFamily:"'Jost', sans-serif", fontSize:9, fontWeight:700, letterSpacing:"0.3em", textTransform:"uppercase", color:T.inkFade, marginBottom:8 }}>Contact</div>
-                  <div style={{
-                    fontFamily:"'Jost', sans-serif",
-                    fontSize:20, fontWeight:500,
-                    color:T.inkMid,
-                    filter:"blur(7px)", // Floutage demandé
-                    userSelect:"none",
-                  }}>+XXX XX XX XX XX</div>
-                  <div style={{ position:"absolute", inset:0, display:"flex", alignItems:"center", justifyContent:"center", paddingTop:20 }}>
-                    <div style={{ width:32, height:32, borderRadius:"50%", background:T.white, border:`1.5px solid ${T.amberLine}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:14 }}>🔒</div>
-                  </div>
-                </div>
-                <div style={{ borderTop:`1px solid ${T.amberLine}`, padding:"12px 20px 16px", textAlign:"center" }}>
-                  <div style={{ fontFamily:"'Cormorant Garamond', Georgia, serif", fontSize:15, fontWeight:600, color:T.ink, marginBottom:4 }}>Contact Premium uniquement</div>
-                  <div style={{ fontFamily:"'Jost', sans-serif", fontSize:11, fontWeight:300, color:T.inkLight, lineHeight:1.6 }}>
-                    Passez à l'offre Premium pour débloquer ce contact.
-                  </div>
-                </div>
-              </div>
-            )}
+              <span style={{ fontSize:18 }}>{partner.is_premium ? "💬" : "🔒"}</span>
+              <span style={{ filter: partner.is_premium ? "none" : "blur(4px)" }}>
+                {partner.is_premium ? `Contacter ${partner.whatsapp}` : "Contact Réservé Premium"}
+              </span>
+            </button>
           </div>
         </div>
       </div>
@@ -253,112 +182,133 @@ function Modal({ partner, onClose }) {
   );
 }
 
-// ─── INSCRIPTION FORM (Accordéon Intégré) ────────────────────────────────────
+// ─── INSCRIPTION FORM (Multi-step logic préservée) ────────────────────────────
 function InscriptionForm() {
+  const [step, setStep] = useState(1);
   const [form, setForm] = useState({ name:"", city:"", category:"salon", whatsapp:"", description:"", email:"" });
   const [status, setStatus] = useState(null);
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const next = () => setStep(s => s + 1);
+  
   const submit = async () => {
-    if (!form.name.trim() || !form.city.trim() || !form.whatsapp.trim()) {
-      setStatus("error");
-      return;
-    }
+    if (!form.name || !form.city || !form.whatsapp) { setStatus("error"); return; }
     setStatus("loading");
     const { error } = await supabase.from("partners").insert([{
-      name: form.name.trim(),
-      city: form.city.trim(),
-      category: form.category,
-      whatsapp: form.whatsapp.trim(),
-      description: form.description.trim(),
-      email: form.email.trim(),
-      active: false,
-      is_premium: false,
-      emoji: form.category === "salon" ? "💇🏾‍♀️" : form.category === "independante" ? "✨" : form.category === "produits" ? "🧴" : "🎓",
+      ...form, active: false, is_premium: false,
+      emoji: CATEGORIES.find(c => c.id === form.category)?.emoji || "✨"
     }]);
     setStatus(error ? "error" : "success");
   };
 
-  if (status === "success") {
-    return (
-      <div style={{ padding:"28px 0", textAlign:"center" }}>
-        <div style={{ fontSize:40, marginBottom:16 }}>✦</div>
-        <div style={{ fontFamily:"'Cormorant Garamond', Georgia, serif", fontSize:22, fontWeight:700, color:T.ink, marginBottom:8 }}>Demande envoyée !</div>
-        <div style={{ fontFamily:"'Jost', sans-serif", fontSize:12, fontWeight:300, color:T.inkLight }}>Nous reviendrons vers vous sous 48h.</div>
-      </div>
-    );
-  }
+  if (status === "success") return <div style={{ textAlign:"center", padding:20 }}>Demande envoyée ! ✦</div>;
 
   return (
-    <div style={{ display:"flex", flexDirection:"column", gap:14, paddingBottom: 20 }}>
-      <input type="text" value={form.name} onChange={e => set("name", e.target.value)} placeholder="Nom du salon / Nom d'indépendante *" style={inputS} />
-      <input type="text" value={form.city} onChange={e => set("city", e.target.value)} placeholder="Ville *" style={inputS} />
-      <select value={form.category} onChange={e => set("category", e.target.value)} style={inputS}>
-        <option value="salon">💇🏾‍♀️ Salon</option>
-        <option value="independante">✨ Indépendante</option> {/* Ajout demandé */}
-        <option value="produits">🧴 Produits</option>
-        <option value="formation">🎓 Formation</option>
-      </select>
-      <input type="tel" value={form.whatsapp} onChange={e => set("whatsapp", e.target.value)} placeholder="WhatsApp (ex: +221...) *" style={inputS} />
-      <textarea value={form.description} onChange={e => set("description", e.target.value)} placeholder="Courte présentation..." rows={2} style={inputS} />
-      {status === "error" && <div style={{ fontSize:10, color:"#c0392b", textAlign:"center" }}>Veuillez remplir les champs obligatoires.</div>}
-      <button onClick={submit} disabled={status === "loading"} style={btnS}>
-        {status === "loading" ? "Envoi..." : "✦ Envoyer ma demande"}
-      </button>
+    <div style={{ display:"flex", flexDirection:"column", gap:12, paddingBottom: 20 }}>
+      {step === 1 ? (
+        <>
+          <input type="text" placeholder="Nom du salon / Nom d'indépendante" value={form.name} onChange={e => set("name", e.target.value)} style={inS} />
+          <input type="text" placeholder="Ville" value={form.city} onChange={e => set("city", e.target.value)} style={inS} />
+          <select value={form.category} onChange={e => set("category", e.target.value)} style={inS}>
+            {CATEGORIES.filter(c => c.id !== "all").map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+          </select>
+          <button onClick={next} style={btnS}>Continuer</button>
+        </>
+      ) : (
+        <>
+          <input type="tel" placeholder="WhatsApp (ex: +33...)" value={form.whatsapp} onChange={e => set("whatsapp", e.target.value)} style={inS} />
+          <textarea placeholder="Description..." value={form.description} onChange={e => set("description", e.target.value)} rows={3} style={inS} />
+          <button onClick={submit} disabled={status === "loading"} style={btnS}>
+            {status === "loading" ? "Envoi..." : "✦ Finaliser l'inscription"}
+          </button>
+          <button onClick={() => setStep(1)} style={{ background:"none", border:"none", color:T.inkLight, cursor:"pointer", fontSize:11 }}>Retour</button>
+        </>
+      )}
     </div>
   );
 }
 
-// Styles réutilisables
-const inputS = { width:"100%", background:T.white, border:`1px solid ${T.amberLine}`, borderRadius:12, padding:"12px 16px", fontFamily:"'Jost',sans-serif", fontSize:13, color:T.ink, boxSizing:"border-box", outline:"none" };
-const btnS = { width:"100%", padding:"16px", borderRadius:16, border:"none", background:`linear-gradient(135deg, ${T.amber}, ${T.spice})`, color:T.white, fontWeight:700, textTransform:"uppercase", cursor:"pointer", fontSize:10, letterSpacing:"0.15em" };
+const inS = { width:"100%", padding:14, borderRadius:12, border:`1px solid ${T.amberLine}`, outline:"none", fontSize:14 };
+const btnS = { width:"100%", padding:16, borderRadius:14, border:"none", background:T.ink, color:T.white, fontWeight:700, cursor:"pointer" };
 
-// ─── MAIN PARTNERS ────────────────────────────────────────────────────────────
+// ─── MAIN PARTNERS COMPONENT ──────────────────────────────────────────────────
 export default function Partners() {
   const [partners, setPartners] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("all");
   const [selected, setSelected] = useState(null);
   const [showForm, setShowForm] = useState(false);
 
+  useEffect(() => {
+    const fetchPartners = async () => {
+      const { data } = await supabase.from("partners").select("*").eq("active", true);
+      if (data) setPartners(data.map(mapPartner));
+      setLoading(false);
+    };
+    fetchPartners();
+  }, []);
+
+  const filtered = filter === "all" ? partners : partners.filter(p => p.category === filter);
+
   return (
-    <div style={{ backgroundColor:T.bg, minHeight:"100vh", color:T.ink, paddingBottom: 60 }}>
-      <div style={{ maxWidth: 800, margin: "0 auto", padding: "40px 20px" }}>
+    <div style={{ backgroundColor:T.bg, minHeight:"100vh", padding:"40px 20px" }}>
+      <div style={{ maxWidth: 1000, margin: "0 auto" }}>
         
-        {/* Accordéon d'inscription */}
-        <div style={{ 
-          background: T.white, 
-          borderRadius: 24, 
-          border: `1px solid ${T.amberLine}`,
-          overflow: "hidden",
-          boxShadow: `0 10px 40px ${T.amberDim}`,
-          marginBottom: 40
-        }}>
-          <button 
-            onClick={() => setShowForm(!showForm)}
-            style={{
-              width: "100%", padding: "20px 28px", background: "none", border: "none",
-              display: "flex", justifyContent: "space-between", alignItems: "center",
-              cursor: "pointer", fontFamily: "'Jost', sans-serif", fontWeight: 700, color: T.spice
+        {/* Filtres */}
+        <div style={{ display:"flex", gap:10, flexWrap:"wrap", justifyContent:"center", marginBottom:40 }}>
+          {CATEGORIES.map(cat => (
+            <button key={cat.id} onClick={() => setFilter(cat.id)} style={{
+              padding:"10px 20px", borderRadius:30, border:`1px solid ${T.amberLine}`,
+              background: filter === cat.id ? T.amber : T.white,
+              color: filter === cat.id ? T.white : T.inkMid,
+              cursor:"pointer", transition:"0.2s"
             }}>
-            <span>✦ INSCRIRE MON ACTIVITÉ GRATUITEMENT</span>
-            <span style={{ transform: showForm ? "rotate(180deg)" : "0", transition: "0.3s" }}>▼</span>
-          </button>
-          
-          <div style={{ 
-            maxHeight: showForm ? "1000px" : "0", 
-            overflow: "hidden", 
-            transition: "max-height 0.4s ease-in-out",
-            padding: showForm ? "0 28px 28px" : "0 28px"
+              {cat.emoji} {cat.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Accordéon Inscription */}
+        <div style={{ maxWidth: 500, margin: "0 auto 60px", background:T.white, borderRadius:24, border:`1px solid ${T.amberLine}`, overflow:"hidden", boxShadow:`0 10px 40px ${T.amberDim}` }}>
+          <button onClick={() => setShowForm(!showForm)} style={{
+            width:"100%", padding:24, border:"none", background:"none", cursor:"pointer",
+            display:"flex", justifyContent:"space-between", alignItems:"center",
+            fontFamily:"'Jost', sans-serif", fontWeight:700, color:T.spice
           }}>
+            <span>✦ INSCRIRE MON ACTIVITÉ GRATUITEMENT</span>
+            <span style={{ transform: showForm ? "rotate(180deg)" : "rotate(0deg)", transition:"0.3s" }}>▼</span>
+          </button>
+          <div style={{ maxHeight: showForm ? "1000px" : "0", transition:"max-height 0.5s ease-in-out", overflow:"hidden", padding: showForm ? "0 24px 24px" : "0 24px" }}>
             <InscriptionForm />
           </div>
         </div>
 
-        {/* Liste des partenaires simplifiée pour l'exemple */}
-        <div style={{ textAlign: "center", fontStyle: "italic", color: T.inkFade, fontSize: 13 }}>
-          AfroTresse · Partenaires certifiés ✦
+        {/* Grille des Partenaires */}
+        {loading ? (
+          <div style={{ textAlign:"center", color:T.amber }}>Chargement...</div>
+        ) : (
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(280px, 1fr))", gap:24 }}>
+            {filtered.map(p => (
+              <div key={p.id} onClick={() => setSelected(p)} style={{
+                background:T.white, padding:28, borderRadius:24, border:`1px solid ${T.amberLine}`, cursor:"pointer",
+                transition:"all 0.3s cubic-bezier(0.23,1,0.32,1)",
+              }}>
+                <div style={{ fontSize:36, marginBottom:16 }}>{p.emoji}</div>
+                <h3 style={{ margin:"0 0 6px", fontFamily:"'Cormorant Garamond', serif", fontSize:22 }}>{p.name}</h3>
+                <div style={{ fontSize:11, color:T.amber, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.1em" }}>
+                  {p.city} • {p.categoryLabel}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div style={{ textAlign:"center", marginTop:80, opacity:0.4, fontSize:12 }}>
+          AfroTresse · Partenaires certifiés ✦ 2026
         </div>
       </div>
-      {selected && <Modal partner={selected} onClose={() => setSelected(null)}/>}
+      {selected && <Modal partner={selected} onClose={() => setSelected(null)} />}
     </div>
   );
-}
+    }
+      
