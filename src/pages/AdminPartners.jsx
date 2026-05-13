@@ -331,6 +331,9 @@ export default function AdminPartners() {
   const [isEditing, setIsEditing]         = useState(null);
   const [isAdmin, setIsAdmin]             = useState(false);
   const searchRef = useRef(null);
+  const [requests, setRequests]         = useState([]);
+  const [requestsLoading, setRequestsLoading] = useState(false);
+  const [activeTab, setActiveTab]       = useState("partners"); // "partners" | "requests"
 
   const initialForm = {
     name: "", city: "", category: "salon", category_label: "",
@@ -387,6 +390,42 @@ export default function AdminPartners() {
   const toggleBoolean = async (id, field, currentVal) => {
     const { error } = await supabase.from("partners").update({ [field]: !currentVal }).eq("id", id);
     if (!error) fetchPartners();
+  };
+
+  const fetchRequests = async () => {
+    setRequestsLoading(true);
+    const { data } = await supabase
+      .from("partner_requests")
+      .select("*")
+      .order("created_at", { ascending: false });
+    setRequests(data || []);
+    setRequestsLoading(false);
+  };
+
+  const handleApprove = async (req) => {
+    // Créer le partenaire dans la table partners
+    const { error } = await supabase.from("partners").insert([{
+      name:        req.name,
+      city:        req.city,
+      category:    req.category,
+      whatsapp:    req.whatsapp,
+      emoji:       "👑",
+      active:      true,
+      is_featured: false,
+      description: `Spécialités : ${(req.specialties || []).join(", ")}`,
+    }]);
+    if (!error) {
+      await supabase.from("partner_requests").update({ status: "approved" }).eq("id", req.id);
+      fetchRequests();
+      fetchPartners();
+    } else {
+      alert("Erreur : " + error.message);
+    }
+  };
+
+  const handleReject = async (id) => {
+    await supabase.from("partner_requests").update({ status: "rejected" }).eq("id", id);
+    fetchRequests();
   };
 
   const handleSubmit = async (e) => {
@@ -471,6 +510,92 @@ export default function AdminPartners() {
             {showForm ? "✕" : "+"}
           </button>
         </header>
+
+        {/* ── ONGLETS ────────────────────────────────────────────── */}
+        <div className="flex gap-2 mb-6">
+          <button
+            onClick={() => setActiveTab("partners")}
+            className={`flex-1 py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${activeTab === "partners" ? "bg-[#C9963A] text-black" : "bg-white/5 text-white/40 border border-white/10"}`}
+          >
+            👑 Partenaires ({partners.length})
+          </button>
+          <button
+            onClick={() => { setActiveTab("requests"); fetchRequests(); }}
+            className={`flex-1 py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition-all relative ${activeTab === "requests" ? "bg-[#C9963A] text-black" : "bg-white/5 text-white/40 border border-white/10"}`}
+          >
+            📥 Demandes
+            {requests.filter(r => r.status === "pending").length > 0 && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-[9px] font-black flex items-center justify-center">
+                {requests.filter(r => r.status === "pending").length}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* ── SECTION DEMANDES ────────────────────────────────────── */}
+        {activeTab === "requests" && (
+          <div className="flex flex-col gap-3 mb-6">
+            {requestsLoading ? (
+              <div className="text-center py-10 text-white/30 text-sm">Chargement…</div>
+            ) : requests.length === 0 ? (
+              <div className="text-center py-10 text-white/30 text-sm">Aucune demande pour l'instant</div>
+            ) : (
+              requests.map(req => (
+                <div key={req.id} className="bg-zinc-900/40 p-4 rounded-[2rem] border border-white/5">
+                  {/* Status badge */}
+                  <div className="flex items-center justify-between mb-3">
+                    <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-full ${
+                      req.status === "pending"  ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30" :
+                      req.status === "approved" ? "bg-green-500/20 text-green-400 border border-green-500/30" :
+                      "bg-red-500/20 text-red-400 border border-red-500/30"
+                    }`}>
+                      {req.status === "pending" ? "⏳ En attente" : req.status === "approved" ? "✅ Approuvé" : "❌ Rejeté"}
+                    </span>
+                    <span className="text-[9px] text-white/20">
+                      {new Date(req.created_at).toLocaleDateString("fr-FR")}
+                    </span>
+                  </div>
+
+                  {/* Infos */}
+                  <h3 className="font-black text-sm text-white mb-1">{req.name}</h3>
+                  <p className="text-[10px] text-white/40 uppercase tracking-widest mb-2">
+                    {req.city} · {req.country}
+                  </p>
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {(req.specialties || []).map(s => (
+                      <span key={s} className="text-[8px] px-2 py-0.5 rounded-full bg-[#C9963A]/10 text-[#C9963A] border border-[#C9963A]/20">
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+                  <p className="text-[10px] text-white/40">📱 {req.whatsapp}</p>
+                  <p className="text-[10px] text-white/40 mb-3">✉️ {req.email}</p>
+
+                  {/* Actions */}
+                  {req.status === "pending" && (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleApprove(req)}
+                        className="flex-1 py-2.5 rounded-xl text-[10px] font-black bg-green-500/15 text-green-400 border border-green-500/25 hover:bg-green-500/25 transition-all"
+                      >
+                        ✅ Approuver
+                      </button>
+                      <button
+                        onClick={() => handleReject(req.id)}
+                        className="flex-1 py-2.5 rounded-xl text-[10px] font-black bg-red-500/15 text-red-400 border border-red-500/25 hover:bg-red-500/25 transition-all"
+                      >
+                        ❌ Rejeter
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        {activeTab === "partners" && (
+        <div>
 
         {/* ── SECTION LOGO HERO AFROTRESSE ──────────────────────── */}
         <HeroLogoUploader />
@@ -744,6 +869,8 @@ export default function AdminPartners() {
             })
           )}
         </div>
+        </div>
+        )}
 
       </div>
     </div>
