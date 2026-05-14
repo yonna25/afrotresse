@@ -228,11 +228,31 @@ function ErrorToast({ message, onClose }) {
 
 // ── Page ─────────────────────────────────────────────────────────
 export default function Credits() {
-  const [selected, setSelected] = useState('allie');
-  const [loading, setLoading] = useState(false);
-  const [paymentUrl, setPaymentUrl] = useState(null);
-  const [errorMsg, setErrorMsg] = useState(null);
+  const [selected, setSelected]       = useState('allie');
+  const [loading, setLoading]         = useState(false);
+  const [paymentUrl, setPaymentUrl]   = useState(null);
+  const [errorMsg, setErrorMsg]       = useState(null);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [successPack, setSuccessPack] = useState(null);
   const payButtonRef = useRef(null);
+
+  // Détecter ?payment=success dans l URL + sync crédits
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('payment') === 'success') {
+      const pack = params.get('pack');
+      setPaymentSuccess(true);
+      setSuccessPack(pack);
+      window.history.replaceState({}, '', '/credits');
+      // Sync crédits après 2s pour laisser le webhook traiter
+      setTimeout(async () => {
+        try {
+          const { syncCreditsFromServer } = await import('../services/credits.js');
+          await syncCreditsFromServer();
+        } catch {}
+      }, 2000);
+    }
+  }, []);
 
   // Nettoyage à la navigation
   useEffect(() => {
@@ -260,7 +280,9 @@ export default function Credits() {
       if (supabaseAuth) {
         try { userId = JSON.parse(supabaseAuth)?.user?.id; } catch {}
       }
-      const sessionId = userId || localStorage.getItem('afrotresse_session_id') || 'guest_user';
+      // Priorité au fingerprint cache pour garantir la cohérence avec le webhook
+      const cachedFp  = localStorage.getItem('afrotresse_fp');
+      const sessionId = userId || (cachedFp ? `fp_${cachedFp}` : localStorage.getItem('afrotresse_session_id') || 'guest_user');
 
       const response = await fetch('/api/fedapay', {
         method: 'POST',
@@ -285,6 +307,47 @@ export default function Credits() {
       setLoading(false);
     }
   };
+
+  // Écran de succès
+  if (paymentSuccess) {
+    const packInfo = PACKS_CONFIG[successPack];
+    return (
+      <div
+        className="text-white font-sans flex flex-col items-center justify-center"
+        style={{ backgroundColor: '#1E1008', height: '100dvh', padding: '0 24px' }}
+      >
+        <Seo title="Paiement réussi - AfroTresse" />
+        <div style={{ textAlign: 'center', maxWidth: 360 }}>
+          <div style={{ fontSize: 64, marginBottom: 20 }}>🎉</div>
+          <h1 style={{ color: '#C29036', fontSize: 28, fontWeight: 700, marginBottom: 8 }}>
+            Paiement réussi !
+          </h1>
+          <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, lineHeight: 1.6, marginBottom: 8 }}>
+            {packInfo
+              ? `Ton pack ${packInfo.label} (${packInfo.credits} crédits) a été activé.`
+              : 'Tes crédits ont été ajoutés à ton compte.'}
+          </p>
+          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, marginBottom: 32 }}>
+            Si tes crédits ne s'affichent pas encore, patiente quelques secondes et rafraîchis la page Profil.
+          </p>
+          <button
+            onClick={() => window.location.href = '/profile'}
+            style={{
+              width: '100%', padding: '16px',
+              borderRadius: 16, border: 'none',
+              background: 'linear-gradient(135deg, #C29036, #8B4513)',
+              color: '#fff',
+              fontSize: 13, fontWeight: 700,
+              letterSpacing: '0.15em', textTransform: 'uppercase',
+              cursor: 'pointer',
+            }}
+          >
+            Voir mon solde →
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -491,15 +554,4 @@ export default function Credits() {
                     border: '1px solid rgba(255,255,255,0.07)',
                   }}
                 >
-                  <span>{icon}</span>
-                  <span>{label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </div>
-  );
-}
+   
