@@ -1,5 +1,4 @@
 import { createClient } from "@supabase/supabase-js";
-import crypto from "crypto";
 
 export const config = { api: { bodyParser: false } };
 
@@ -27,7 +26,14 @@ export default async function handler(req, res) {
 
   if (!webhookSecret || !signature) return res.status(401).end();
 
-  const event = JSON.parse(rawBody.toString());
+  let event;
+  try {
+    event = JSON.parse(rawBody.toString());
+  } catch {
+    return res.status(400).end();
+  }
+
+  // Ignorer les événements non pertinents
   if (event.name !== "transaction.approved" && event.event !== "transaction.approved") {
     return res.status(200).json({ ignored: true });
   }
@@ -36,33 +42,84 @@ export default async function handler(req, res) {
   const { session_id: sessionId, pack } = transaction.metadata || {};
   const transId = String(transaction.id);
 
-  if (!sessionId || !pack || !PACKS[pack]) return res.status(400).end();
+  if (!sessionId || !pack || !PACKS[pack]) {
+    console.error("[webhook] metadata manquante:", { sessionId, pack });
+    return res.status(400).end();
+  }
 
-  const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+  const supabase = createClient(
+    process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  );
 
-  const { data: already } = await supabase.from("paid_transactions").select("id").eq("transaction_id", transId).maybeSingle();
+  // Anti-doublon
+  const { data: already } = await supabase
+    .from("paid_transactions")
+    .select("id")
+    .eq("transaction_id", transId)
+    .maybeSingle();
+
   if (already) return res.status(200).json({ duplicate: true });
 
   const creditsToAdd = PACKS[pack].credits;
 
+  // Enregistrer la transaction
   await supabase.from("paid_transactions").insert([{
     transaction_id: transId,
-    session_id: sessionId,
+    session_id:     sessionId,
     pack,
-    credits: creditsToAdd,
-    amount: transaction.amount
+    credits:        creditsToAdd,
+    amount:         transaction.amount,
   }]);
 
-  const { data: account } = await supabase.from("usage_credits").select("id, credits").eq("session_id", sessionId).maybeSingle();
+  // ── CAS 1 : Utilisatrice connectée (sessionId = UUID user) ──
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(sessionId);
 
-  if (account) {
-    await supabase.from("usage_credits").update({ 
-      credits: account.credits + creditsToAdd,
-      updated_at: new Date().toISOString()
-    }).eq("id", account.id);
-  } else {
-    await supabase.from("usage_credits").insert([{ session_id: sessionId, credits: creditsToAdd }]);
+  if (isUUID) {
+    const { data: userAccount } = await supabase
+      .from("usage_credits")
+      .select("id, credits")
+      .eq("user_id", sessionId)
+      .maybeSingle();
+
+    if (userAccount) {
+      await supabase.from("usage_credits")
+        .update({
+          credits:    userAccount.credits + creditsToAdd,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", userAccount.id);
+    } else {
+      await supabase.from("usage_credits").insert([{
+        user_id: sessionId,
+        credits: creditsToAdd,
+      }]);
+    }
+    console.log(`[webhook] ✅ Connectée userId=${sessionId} +${creditsToAdd} crédits`);
+    return res.status(200).json({ success: true, type: "user" });
   }
 
-  return res.status(200).json({ success: true });
+  // ── CAS 2 : Utilisatrice anonyme (sessionId = fp_XXXXX ou autre) ──
+  const { data: sessionAccount } = await supabase
+    .from("usage_credits")
+    .select("id, credits")
+    .eq("session_id", sessionId)
+    .maybeSingle();
+
+  if (sessionAccount) {
+    await supabase.from("usage_credits")
+      .update({
+        credits:    sessionAccount.credits + creditsToAdd,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", sessionAccount.id);
+  } else {
+    await supabase.from("usage_credits").insert([{
+      session_id: sessionId,
+      credits:    creditsToAdd,
+    }]);
+  }
+
+  console.log(`[webhook] ✅ Anonyme sessionId=${sessionId} +${creditsToAdd} crédits`);
+  return res.status(200).json({ success: true, type: "session" });
 }
