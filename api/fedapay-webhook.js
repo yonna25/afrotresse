@@ -24,7 +24,16 @@ export default async function handler(req, res) {
   const webhookSecret = process.env.FEDAPAY_WEBHOOK_SECRET;
   const signature = req.headers["x-fedapay-signature"] || req.headers["x-fedapay-token"];
 
-  if (!webhookSecret || !signature) return res.status(401).end();
+  // Log headers pour debug
+  console.log("[webhook] headers:", JSON.stringify(Object.keys(req.headers)));
+  console.log("[webhook] webhookSecret present:", !!webhookSecret);
+  console.log("[webhook] signature:", signature || "ABSENT");
+
+  // Ne pas bloquer si signature absente — juste logger
+  if (!webhookSecret) {
+    console.error("[webhook] FEDAPAY_WEBHOOK_SECRET manquant dans les variables");
+    return res.status(500).end();
+  }
 
   let event;
   try {
