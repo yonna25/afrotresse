@@ -41,7 +41,10 @@ export default async function handler(req, res) {
   } catch {
     return res.status(400).end();
   }
-
+console.log("[webhook] FULL EVENT:", JSON.stringify(event, null, 2)); // ← ici
+} catch {
+  return res.status(400).end();
+}
   // Ignorer les événements non pertinents
   if (event.name !== "transaction.approved" && event.event !== "transaction.approved") {
     return res.status(200).json({ ignored: true });
