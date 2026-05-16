@@ -1,87 +1,91 @@
-// api/consume.js — AfroTresse
-// Consommation d'un crédit validée côté serveur
-// Gère deux cas :
-//   - Utilisatrice connectée  → table `usage_credits` (user_id / credits)
-//   - Utilisatrice anonyme    → table `sessions`      (session_id / credits)
-// ─────────────────────────────────────────────────────
-
 import { createClient } from "@supabase/supabase-js";
 
-const supabase = createClient(
-  process.env.VITE_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+export const config = { api: { bodyParser: true } };
+
+const RATE_LIMIT = 30;
+const WINDOW_MS  = 60 * 1000;
+const rateMap    = new Map();
+
+function checkRateLimit(ip) {
+  const now  = Date.now();
+  const data = rateMap.get(ip) || { count: 0, start: now };
+  if (now - data.start > WINDOW_MS) {
+    rateMap.set(ip, { count: 1, start: now });
+    return true;
+  }
+  if (data.count >= RATE_LIMIT) return false;
+  data.count++;
+  rateMap.set(ip, data);
+  return true;
+}
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const FP_RE   = /^fp_[a-f0-9]{16,64}$/i;
 
 export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "https://afrotresse.com");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  if (req.method !== "POST") return res.status(405).end();
 
-  if (req.method === "OPTIONS") return res.status(200).end();
-  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+  const ip = req.headers["x-forwarded-for"]?.split(",")[0].trim()
+           || req.socket?.remoteAddress || "unknown";
 
-  const { sessionId, userId, amount = 1 } = req.body || {};
+  if (!checkRateLimit(ip)) return res.status(429).json({ error: "Trop de requêtes" });
+
+  const { sessionId, userId } = req.body;
 
   if (!sessionId && !userId) {
-    return res.status(400).json({ error: "sessionId ou userId requis" });
+    return res.status(400).json({ error: "Identifiant requis" });
   }
 
-  try {
+  const supabase = createClient(
+    process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  );
 
-    // ── Utilisatrice connectée → table `usage_credits` ───────────
-    if (userId) {
-      const { data, error } = await supabase
+  try {
+    // CAS 1 : connectée (UUID)
+    if (userId && UUID_RE.test(userId)) {
+      const { data } = await supabase
         .from("usage_credits")
-        .select("credits")
+        .select("id, credits")
         .eq("user_id", userId)
         .maybeSingle();
 
-      if (error) throw error;
-
-      const currentBalance = data?.credits ?? 0;
-
-      if (currentBalance < amount) {
-        return res.status(402).json({ error: "Crédits insuffisants", credits: currentBalance });
+      if (!data || data.credits <= 0) {
+        return res.status(403).json({ error: "Crédits insuffisants" });
       }
 
-      const newBalance = currentBalance - amount;
-      const { error: updateError } = await supabase
+      await supabase.from("usage_credits")
+        .update({ credits: data.credits - 1, updated_at: new Date().toISOString() })
+        .eq("id", data.id);
+
+      console.log(`[consume] user=${userId} ${data.credits}→${data.credits - 1}`);
+      return res.status(200).json({ credits: data.credits - 1 });
+    }
+
+    // CAS 2 : anonyme (fp_XXXXX)
+    if (sessionId && FP_RE.test(sessionId)) {
+      const { data } = await supabase
         .from("usage_credits")
-        .update({ credits: newBalance, updated_at: new Date().toISOString() })
-        .eq("user_id", userId);
+        .select("id, credits")
+        .eq("session_id", sessionId)
+        .maybeSingle();
 
-      if (updateError) throw updateError;
+      if (!data || data.credits <= 0) {
+        return res.status(403).json({ error: "Crédits insuffisants" });
+      }
 
-      return res.status(200).json({ success: true, credits: newBalance });
+      await supabase.from("usage_credits")
+        .update({ credits: data.credits - 1, updated_at: new Date().toISOString() })
+        .eq("id", data.id);
+
+      console.log(`[consume] session=${sessionId} ${data.credits}→${data.credits - 1}`);
+      return res.status(200).json({ credits: data.credits - 1 });
     }
 
-    // ── Utilisatrice anonyme → table `sessions` ──────────────────
-    const { data, error } = await supabase
-      .from("sessions")
-      .select("credits")
-      .eq("session_id", sessionId)
-      .maybeSingle();
+    return res.status(400).json({ error: "Format invalide" });
 
-    if (error) throw error;
-
-    const currentBalance = data?.credits ?? 0;
-
-    if (currentBalance < amount) {
-      return res.status(402).json({ error: "Crédits insuffisants", credits: currentBalance });
-    }
-
-    const newBalance = currentBalance - amount;
-    const { error: updateError } = await supabase
-      .from("sessions")
-      .update({ credits: newBalance, last_used: new Date().toISOString() })
-      .eq("session_id", sessionId);
-
-    if (updateError) throw updateError;
-
-    return res.status(200).json({ success: true, credits: newBalance });
-
-  } catch (err) {
-    console.error("[/api/consume]", err.message);
-    return res.status(500).json({ error: "Erreur serveur" });
+  } catch (e) {
+    console.error("[consume-credit]", e.message);
+    return res.status(500).json({ error: "Erreur interne" });
   }
 }
