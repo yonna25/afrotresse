@@ -248,10 +248,40 @@ export default function Credits() {
       setTimeout(async () => {
         try {
           const { syncCreditsFromServer } = await import('../services/credits.js');
-          await syncCreditsFromServer();
+          const synced = await syncCreditsFromServer();
+          // Si pas connectée, sync depuis session_id
+          if (synced === null) {
+            const { createClient } = await import('@supabase/supabase-js');
+            const sb = createClient(
+              import.meta.env.VITE_SUPABASE_URL,
+              import.meta.env.VITE_SUPABASE_ANON_KEY
+            );
+            const fp = localStorage.getItem('afrotresse_fp');
+            const sid = fp ? `fp_${fp}` : null;
+            if (sid) {
+              const { data } = await sb.from('usage_credits').select('credits').eq('session_id', sid).maybeSingle();
+              if (data?.credits != null) {
+                localStorage.setItem('afrotresse_credits', String(data.credits));
+              }
+            }
+          }
         } catch {}
       }, 2000);
     }
+  }, []);
+
+  // Pré-charger le fingerprint dès le montage pour qu il soit prêt au paiement
+  useEffect(() => {
+    const preloadFp = async () => {
+      try {
+        const cached = localStorage.getItem('afrotresse_fp');
+        if (!cached) {
+          const { getFingerprint } = await import('../services/fingerprint.js');
+          await getFingerprint();
+        }
+      } catch {}
+    };
+    preloadFp();
   }, []);
 
   // Nettoyage à la navigation
@@ -280,9 +310,19 @@ export default function Credits() {
       if (supabaseAuth) {
         try { userId = JSON.parse(supabaseAuth)?.user?.id; } catch {}
       }
-      // Priorité au fingerprint cache pour garantir la cohérence avec le webhook
-      const cachedFp  = localStorage.getItem('afrotresse_fp');
-      const sessionId = userId || (cachedFp ? `fp_${cachedFp}` : localStorage.getItem('afrotresse_session_id') || 'guest_user');
+
+      // Récupérer le fingerprint — attendre s il n est pas encore en cache
+      let cachedFp = localStorage.getItem('afrotresse_fp');
+      if (!cachedFp) {
+        try {
+          const { getFingerprint } = await import('../services/fingerprint.js');
+          const fp = await getFingerprint();
+          if (fp) cachedFp = fp;
+        } catch {}
+      }
+
+      const sessionId = userId || (cachedFp ? `fp_${cachedFp}` : localStorage.getItem('afrotresse_session_id') || `anon_${Date.now()}`);
+      console.log('[credits] sessionId utilisé:', sessionId);
 
       const response = await fetch('/api/fedapay', {
         method: 'POST',
@@ -340,10 +380,41 @@ export default function Credits() {
               fontSize: 13, fontWeight: 700,
               letterSpacing: '0.15em', textTransform: 'uppercase',
               cursor: 'pointer',
+              marginBottom: 16,
             }}
           >
             Voir mon solde →
           </button>
+
+          {/* Sécurisation des crédits */}
+          <div style={{
+            padding: '14px 16px',
+            borderRadius: 14,
+            border: '1px solid rgba(194,144,54,0.3)',
+            background: 'rgba(194,144,54,0.08)',
+            textAlign: 'left',
+          }}>
+            <p style={{ color: '#C29036', fontSize: 12, fontWeight: 700, marginBottom: 4 }}>
+              🔐 Sécurise tes crédits
+            </p>
+            <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: 11, lineHeight: 1.6, marginBottom: 10 }}>
+              Sans compte, tes crédits sont liés à cet appareil. Si tu changes de téléphone ou vides ton cache, ils disparaissent.
+            </p>
+            <button
+              onClick={() => window.location.href = '/magic-link'}
+              style={{
+                width: '100%', padding: '10px',
+                borderRadius: 10, border: 'none',
+                background: 'rgba(194,144,54,0.2)',
+                color: '#C29036',
+                fontSize: 11, fontWeight: 700,
+                letterSpacing: '0.1em', textTransform: 'uppercase',
+                cursor: 'pointer',
+              }}
+            >
+              Sécuriser mes crédits →
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -482,87 +553,4 @@ export default function Credits() {
         >
           <span className="text-xl flex-shrink-0">👥</span>
           <div className="flex-1">
-            <p className="font-medium text-white text-sm">Parrainage</p>
-            <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
-              Invite une amie et gagne des crédits
-            </p>
-          </div>
-          <span
-            className="font-semibold text-xs px-3 py-1 rounded-full flex-shrink-0"
-            style={{ backgroundColor: 'rgba(194,144,54,0.15)', color: '#C29036' }}
-          >
-            +2 crédits
-          </span>
-        </div>
-
-        {/* Bouton paiement */}
-        <button
-          ref={payButtonRef}
-          onClick={handleBuy}
-          disabled={loading}
-          className="w-full font-semibold py-4 rounded-2xl text-sm tracking-wide transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-          style={{ backgroundColor: '#C29036', color: '#1E1008' }}
-        >
-          <span>💳</span>
-          <span>Payer avec FedaPay</span>
-        </button>
-
-        {/* Section bas */}
-        <div className="mt-8 space-y-3 mb-4">
-
-          <div
-            className="rounded-2xl px-5 py-4 flex items-center gap-4"
-            style={{
-              background: 'linear-gradient(135deg, #2C1A0E, #3a2010)',
-              border: '1px solid rgba(194,144,54,0.18)',
-            }}
-          >
-            <span className="text-xl flex-shrink-0">🎁</span>
-            <div>
-              <p className="font-medium text-white text-sm">Crédits offerts à l'inscription</p>
-              <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                Commence gratuitement dès ton arrivée
-              </p>
-            </div>
-          </div>
-
-          <div
-            className="rounded-2xl px-5 py-4"
-            style={{
-              backgroundColor: '#2C1A0E',
-              border: '1px solid rgba(255,255,255,0.05)',
-            }}
-          >
-            <p
-              className="text-[10px] uppercase tracking-widest font-medium mb-3"
-              style={{ color: 'rgba(255,255,255,0.3)' }}
-            >
-              Paiements acceptés
-            </p>
-            <div className="flex items-center gap-2 flex-wrap">
-              {[
-                { icon: '📱', label: 'Mobile Money' },
-                { icon: '💳', label: 'Carte bancaire' },
-                { icon: '🏦', label: 'Virement' },
-              ].map(({ icon, label }) => (
-                <div
-                  key={label}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs"
-                  style={{
-                    background: 'rgba(255,255,255,0.04)',
-                    color: 'rgba(255,255,255,0.55)',
-                    border: '1px solid rgba(255,255,255,0.07)',
-                  }}
-                >
-                  <span>{icon}</span>
-                  <span>{label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </div>
-  );
-}
+            <p className="font-medium text
