@@ -22,6 +22,11 @@ export default async function handler(req, res) {
 
   let rawBody = await getRawBody(req);
   const webhookSecret = process.env.FEDAPAY_WEBHOOK_SECRET;
+  const signature = req.headers["x-fedapay-signature"] || req.headers["x-fedapay-token"];
+
+  console.log("[webhook] headers:", JSON.stringify(Object.keys(req.headers)));
+  console.log("[webhook] webhookSecret present:", !!webhookSecret);
+  console.log("[webhook] signature:", signature || "ABSENT");
 
   if (!webhookSecret) {
     console.error("[webhook] FEDAPAY_WEBHOOK_SECRET manquant");
@@ -31,6 +36,7 @@ export default async function handler(req, res) {
   let event;
   try {
     event = JSON.parse(rawBody.toString());
+    console.log("[webhook] FULL EVENT:", JSON.stringify(event, null, 2));
   } catch {
     console.error("[webhook] JSON parse error");
     return res.status(400).end();
@@ -41,26 +47,13 @@ export default async function handler(req, res) {
   }
 
   const transaction = event.entity || event;
-
-  // FedaPay met nos données dans custom_metadata OU metadata
-  const meta = transaction.custom_metadata || transaction.metadata || {};
-  const sessionId = meta.session_id;
-  const pack = meta.pack;
+  const { session_id: sessionId, pack } = transaction.metadata || {};
   const transId = String(transaction.id);
 
-  // Fallback : extraire le pack depuis callback_url si metadata vide
-  let resolvedPack = pack;
-  let resolvedSessionId = sessionId;
+  console.log("[webhook] metadata:", { sessionId, pack, transId });
 
-  if (!resolvedPack && transaction.callback_url) {
-    const url = new URL(transaction.callback_url);
-    resolvedPack = url.searchParams.get("pack");
-  }
-
-  console.log("[webhook] metadata:", { sessionId: resolvedSessionId, pack: resolvedPack, transId });
-
-  if (!resolvedSessionId || !resolvedPack || !PACKS[resolvedPack]) {
-    console.error("[webhook] metadata manquante:", { resolvedSessionId, resolvedPack });
+  if (!sessionId || !pack || !PACKS[pack]) {
+    console.error("[webhook] metadata manquante:", { sessionId, pack });
     return res.status(400).end();
   }
 
@@ -77,23 +70,23 @@ export default async function handler(req, res) {
 
   if (already) return res.status(200).json({ duplicate: true });
 
-  const creditsToAdd = PACKS[resolvedPack].credits;
+  const creditsToAdd = PACKS[pack].credits;
 
   await supabase.from("paid_transactions").insert([{
     transaction_id: transId,
-    session_id:     resolvedSessionId,
-    pack:           resolvedPack,
+    session_id:     sessionId,
+    pack,
     credits:        creditsToAdd,
     amount:         transaction.amount,
   }]);
 
-  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(resolvedSessionId);
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(sessionId);
 
   if (isUUID) {
     const { data: userAccount } = await supabase
       .from("usage_credits")
       .select("id, credits")
-      .eq("user_id", resolvedSessionId)
+      .eq("user_id", sessionId)
       .maybeSingle();
 
     if (userAccount) {
@@ -101,16 +94,16 @@ export default async function handler(req, res) {
         .update({ credits: userAccount.credits + creditsToAdd, updated_at: new Date().toISOString() })
         .eq("id", userAccount.id);
     } else {
-      await supabase.from("usage_credits").insert([{ user_id: resolvedSessionId, credits: creditsToAdd }]);
+      await supabase.from("usage_credits").insert([{ user_id: sessionId, credits: creditsToAdd }]);
     }
-    console.log(`[webhook] Connectee userId=${resolvedSessionId} +${creditsToAdd} credits`);
+    console.log(`[webhook] ✅ Connectée userId=${sessionId} +${creditsToAdd} crédits`);
     return res.status(200).json({ success: true, type: "user" });
   }
 
   const { data: sessionAccount } = await supabase
     .from("usage_credits")
     .select("id, credits")
-    .eq("session_id", resolvedSessionId)
+    .eq("session_id", sessionId)
     .maybeSingle();
 
   if (sessionAccount) {
@@ -118,9 +111,9 @@ export default async function handler(req, res) {
       .update({ credits: sessionAccount.credits + creditsToAdd, updated_at: new Date().toISOString() })
       .eq("id", sessionAccount.id);
   } else {
-    await supabase.from("usage_credits").insert([{ session_id: resolvedSessionId, credits: creditsToAdd }]);
+    await supabase.from("usage_credits").insert([{ session_id: sessionId, credits: creditsToAdd }]);
   }
 
-  console.log(`[webhook] Anonyme sessionId=${resolvedSessionId} +${creditsToAdd} credits`);
+  console.log(`[webhook] ✅ Anonyme sessionId=${sessionId} +${creditsToAdd} crédits`);
   return res.status(200).json({ success: true, type: "session" });
-}
+      }
