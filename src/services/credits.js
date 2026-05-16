@@ -49,14 +49,34 @@ export const addCredits = async (amount) => {
 
 export const syncCreditsFromServer = async () => {
   try {
+    // ── CAS 1 : Utilisatrice connectée ──────────────────────────────────
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return null;
-    const { data } = await supabase.from("usage_credits")
-      .select("credits").eq("user_id", user.id).single();
-    if (data?.credits != null) {
-      localStorage.setItem(KEY, String(data.credits));
-      return data.credits;
+    if (user) {
+      const { data } = await supabase.from("usage_credits")
+        .select("credits").eq("user_id", user.id).single();
+      if (data?.credits != null) {
+        localStorage.setItem(KEY, String(data.credits));
+        return data.credits;
+      }
+      return null;
     }
+
+    // ── CAS 2 : Anonyme — cherche par session_id (fingerprint) ──────────
+    const fp = localStorage.getItem("afrotresse_fingerprint");
+    if (!fp) return null;
+
+    const sessionId = `fp_${fp}`;
+
+    const { data: anonData } = await supabase.from("usage_credits")
+      .select("credits")
+      .eq("session_id", sessionId)
+      .maybeSingle();
+
+    if (anonData?.credits != null) {
+      localStorage.setItem(KEY, String(anonData.credits));
+      return anonData.credits;
+    }
+
   } catch (e) { console.error("syncCredits:", e); }
   return null;
 };
