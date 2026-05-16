@@ -10,20 +10,54 @@ export const setCredits = (amount) => {
 
 export const hasCredits = () => getCredits() > 0;
 
+// ── Récupère l'identifiant courant (userId ou sessionId) ──────────────
+function getCurrentIdentifier() {
+  // Utilisatrice connectée
+  const supabaseAuth = localStorage.getItem('sb-fowatshrtuzyyqsvvpxu-auth-token');
+  if (supabaseAuth) {
+    try {
+      const userId = JSON.parse(supabaseAuth)?.user?.id;
+      if (userId) return { userId, sessionId: null };
+    } catch {}
+  }
+  // Anonyme
+  const fp = localStorage.getItem("afrotresse_fingerprint");
+  if (fp) return { userId: null, sessionId: `fp_${fp}` };
+  return { userId: null, sessionId: null };
+}
+
 export const useCredit = async () => {
   const current = getCredits();
   if (current <= 0) return false;
-  const next = current - 1;
-  localStorage.setItem(KEY, String(next));
+
+  const { userId, sessionId } = getCurrentIdentifier();
+
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      await supabase.from("usage_credits")
-        .update({ credits: next, updated_at: new Date().toISOString() })
-        .eq("user_id", user.id);
+    const res = await fetch("/api/consume-credit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, sessionId }),
+    });
+
+    if (!res.ok) {
+      console.error("[useCredit] serveur refusé:", res.status);
+      return false;
     }
-  } catch (e) { console.error("useCredit:", e); }
-  return true;
+
+    const json = await res.json();
+    if (json.credits != null) {
+      localStorage.setItem(KEY, String(json.credits));
+    } else {
+      localStorage.setItem(KEY, String(current - 1));
+    }
+    return true;
+
+  } catch (e) {
+    console.error("[useCredit]", e);
+    // Fallback local si API indisponible
+    localStorage.setItem(KEY, String(current - 1));
+    return true;
+  }
 };
 
 export const addCredits = async (amount) => {
@@ -49,38 +83,18 @@ export const addCredits = async (amount) => {
 
 export const syncCreditsFromServer = async () => {
   try {
-    // CAS 1 : utilisatrice connectée
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (user) {
-      const res = await fetch("/api/get-credits", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.id }),
-      });
-      const json = await res.json();
-      if (json.credits != null) {
-        localStorage.setItem(KEY, String(json.credits));
-        return json.credits;
-      }
-      return null;
-    }
-
-    // CAS 2 : anonyme
-    const fp = localStorage.getItem("afrotresse_fingerprint");
-    if (!fp) return null;
-
-    const sessionId = fp.startsWith("fp_") ? fp : `fp_${fp}`;
-    console.log("[syncCredits] anonyme sessionId:", sessionId);
+    const { userId, sessionId } = getCurrentIdentifier();
 
     const res = await fetch("/api/get-credits", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sessionId }),
+      body: JSON.stringify({ userId, sessionId }),
     });
+
     const json = await res.json();
     if (json.credits != null) {
       localStorage.setItem(KEY, String(json.credits));
+      console.log("[syncCredits] sessionId:", sessionId || userId, "→", json.credits);
       return json.credits;
     }
 
