@@ -20,8 +20,8 @@ function getCurrentIdentifier() {
       if (userId) return { userId, sessionId: null };
     } catch {}
   }
-  // Anonyme
-  const fp = localStorage.getItem("afrotresse_fingerprint");
+  // Anonyme — clé unifiée afrotresse_fp (fingerprint.js)
+  const fp = localStorage.getItem("afrotresse_fp");
   if (fp) return { userId: null, sessionId: `fp_${fp}` };
   return { userId: null, sessionId: null };
 }
