@@ -61,11 +61,12 @@ export const syncCreditsFromServer = async () => {
       return null;
     }
 
-    // ── CAS 2 : Anonyme — cherche par session_id (fingerprint) ──────────
+    // ── CAS 2 : Anonyme — clé unifiée afrotresse_fingerprint ────────────
     const fp = localStorage.getItem("afrotresse_fingerprint");
     if (!fp) return null;
 
     const sessionId = `fp_${fp}`;
+    console.log("[syncCredits] anonyme sessionId:", sessionId);
 
     const { data: anonData } = await supabase.from("usage_credits")
       .select("credits")
