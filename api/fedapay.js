@@ -45,10 +45,9 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Donn\u00e9es invalides (pack ou session manquante)' });
     }
 
-    // URL de callback dynamique — s'adapte à Vercel ou domaine custom
     const host = req.headers['x-forwarded-host'] || req.headers.host || 'afrotresse-hfwf.vercel.app';
     const protocol = host.includes('localhost') ? 'http' : 'https';
-    const callbackUrl = `${protocol}://${host}/credits?payment=success&pack=${pack}`;
+    const callbackUrl = `${protocol}://${host}/credits?payment=success&pack=${pack}&sid=${encodeURIComponent(sessionId)}`;
 
     const fedaRes = await fetch(`${fedaBase}/v1/transactions`, {
       method: 'POST',
@@ -57,19 +56,19 @@ export default async function handler(req, res) {
         'Content-Type':  'application/json',
       },
       body: JSON.stringify({
-        description:  selectedPack.description,
-        amount:       selectedPack.amount,
-        currency:     { iso: 'XOF' },
-        callback_url: callbackUrl,
+        description:     selectedPack.description,
+        amount:          selectedPack.amount,
+        currency:        { iso: 'XOF' },
+        callback_url:    callbackUrl,
         customer: {
           email: email || 'client@afrotresse.com',
           ...(phone && { phone_number: { number: phone, country: 'BJ' } }),
         },
-        metadata: {
-          session_id:      sessionId,
-          pack:            pack,
-          expected_amount: selectedPack.amount,
-          credits:         selectedPack.credits,
+        // custom_metadata est renvoyé par FedaPay dans le webhook
+        custom_metadata: {
+          session_id: sessionId,
+          pack:       pack,
+          credits:    selectedPack.credits,
         },
       }),
     });
