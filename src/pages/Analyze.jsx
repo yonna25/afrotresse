@@ -2,29 +2,29 @@ import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { analyzeFace } from "../services/faceAnalysis.js";
-import { setCredits, getCredits, useCredit } from "../services/credits.js";
+import { setCredits, getCredits, useCredit, syncCreditsFromServer } from "../services/credits.js";
 import Seo from "../components/Seo.jsx";
 
 const STEPS = [
   "Analyse des traits uniques...",
-  "Étude de la structure osseuse...",
-  "Calcul des proportions idéales...",
-  "Sélection des tresses royales..."
+  "Etude de la structure osseuse...",
+  "Calcul des proportions ideales...",
+  "Selection des tresses royales..."
 ];
 
 function getErrorMessage(err) {
   const msg = err?.message || "";
-  if (msg.includes("No credits") || msg.includes("crédits"))
-    return { title: "Plus de crédits 📛", body: "Tu as utilisé tes analyses gratuites.", cta: "Obtenir des crédits", route: "/credits" };
-  if (msg.includes("429") || msg.includes("Trop de requêtes"))
-    return { title: "Doucement 😊", body: "Attends quelques secondes avant de réessayer.", cta: "Réessayer", route: "/camera" };
-  if (msg.includes("déjà effectuée") || msg.includes("409") || msg.includes("déjà traitée"))
-    return { title: "Analyse déjà faite 👑", body: "Tu as déjà analysé cette photo dans cette session.", cta: "Voir mes résultats", route: "/results" };
-  if (msg.includes("visage") || msg.includes("détecter"))
-    return { title: "Visage non détecté 📸", body: "Reprends un selfie bien éclairé, de face.", cta: "Reprendre une photo", route: "/camera" };
-  if (msg.includes("Timeout") || msg.includes("connexion") || msg.includes("réseau"))
-    return { title: "Connexion lente 📡", body: "Vérifie ta connexion et réessaie.", cta: "Réessayer", route: "/camera" };
-  return { title: "Erreur (debug)", body: msg || "Erreur inconnue", cta: "Réessayer", route: "/camera" };
+  if (msg.includes("No credits") || msg.includes("credits"))
+    return { title: "Plus de credits", body: "Tu as utilise tes analyses gratuites.", cta: "Obtenir des credits", route: "/credits" };
+  if (msg.includes("429") || msg.includes("Trop de requetes"))
+    return { title: "Doucement", body: "Attends quelques secondes avant de reessayer.", cta: "Reessayer", route: "/camera" };
+  if (msg.includes("deja effectuee") || msg.includes("409") || msg.includes("deja traitee"))
+    return { title: "Analyse deja faite", body: "Tu as deja analyse cette photo dans cette session.", cta: "Voir mes resultats", route: "/results" };
+  if (msg.includes("visage") || msg.includes("detecter"))
+    return { title: "Visage non detecte", body: "Reprends un selfie bien eclaire, de face.", cta: "Reprendre une photo", route: "/camera" };
+  if (msg.includes("Timeout") || msg.includes("connexion") || msg.includes("reseau"))
+    return { title: "Connexion lente", body: "Verifie ta connexion et reessaie.", cta: "Reessayer", route: "/camera" };
+  return { title: "Erreur (debug)", body: msg || "Erreur inconnue", cta: "Reessayer", route: "/camera" };
 }
 
 export default function Analyze() {
@@ -138,7 +138,12 @@ export default function Analyze() {
 
     const run = async () => {
       try {
-        const balance = getCredits();
+        // ── FIX : toujours lire le solde depuis le serveur avant de vérifier ──
+        // localStorage peut être 0 si la session n'était pas encore chargée
+        // au moment du sync précédent → redirect injuste vers /credits.
+        const serverBalance = await syncCreditsFromServer();
+        const balance = serverBalance ?? getCredits();
+
         if (balance === 0) {
           clearInterval(interval);
           clearInterval(stepInterval);
@@ -152,12 +157,10 @@ export default function Analyze() {
         sessionStorage.setItem("afrotresse_results", resultsJson);
         localStorage.setItem("afrotresse_face_shape", result.faceShape);
 
-        // Déduction du crédit — toujours via useCredit (local + usage_credits)
+        // Déduction du crédit
         if (result.creditsRemaining !== undefined) {
-          // L'API retourne le solde exact → on l'applique directement
           setCredits(result.creditsRemaining);
         } else {
-          // L'API ne retourne pas de solde → on déduit 1 via useCredit
           await useCredit();
         }
 
@@ -169,11 +172,11 @@ export default function Analyze() {
         clearInterval(interval);
         clearInterval(stepInterval);
         console.error("Analysis error:", err);
-        if (err?.message?.includes("déjà effectuée") || err?.message?.includes("déjà traitée") || err?.message?.includes("409")) {
+        if (err?.message?.includes("deja effectuee") || err?.message?.includes("deja traitee") || err?.message?.includes("409")) {
           setErrorState({
-            title: "Photo déjà analysée 👑",
-            body: "Tu as déjà analysé cette photo. Tes résultats sont prêts — on t'y emmène !",
-            cta: "Voir mes résultats",
+            title: "Photo deja analysee",
+            body: "Tu as deja analyse cette photo. Tes resultats sont prets — on t'y emmene !",
+            cta: "Voir mes resultats",
             route: "/results",
             autoRedirect: true,
           });
@@ -217,7 +220,7 @@ export default function Analyze() {
             onClick={() => navigate("/")}
             className="w-full py-3 mt-2 text-sm text-white/30"
           >
-            Retour à l'accueil
+            Retour a l'accueil
           </button>
         </motion.div>
       </div>
@@ -249,7 +252,7 @@ export default function Analyze() {
           animate={{ opacity: 1, y: 0 }}
           className="text-xs opacity-70 mb-8 uppercase tracking-widest"
         >
-          {readyMsg ? "Résultats prêts ✨" : STEPS[stepIdx]}
+          {readyMsg ? "Resultats prets ✨" : STEPS[stepIdx]}
         </motion.p>
         <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
           <motion.div className="h-full bg-[#C9963A]" animate={{ width: `${progress}%` }} />
@@ -275,7 +278,7 @@ export default function Analyze() {
               }}
             >
               <p className="font-black text-base text-white leading-tight mb-1">
-                Entre ton prénom pour découvrir des résultats personnalisés 💫
+                Entre ton prenom pour decouvrir des resultats personnalises 💫
               </p>
               <p className="text-[11px] text-white/40 mb-4">
                 L'analyse continue — aucun blocage.
@@ -289,7 +292,7 @@ export default function Analyze() {
               >
                 <input
                   type="text"
-                  placeholder="Ton prénom"
+                  placeholder="Ton prenom"
                   value={prenom}
                   onChange={handlePrenomChange}
                   onKeyDown={e => e.key === "Enter" && handleFormSubmit()}
@@ -309,7 +312,7 @@ export default function Analyze() {
                 className="w-full py-3 rounded-xl font-black text-sm text-[#2C1A0E]"
                 style={{ background: "linear-gradient(135deg, #C9963A, #E8B96A)" }}
               >
-                Personnaliser mes résultats ✨
+                Personnaliser mes resultats ✨
               </button>
 
               <button
