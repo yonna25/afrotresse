@@ -2,6 +2,12 @@ import { createClient } from "@supabase/supabase-js";
 
 export const config = { api: { bodyParser: false } };
 
+const PACKS = {
+  decouverte: { credits: 3,  amount: 300  },
+  allie:      { credits: 10, amount: 900  },
+  vip:        { credits: 50, amount: 2500 },
+};
+
 async function getRawBody(req) {
   return new Promise((resolve, reject) => {
     const chunks = [];
@@ -11,127 +17,122 @@ async function getRawBody(req) {
   });
 }
 
-const PACKS = {
-  decouverte: { credits: 3,  amount: 300  },
-  allie:      { credits: 10, amount: 900  },
-  vip:        { credits: 50, amount: 2500 },
-};
+function getSupabase() {
+  return createClient(
+    process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  );
+}
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
 
-  let rawBody = await getRawBody(req);
-  const webhookSecret = process.env.FEDAPAY_WEBHOOK_SECRET;
-
-  if (!webhookSecret) {
-    console.error("[webhook] FEDAPAY_WEBHOOK_SECRET manquant");
-    return res.status(500).end();
-  }
-
+  // ── 1. Lire le body brut ─────────────────────────────────────────
   let event;
   try {
-    event = JSON.parse(rawBody.toString());
+    const raw = await getRawBody(req);
+    event = JSON.parse(raw.toString());
   } catch {
-    console.error("[webhook] JSON parse error");
+    console.error("[webhook] JSON invalide");
     return res.status(400).end();
   }
 
-  if (event.name !== "transaction.approved" && event.event !== "transaction.approved") {
+  // ── 2. Ignorer les events non pertinents ─────────────────────────
+  const eventName = event.name || event.event || "";
+  if (eventName !== "transaction.approved") {
     return res.status(200).json({ ignored: true });
   }
 
+  // ── 3. Extraire la transaction ───────────────────────────────────
   const transaction = event.entity || event;
+  const transId     = String(transaction.id);
 
-  console.log("[webhook] custom_metadata raw:", JSON.stringify(transaction.custom_metadata));
-  console.log("[webhook] callback_url:", transaction.callback_url);
-
-  // Lire custom_metadata — FedaPay peut envoyer un objet ou une string JSON
+  // ── 4. Lire les métadonnées ──────────────────────────────────────
   let meta = {};
   if (transaction.custom_metadata) {
-    if (typeof transaction.custom_metadata === "string") {
-      try { meta = JSON.parse(transaction.custom_metadata); } catch {}
-    } else {
-      meta = transaction.custom_metadata;
-    }
+    meta = typeof transaction.custom_metadata === "string"
+      ? JSON.parse(transaction.custom_metadata)
+      : transaction.custom_metadata;
   }
 
-  let resolvedSessionId = meta.session_id || null;
-  let resolvedPack = meta.pack || null;
-  const transId = String(transaction.id);
+  let sessionId = meta.session_id || null;
+  let pack      = meta.pack       || null;
 
-  // Fallback : extraire depuis callback_url
-  if ((!resolvedPack || !resolvedSessionId) && transaction.callback_url) {
+  // Fallback : callback_url
+  if ((!sessionId || !pack) && transaction.callback_url) {
     try {
       const url = new URL(transaction.callback_url);
-      if (!resolvedPack) resolvedPack = url.searchParams.get("pack");
-      if (!resolvedSessionId) resolvedSessionId = url.searchParams.get("sid");
+      if (!pack)      pack      = url.searchParams.get("pack");
+      if (!sessionId) sessionId = url.searchParams.get("sid");
     } catch {}
   }
 
-  console.log("[webhook] metadata:", { sessionId: resolvedSessionId, pack: resolvedPack, transId });
+  console.log("[webhook]", { transId, sessionId, pack });
 
-  if (!resolvedSessionId || !resolvedPack || !PACKS[resolvedPack]) {
-    console.error("[webhook] metadata manquante:", { resolvedSessionId, resolvedPack });
+  if (!sessionId || !pack || !PACKS[pack]) {
+    console.error("[webhook] metadata manquante ou pack inconnu");
     return res.status(400).end();
   }
 
-  const supabase = createClient(
-    process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  );
+  const supabase     = getSupabase();
+  const creditsToAdd = PACKS[pack].credits;
 
-  const { data: already } = await supabase
+  // ── 5. Idempotence — rejeter les doublons ────────────────────────
+  const { data: existing } = await supabase
     .from("paid_transactions")
     .select("id")
     .eq("transaction_id", transId)
     .maybeSingle();
 
-  if (already) return res.status(200).json({ duplicate: true });
+  if (existing) {
+    console.log("[webhook] doublon ignoré:", transId);
+    return res.status(200).json({ duplicate: true });
+  }
 
-  const creditsToAdd = PACKS[resolvedPack].credits;
-
+  // ── 6. Enregistrer la transaction ───────────────────────────────
   await supabase.from("paid_transactions").insert([{
     transaction_id: transId,
-    session_id:     resolvedSessionId,
-    pack:           resolvedPack,
+    session_id:     sessionId,
+    pack,
     credits:        creditsToAdd,
     amount:         transaction.amount,
   }]);
 
-  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(resolvedSessionId);
+  // ── 7. Créditer usage_credits ────────────────────────────────────
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(sessionId);
+  const field  = isUUID ? "user_id"    : "session_id";
+  const value  = sessionId;
 
-  if (isUUID) {
-    const { data: userAccount } = await supabase
-      .from("usage_credits")
-      .select("id, credits")
-      .eq("user_id", resolvedSessionId)
-      .maybeSingle();
-
-    if (userAccount) {
-      await supabase.from("usage_credits")
-        .update({ credits: userAccount.credits + creditsToAdd, updated_at: new Date().toISOString() })
-        .eq("id", userAccount.id);
-    } else {
-      await supabase.from("usage_credits").insert([{ user_id: resolvedSessionId, credits: creditsToAdd }]);
-    }
-    console.log(`[webhook] Connectee userId=${resolvedSessionId} +${creditsToAdd} credits`);
-    return res.status(200).json({ success: true, type: "user" });
-  }
-
-  const { data: sessionAccount } = await supabase
+  const { data: account } = await supabase
     .from("usage_credits")
     .select("id, credits")
-    .eq("session_id", resolvedSessionId)
+    .eq(field, value)
     .maybeSingle();
 
-  if (sessionAccount) {
+  if (account) {
     await supabase.from("usage_credits")
-      .update({ credits: sessionAccount.credits + creditsToAdd, updated_at: new Date().toISOString() })
-      .eq("id", sessionAccount.id);
+      .update({
+        credits:    account.credits + creditsToAdd,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", account.id);
   } else {
-    await supabase.from("usage_credits").insert([{ session_id: resolvedSessionId, credits: creditsToAdd }]);
+    const insert = isUUID
+      ? { user_id: sessionId, credits: creditsToAdd }
+      : { session_id: sessionId, credits: creditsToAdd };
+    await supabase.from("usage_credits").insert([insert]);
   }
 
-  console.log(`[webhook] Anonyme sessionId=${resolvedSessionId} +${creditsToAdd} credits`);
-  return res.status(200).json({ success: true, type: "session" });
+  // ── 8. Audit dans credit_movements ──────────────────────────────
+  await supabase.from("credit_movements").insert([{
+    user_id:       isUUID ? sessionId : null,
+    fingerprint:   isUUID ? null : sessionId,
+    amount:        creditsToAdd,
+    type:          "purchase",
+    description:   `Pack ${pack} - transaction ${transId}`,
+    credits_given: creditsToAdd,
+  }]);
+
+  console.log(`[webhook] +${creditsToAdd} credits → ${field}=${value}`);
+  return res.status(200).json({ success: true });
 }
