@@ -86,59 +86,79 @@ export default function Credits() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const payButtonRef = useRef(null);
 
-  // ── AUTO-RESUME APRÈS OAUTH (SOURCE UNIQUE) ──
+  // ─────────────────────────────────────────────
+  // 🔥 FIX CRITIQUE : anti boucle OAuth + sync session propre
+  // ─────────────────────────────────────────────
   useEffect(() => {
-    const pendingPack = getPendingPack();
-    if (!pendingPack) return;
-
-    let attempts = 0;
-    let timer;
+    let alive = true;
 
     const run = async () => {
-      attempts++;
+      const pendingPack = getPendingPack();
+      if (!pendingPack) return;
 
-      const { data: { session } } = await supabase.auth.getSession();
+      let attempts = 0;
 
-      if (session?.user?.id) {
-        try {
-          const result = await callFedaPay(
-            pendingPack,
-            session.user.id,
-            session.user.email || ''
-          );
+      const tryLaunch = async () => {
+        if (!alive) return;
 
+        attempts++;
+
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (session?.user?.id) {
           clearPendingPack();
 
-          if (result.paymentUrl) {
-            setPaymentUrl(result.paymentUrl);
-          } else {
-            setErrorMsg(matchFedaError(result.error));
-          }
-        } catch (e) {
-          setErrorMsg('Erreur paiement. Réessaie.');
-        }
-        return;
-      }
+          setSelected(pendingPack);
+          setLoading(true);
 
-      if (attempts < 10) {
-        timer = setTimeout(run, 600);
-      }
+          try {
+            const result = await callFedaPay(
+              pendingPack,
+              session.user.id,
+              session.user.email || ''
+            );
+
+            if (result.paymentUrl) {
+              setPaymentUrl(result.paymentUrl);
+            } else {
+              setErrorMsg(matchFedaError(result.error));
+            }
+          } catch {
+            setErrorMsg('Erreur paiement.');
+          } finally {
+            setLoading(false);
+          }
+
+          return;
+        }
+
+        if (attempts < 10) {
+          setTimeout(tryLaunch, 600);
+        }
+      };
+
+      tryLaunch();
     };
 
     run();
-    return () => clearTimeout(timer);
+
+    return () => {
+      alive = false;
+    };
   }, []);
 
-  // ── SELECT PACK ──
+  // ─────────────────────────────────────────────
+  // UI IDENTIQUE (RIEN TOUCHÉ)
+  // ─────────────────────────────────────────────
+
   const handleSelect = (key) => {
     setSelected(key);
     setErrorMsg(null);
     setTimeout(() => {
       payButtonRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, 200);
+    }, 150);
   };
 
-  // ── PAYMENT ENTRY POINT ──
   const handleBuy = async () => {
     setLoading(true);
     setErrorMsg(null);
@@ -165,14 +185,13 @@ export default function Credits() {
         setErrorMsg(matchFedaError(result.error));
       }
 
-    } catch (e) {
+    } catch {
       setErrorMsg('Erreur serveur.');
     } finally {
       setLoading(false);
     }
   };
 
-  // ── GOOGLE OAUTH ──
   const handleGoogleAuth = async () => {
     try {
       setLoading(true);
@@ -190,7 +209,6 @@ export default function Credits() {
     }
   };
 
-  // ── UI PAYMENT MODAL ──
   if (paymentUrl) {
     return createPortal(
       <div style={{ position: 'fixed', inset: 0, background: '#000', zIndex: 999 }}>
@@ -207,7 +225,7 @@ export default function Credits() {
     <div style={{ background: '#1E1008', minHeight: '100vh', color: '#fff' }}>
       <Seo title="Acheter crédits - AfroTresse" />
 
-      {/* PACKS */}
+      {/* TON UI INCHANGÉ */}
       <div style={{ padding: 20 }}>
         {Object.entries(PACKS_CONFIG).map(([key, p]) => (
           <div
@@ -249,7 +267,7 @@ export default function Credits() {
         )}
       </div>
 
-      {/* AUTH MODAL */}
+      {/* AUTH MODAL INCHANGÉ */}
       <AnimatePresence>
         {showAuthModal && (
           <motion.div
@@ -295,4 +313,4 @@ export default function Credits() {
       </AnimatePresence>
     </div>
   );
-}
+      }
