@@ -49,7 +49,7 @@ function LoadingOverlay() {
       style={{
         position: 'fixed', inset: 0, zIndex: 40,
         display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifycontent: 'center', gap: 20,
+        alignItems: 'center', justifyContent: 'center', gap: 20,
         background: 'rgba(20,8,0,0.88)', backdropFilter: 'blur(6px)',
         paddingBottom: 80,
       }}
@@ -97,7 +97,7 @@ function FedaPayModal({ url, onClose }) {
       }}
     >
       <div style={{
-        display: 'flex', alignItems: 'center', justifycontent: 'space-between',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '14px 18px', flexShrink: 0,
         borderBottom: '1px solid rgba(194,144,54,0.18)',
       }}>
@@ -105,7 +105,7 @@ function FedaPayModal({ url, onClose }) {
           <div style={{
             width: 30, height: 30, borderRadius: '50%',
             backgroundColor: '#C29036',
-            display: 'flex', alignItems: 'center', justifycontent: 'center',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 14,
           }}>💳</div>
           <div>
@@ -124,7 +124,7 @@ function FedaPayModal({ url, onClose }) {
             background: 'rgba(255,255,255,0.1)',
             border: 'none', color: '#fff', fontSize: 15,
             cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifycontent: 'center',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}
         >✕</button>
       </div>
@@ -132,7 +132,7 @@ function FedaPayModal({ url, onClose }) {
       {!iframeLoaded && (
         <div style={{
           flex: 1, display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifycontent: 'center', gap: 14,
+          alignItems: 'center', justifyContent: 'center', gap: 14,
         }}>
           <motion.div
             animate={{ rotate: 360 }}
@@ -161,7 +161,7 @@ function FedaPayModal({ url, onClose }) {
       />
 
       <div style={{
-        display: 'flex', alignItems: 'center', justifycontent: 'center',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
         gap: 6, padding: '8px 0', flexShrink: 0,
         fontSize: 10, color: 'rgba(255,255,255,0.3)',
         borderTop: '1px solid rgba(255,255,255,0.05)',
@@ -234,6 +234,7 @@ export default function Credits() {
     }
   }, []);
 
+  // Détection de la réussite du paiement et synchronisation immédiate forcée
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('payment') === 'success') {
@@ -241,16 +242,22 @@ export default function Credits() {
       setPaymentSuccess(true);
       setSuccessPack(pack);
       
-      // On attend la fin de la synchronisation des crédits avant de vider les paramètres d'URL
-      setTimeout(async () => {
+      // On met à jour directement le stockage local pour bloquer le saut à 0
+      try {
+        const currentCredits = parseInt(localStorage.getItem('user_credits') || '0', 10);
+        const packs = { decouverte: 3, allie: 10, vip: 50 };
+        const added = packs[pack] || 0;
+        localStorage.setItem('user_credits', String(currentCredits + added));
+      } catch (e) {}
+
+      // On lance la synchronisation réelle avec le serveur
+      async function triggerSync() {
         try {
           const { syncCreditsFromServer } = await import('../services/credits.js');
           await syncCreditsFromServer();
-          
-          // L'URL est nettoyée uniquement quand l'état du solde est validé par le serveur
-          window.history.replaceState({}, '', '/credits');
         } catch {}
-      }, 2000);
+      }
+      triggerSync();
     }
   }, []);
 
@@ -307,6 +314,11 @@ export default function Credits() {
     }
   };
 
+  // Redirection propre suite au clic sur "Voir mon solde"
+  const handleRedirectToProfile = () => {
+    window.location.href = '/profile';
+  };
+
   if (paymentSuccess) {
     const packInfo = PACKS_CONFIG[successPack];
     return (
@@ -329,7 +341,7 @@ export default function Credits() {
             Si tes crédits ne s'affichent pas encore, patiente quelques secondes et rafraîchis la page Profil.
           </p>
           <button
-            onClick={() => window.location.href = '/profile'}
+            onClick={handleRedirectToProfile}
             style={{
               width: '100%', padding: '16px',
               borderRadius: 16, border: 'none',
