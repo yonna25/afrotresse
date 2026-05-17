@@ -269,18 +269,17 @@ export default function Credits() {
   const [authLoading, setAuthLoading]       = useState(null); // 'google' | 'magic' | null
   const [magicEmail, setMagicEmail]           = useState('');
   const [magicSent, setMagicSent]             = useState(false);
+  const [showMagicForm, setShowMagicForm]     = useState(false);
   const [successPack, setSuccessPack]       = useState(null);
   const payButtonRef = useRef(null);
 
-  // Retour OAuth → polling jusqu'à ce que la session soit disponible
+  // Au montage : si un pack est en attente + session disponible → lancer FedaPay
+  // Ne dépend pas de ?pending=true dans l'URL (trop fragile)
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('pending') !== 'true') return;
-
-    window.history.replaceState({}, '', '/credits');
+    window.history.replaceState({}, '', '/credits'); // Nettoyer l'URL quoi qu'il arrive
 
     const pendingPack = getPendingPack();
-    if (!pendingPack) return;
+    if (!pendingPack) return; // Rien en attente → sortir
 
     let attempts = 0;
     let timer;
@@ -299,14 +298,14 @@ export default function Credits() {
             if (result.paymentUrl) setPaymentUrl(result.paymentUrl);
             else setErrorMsg(matchFedaError(result.error));
           } catch {
-            setErrorMsg('Une erreur est survenue. Veuillez reessayer.');
+            setErrorMsg("Une erreur est survenue. Veuillez reessayer.");
           } finally {
             setLoading(false);
           }
-          return;
+          return; // Session trouvée → stop
         }
       } catch {}
-      if (attempts < 10) timer = setTimeout(tryLaunch, 500);
+      if (attempts < 10) timer = setTimeout(tryLaunch, 500); // Réessayer dans 500ms
     };
 
     tryLaunch();
@@ -594,46 +593,73 @@ export default function Credits() {
                   </span>
                 </button>
 
-                {/* Magic Link */}
+                {/* Magic Link — accordéon */}
                 {!magicSent ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <div style={{ position: 'relative' }}>
-                      <span style={{
-                        position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)',
-                        fontSize: 16, pointerEvents: 'none',
-                      }}>✉️</span>
-                      <input
-                        type="email"
-                        placeholder="Ton adresse email"
-                        value={magicEmail}
-                        onChange={e => setMagicEmail(e.target.value)}
-                        onKeyDown={e => e.key === 'Enter' && handleMagicLink()}
-                        style={{
-                          width: '100%', padding: '15px 14px 15px 42px',
-                          borderRadius: 14, border: '1px solid rgba(255,255,255,0.15)',
-                          background: 'rgba(255,255,255,0.06)',
-                          color: '#fff', fontSize: 14, outline: 'none',
-                          boxSizing: 'border-box',
-                        }}
-                      />
-                    </div>
+                    {/* Bouton accordéon */}
                     <button
-                      onClick={handleMagicLink}
-                      disabled={authLoading !== null || !magicEmail.trim()}
+                      onClick={() => setShowMagicForm(v => !v)}
+                      disabled={authLoading !== null}
                       style={{
                         width: '100%', padding: '15px',
-                        borderRadius: 14, border: '1px solid rgba(194,144,54,0.4)',
-                        background: 'rgba(194,144,54,0.12)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                        cursor: (!magicEmail.trim() || authLoading) ? 'not-allowed' : 'pointer',
+                        borderRadius: 14, border: '1px solid rgba(255,255,255,0.12)',
+                        background: 'rgba(255,255,255,0.05)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        cursor: 'pointer',
                         opacity: authLoading === 'google' ? 0.5 : 1,
                       }}
                     >
-                      <span style={{ fontSize: 16 }}>🔗</span>
-                      <span style={{ color: '#C29036', fontSize: 14, fontWeight: 600 }}>
-                        {authLoading === 'magic' ? 'Envoi en cours…' : 'Continuer avec Magic Link'}
-                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <span style={{ fontSize: 16 }}>✉️</span>
+                        <span style={{ color: 'rgba(255,255,255,0.75)', fontSize: 14, fontWeight: 500 }}>
+                          Continuer par email
+                        </span>
+                      </div>
+                      <span style={{
+                        color: 'rgba(255,255,255,0.35)', fontSize: 12,
+                        transform: showMagicForm ? 'rotate(180deg)' : 'rotate(0deg)',
+                        transition: 'transform 0.2s',
+                        display: 'inline-block',
+                      }}>▼</span>
                     </button>
+
+                    {/* Formulaire dépliable */}
+                    {showMagicForm && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        <div style={{ position: 'relative' }}>
+                          <input
+                            type="email"
+                            placeholder="Ton adresse email"
+                            value={magicEmail}
+                            onChange={e => setMagicEmail(e.target.value)}
+                            onKeyDown={e => e.key === 'Enter' && handleMagicLink()}
+                            autoFocus
+                            style={{
+                              width: '100%', padding: '14px',
+                              borderRadius: 12, border: '1px solid rgba(194,144,54,0.3)',
+                              background: 'rgba(255,255,255,0.06)',
+                              color: '#fff', fontSize: 14, outline: 'none',
+                              boxSizing: 'border-box',
+                            }}
+                          />
+                        </div>
+                        <button
+                          onClick={handleMagicLink}
+                          disabled={authLoading !== null || !magicEmail.trim()}
+                          style={{
+                            width: '100%', padding: '14px',
+                            borderRadius: 12, border: 'none',
+                            background: magicEmail.trim() ? '#C29036' : 'rgba(194,144,54,0.25)',
+                            color: magicEmail.trim() ? '#1E1008' : 'rgba(255,255,255,0.3)',
+                            fontSize: 14, fontWeight: 700,
+                            cursor: (!magicEmail.trim() || authLoading) ? 'not-allowed' : 'pointer',
+                            transition: 'all 0.2s',
+                          }}
+                        >
+                          {authLoading === 'magic' ? 'Envoi en cours…' : 'Envoyer le lien'}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div style={{
@@ -647,7 +673,7 @@ export default function Credits() {
                       Vérifie ta boîte mail
                     </p>
                     <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, lineHeight: 1.5 }}>
-                      Un lien de connexion a été envoyé à <strong style={{ color: 'rgba(255,255,255,0.75)' }}>{magicEmail}</strong>.
+                      Lien envoyé à <strong style={{ color: 'rgba(255,255,255,0.75)' }}>{magicEmail}</strong>.
                       Clique dessus pour revenir et payer.
                     </p>
                   </div>
