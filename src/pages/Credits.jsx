@@ -78,7 +78,6 @@ function LoadingOverlay() {
 
 function FedaPayModal({ url, onClose }) {
   const [iframeLoaded, setIframeLoaded] = useState(false);
-
   useEffect(() => {
     const handler = (e) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', handler);
@@ -228,6 +227,13 @@ export default function Credits() {
   const [successPack, setSuccessPack]       = useState(null);
   const payButtonRef = useRef(null);
 
+  // Sécurité anti-iframe : si la page est chargée dans un conteneur web externe (FedaPay)
+  useEffect(() => {
+    if (window.self !== window.top) {
+      window.top.location.href = window.location.href;
+    }
+  }, []);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('payment') === 'success') {
@@ -264,19 +270,16 @@ export default function Credits() {
     setLoading(true);
     setErrorMsg(null);
     try {
-      // Récupérer userId si connectée
       const supabaseAuth = localStorage.getItem('sb-fowatshrtuzyyqsvvpxu-auth-token');
       let userId = null;
       if (supabaseAuth) {
         try { userId = JSON.parse(supabaseAuth)?.user?.id; } catch {}
       }
 
-      // ── Clé unifiée : afrotresse_fingerprint (même clé que Home.jsx) ──
       const fp = localStorage.getItem('afrotresse_fingerprint');
       const sessionId = userId || (fp ? `fp_${fp}` : 'guest_user');
 
       console.log('[credits] sessionId utilisé:', sessionId);
-
       const response = await fetch('/api/fedapay', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -286,7 +289,6 @@ export default function Credits() {
           sessionId,
         }),
       });
-
       const result = await response.json();
 
       if (result.paymentUrl) {
@@ -359,7 +361,6 @@ export default function Credits() {
       </AnimatePresence>
 
       <div className="max-w-lg mx-auto px-4 pt-10">
-
         <div
           className="rounded-2xl px-5 py-3 flex items-center gap-3 mb-6"
           style={{
@@ -373,10 +374,7 @@ export default function Credits() {
           </p>
         </div>
 
-        <h1
-          className="text-3xl font-bold text-center mb-10"
-          style={{ color: '#C29036' }}
-        >
+        <h1 className="text-3xl font-bold text-center mb-10" style={{ color: '#C29036' }}>
           Choisis ton pack
         </h1>
 
@@ -426,20 +424,14 @@ export default function Credits() {
                       <p className="font-semibold text-sm text-white leading-tight">
                         {pack.label}
                       </p>
-                      <p
-                        className="text-xs mt-0.5"
-                        style={{ color: 'rgba(255,255,255,0.5)' }}
-                      >
+                      <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.5)' }}>
                         {pack.description}
                       </p>
                     </div>
                   </div>
                   <div className="text-right flex-shrink-0 ml-4">
                     <div>
-                      <span
-                        className="text-2xl font-bold leading-none"
-                        style={{ color: '#C29036' }}
-                      >
+                      <span className="text-2xl font-bold leading-none" style={{ color: '#C29036' }}>
                         {pack.price}
                       </span>
                       <span
