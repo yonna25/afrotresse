@@ -47,7 +47,9 @@ export default async function handler(req, res) {
 
     const host = req.headers['x-forwarded-host'] || req.headers.host || 'afrotresse-hfwf.vercel.app';
     const protocol = host.includes('localhost') ? 'http' : 'https';
-    const callbackUrl = `${protocol}://${host}/credits?payment=success&pack=${pack}&sid=${encodeURIComponent(sessionId)}`;
+    
+    // Modification ici : ajout de &target=_top pour éviter le doublon d'interface au retour du paiement
+    const callbackUrl = `${protocol}://${host}/credits?payment=success&pack=${pack}&sid=${encodeURIComponent(sessionId)}&target=_top`;
 
     const fedaRes = await fetch(`${fedaBase}/v1/transactions`, {
       method: 'POST',
@@ -64,7 +66,6 @@ export default async function handler(req, res) {
           email: email || 'client@afrotresse.com',
           ...(phone && { phone_number: { number: phone, country: 'BJ' } }),
         },
-        // custom_metadata est renvoyé par FedaPay dans le webhook
         custom_metadata: {
           session_id: sessionId,
           pack:       pack,
