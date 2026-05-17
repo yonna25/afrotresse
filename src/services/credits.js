@@ -3,34 +3,31 @@ import { supabase } from "./supabase.js";
 const KEY = "afrotresse_credits";
 
 export const getCredits = () => parseInt(localStorage.getItem(KEY) || "0", 10);
-
-export const setCredits = (amount) => {
-  localStorage.setItem(KEY, String(parseInt(amount, 10)));
-};
-
+export const setCredits = (n) => localStorage.setItem(KEY, String(parseInt(n, 10)));
 export const hasCredits = () => getCredits() > 0;
 
-// ── Récupère l'identifiant courant (userId ou sessionId) ──────────────
-function getCurrentIdentifier() {
-  // Utilisatrice connectée
-  const supabaseAuth = localStorage.getItem('sb-fowatshrtuzyyqsvvpxu-auth-token');
-  if (supabaseAuth) {
-    try {
-      const userId = JSON.parse(supabaseAuth)?.user?.id;
-      if (userId) return { userId, sessionId: null };
-    } catch {}
-  }
-  // Anonyme — clé unifiée afrotresse_fp (fingerprint.js)
+// ── Identifiant courant — TOUJOURS via supabase.auth.getSession() ──────────
+// Ne jamais lire la clé localStorage de Supabase directement :
+// le project ref peut changer et la clé devient fausse.
+async function getCurrentIdentifier() {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user?.id) {
+      return { userId: session.user.id, sessionId: null };
+    }
+  } catch {}
+
   const fp = localStorage.getItem("afrotresse_fp");
   if (fp) return { userId: null, sessionId: `fp_${fp}` };
   return { userId: null, sessionId: null };
 }
 
+// ── Consommer 1 crédit ────────────────────────────────────────────────────
 export const useCredit = async () => {
   const current = getCredits();
   if (current <= 0) return false;
 
-  const { userId, sessionId } = getCurrentIdentifier();
+  const { userId, sessionId } = await getCurrentIdentifier();
 
   try {
     const res = await fetch("/api/consume-credit", {
@@ -46,44 +43,26 @@ export const useCredit = async () => {
 
     const json = await res.json();
     if (json.credits != null) {
-      localStorage.setItem(KEY, String(json.credits));
+      setCredits(json.credits);
     } else {
-      localStorage.setItem(KEY, String(current - 1));
+      setCredits(current - 1);
     }
     return true;
 
   } catch (e) {
     console.error("[useCredit]", e);
-    // Fallback local si API indisponible
-    localStorage.setItem(KEY, String(current - 1));
+    setCredits(current - 1); // fallback local
     return true;
   }
 };
 
-export const addCredits = async (amount) => {
-  const next = getCredits() + amount;
-  localStorage.setItem(KEY, String(next));
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { data } = await supabase.from("usage_credits")
-        .select("credits").eq("user_id", user.id).single();
-      if (data) {
-        await supabase.from("usage_credits")
-          .update({ credits: data.credits + amount, updated_at: new Date().toISOString() })
-          .eq("user_id", user.id);
-      } else {
-        await supabase.from("usage_credits")
-          .insert({ user_id: user.id, email: user.email, credits: amount });
-      }
-    }
-  } catch (e) { console.error("addCredits:", e); }
-  return next;
-};
-
+// ── Synchroniser depuis Supabase (source de vérité) ──────────────────────
+// À appeler après paiement ou au chargement du profil.
+// NE PAS appeler addCredits() côté frontend après un paiement —
+// le webhook est la seule source qui ajoute des crédits dans Supabase.
 export const syncCreditsFromServer = async () => {
   try {
-    const { userId, sessionId } = getCurrentIdentifier();
+    const { userId, sessionId } = await getCurrentIdentifier();
 
     const res = await fetch("/api/get-credits", {
       method: "POST",
@@ -93,14 +72,42 @@ export const syncCreditsFromServer = async () => {
 
     const json = await res.json();
     if (json.credits != null) {
-      localStorage.setItem(KEY, String(json.credits));
-      console.log("[syncCredits] sessionId:", sessionId || userId, "→", json.credits);
+      setCredits(json.credits);
+      console.log("[syncCredits]", userId || sessionId, "→", json.credits);
       return json.credits;
     }
-
-  } catch (e) { console.error("syncCredits:", e); }
+  } catch (e) {
+    console.error("[syncCredits]", e);
+  }
   return null;
 };
+
+// ── addCredits — usage interne uniquement (bonus, parrainage) ─────────────
+// NE PAS appeler cette fonction après un paiement FedaPay.
+// Le webhook fedapay-webhook.js est la seule source qui crédite après paiement.
+// Cette fonction ne sert qu'aux crédits offerts (parrainage, bonus).
+export const addCredits = async (amount) => {
+  try {
+    const { userId, sessionId } = await getCurrentIdentifier();
+
+    const res = await fetch("/api/add-credits", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, sessionId, amount }),
+    });
+
+    const json = await res.json();
+    if (json.credits != null) {
+      setCredits(json.credits);
+      return json.credits;
+    }
+  } catch (e) {
+    console.error("[addCredits]", e);
+  }
+  return null;
+};
+
+export const consumeCredits = async () => useCredit();
 
 export const getSavedStyles = () => {
   try { return JSON.parse(localStorage.getItem("afrotresse_saved_styles") || "[]"); }
@@ -114,7 +121,5 @@ export const unsaveStyle = (styleId) => {
     return true;
   } catch { return false; }
 };
-
-export const consumeCredits = async () => useCredit();
 
 export const PRICING = { referral: { sender: 2, receiver: 2 } };
