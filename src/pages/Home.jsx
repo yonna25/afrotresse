@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getCredits, syncCreditsFromServer, setCredits } from '../services/credits.js';
+import { getCredits, syncCreditsFromServer } from '../services/credits.js';
 import Seo from "../components/Seo.jsx";
 import { getApprovedReviews } from '../services/reviews.js';
 import { supabase } from '../services/supabase.js';
@@ -16,7 +16,6 @@ const SLIDES = [
 ];
 
 const MAINTENANCE_MESSAGE = "🛠️ Mise à jour en cours sur AfroTresse — Merci pour votre patience ! 📲 WhatsApp : +2290164649117";
-
 const INTERVAL = 3500;
 
 async function generateFingerprint() {
@@ -80,15 +79,23 @@ export default function Home() {
   const [showArrow] = useState(true);
   const [socialProof, setSocialProof] = useState(null);
   const [welcomeToast, setWelcomeToast] = useState(false);
-
   const [credits, setCreditsState] = useState(() => getCredits());
 
+  // ── FIX 1 : Attendre que la session Supabase soit chargée AVANT de sync ──
+  // Sans ce délai, supabase.auth.getSession() retourne null → getCurrentIdentifier()
+  // tombe sur fp_ → lit 0 crédits → localStorage = 0 → oscillation.
   useEffect(() => {
-    syncCreditsFromServer()
-      .then(c => { if (c != null) setCreditsState(c); })
-      .catch(() => {});
+    const doSync = async () => {
+      await supabase.auth.getSession(); // garantit que la session est restaurée
+      const c = await syncCreditsFromServer();
+      if (c != null) setCreditsState(c);
+    };
+    doSync().catch(() => {});
   }, []);
 
+  // ── FIX 2 : give_free_credits — ne pas calculer manuellement le nouveau solde ──
+  // Avant : faisait localStorage + data → bug si localStorage était déjà corrompu.
+  // Maintenant : après le RPC, on relit depuis le serveur (source de vérité unique).
   useEffect(() => {
     const initFreeCredits = async () => {
       if (freeCreditsChecked.current) return;
@@ -109,15 +116,14 @@ export default function Home() {
         if (error) throw error;
 
         if (data > 0) {
-          const current = getCredits();
-          const newBalance = current + data;
-          localStorage.setItem('afrotresse_credits', newBalance.toString());
-          setCreditsState(newBalance);
+          // Relire depuis le serveur — pas de calcul manuel
+          const newBalance = await syncCreditsFromServer();
+          if (newBalance != null) setCreditsState(newBalance);
           setWelcomeToast(true);
           setTimeout(() => setWelcomeToast(false), 4000);
         }
       } catch (err) {
-        console.error('Erreur crédits gratuits:', err);
+        console.error('Erreur credits gratuits:', err);
       }
     };
 
@@ -162,7 +168,7 @@ export default function Home() {
               className="fixed top-10 left-1/2 -translate-x-1/2 z-[300] px-5 py-3 rounded-2xl font-black text-sm shadow-2xl text-center"
               style={{ background: '#C9963A', color: '#1A0A00', maxWidth: '280px' }}
             >
-              {'🎁 2 crédits offerts, Votre Majesté !'}
+              {'🎁 2 credits offerts, Votre Majeste !'}
             </motion.div>
           )}
         </AnimatePresence>
@@ -211,7 +217,7 @@ export default function Home() {
             <h1 className="font-display text-2xl font-medium" style={{ lineHeight: 1.2, textShadow: '0 2px 12px rgba(0,0,0,0.65)' }}>
               <span style={{ color: '#C9963A', fontWeight: 600 }}>Un selfie, et</span>{' '}
               <span style={{ color: '#FFFFFF', fontWeight: 500 }}>
-                {'découvre'}<br />
+                {'decouvre'}<br />
                 ta meilleure coiffure<br />
                 <span style={{ fontSize: '0.62em' }}>avant d'aller chez ta coiffeuse.</span>
               </span>
