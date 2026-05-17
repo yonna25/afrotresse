@@ -49,7 +49,7 @@ function LoadingOverlay() {
       style={{
         position: 'fixed', inset: 0, zIndex: 40,
         display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center', gap: 20,
+        alignItems: 'center', justifycontent: 'center', gap: 20,
         background: 'rgba(20,8,0,0.88)', backdropFilter: 'blur(6px)',
         paddingBottom: 80,
       }}
@@ -97,7 +97,7 @@ function FedaPayModal({ url, onClose }) {
       }}
     >
       <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        display: 'flex', alignItems: 'center', justifycontent: 'space-between',
         padding: '14px 18px', flexShrink: 0,
         borderBottom: '1px solid rgba(194,144,54,0.18)',
       }}>
@@ -105,7 +105,7 @@ function FedaPayModal({ url, onClose }) {
           <div style={{
             width: 30, height: 30, borderRadius: '50%',
             backgroundColor: '#C29036',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            display: 'flex', alignItems: 'center', justifycontent: 'center',
             fontSize: 14,
           }}>💳</div>
           <div>
@@ -124,7 +124,7 @@ function FedaPayModal({ url, onClose }) {
             background: 'rgba(255,255,255,0.1)',
             border: 'none', color: '#fff', fontSize: 15,
             cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            display: 'flex', alignItems: 'center', justifycontent: 'center',
           }}
         >✕</button>
       </div>
@@ -132,7 +132,7 @@ function FedaPayModal({ url, onClose }) {
       {!iframeLoaded && (
         <div style={{
           flex: 1, display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center', gap: 14,
+          alignItems: 'center', justifycontent: 'center', gap: 14,
         }}>
           <motion.div
             animate={{ rotate: 360 }}
@@ -161,7 +161,7 @@ function FedaPayModal({ url, onClose }) {
       />
 
       <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        display: 'flex', alignItems: 'center', justifycontent: 'center',
         gap: 6, padding: '8px 0', flexShrink: 0,
         fontSize: 10, color: 'rgba(255,255,255,0.3)',
         borderTop: '1px solid rgba(255,255,255,0.05)',
@@ -227,7 +227,7 @@ export default function Credits() {
   const [successPack, setSuccessPack]       = useState(null);
   const payButtonRef = useRef(null);
 
-  // Sécurité anti-iframe : si la page est chargée dans un conteneur web externe (FedaPay)
+  // Sécurité anti-iframe
   useEffect(() => {
     if (window.self !== window.top) {
       window.top.location.href = window.location.href;
@@ -240,11 +240,15 @@ export default function Credits() {
       const pack = params.get('pack');
       setPaymentSuccess(true);
       setSuccessPack(pack);
-      window.history.replaceState({}, '', '/credits');
+      
+      // On attend la fin de la synchronisation des crédits avant de vider les paramètres d'URL
       setTimeout(async () => {
         try {
           const { syncCreditsFromServer } = await import('../services/credits.js');
           await syncCreditsFromServer();
+          
+          // L'URL est nettoyée uniquement quand l'état du solde est validé par le serveur
+          window.history.replaceState({}, '', '/credits');
         } catch {}
       }, 2000);
     }
