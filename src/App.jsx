@@ -5,7 +5,6 @@ import { Analytics } from '@vercel/analytics/react'
 
 // Services
 import { setCredits, getCredits } from './services/credits.js'
-import { getCurrentUser } from './services/useSupabaseCredits.js'
 import { supabase } from './services/supabase.js'
 
 // Pages
@@ -45,7 +44,7 @@ function AdminRoute({ children }) {
     <div className="min-h-screen bg-[#0F0500] flex items-center justify-center">
       <div className="flex flex-col items-center gap-3">
         <div className="w-6 h-6 border-2 border-[#C9963A] border-t-transparent rounded-full animate-spin"></div>
-        <span className="text-[#C9963A] text-[10px] font-black uppercase tracking-widest">V\u00e9rification...</span>
+        <span className="text-[#C9963A] text-[10px] font-black uppercase tracking-widest">Verification...</span>
       </div>
     </div>
   );
@@ -79,16 +78,16 @@ function CreditSuccessPopup({ data, onClose }) {
         }}
         onClick={e => e.stopPropagation()}
       >
-        <div className="text-6xl mb-4">\ud83d\udc8e</div>
-        <h2 className="text-2xl font-black text-[#C9963A] mb-1">F\u00e9licitations {data.userName} ! \ud83c\udf89</h2>
-        <p className="text-4xl font-black text-white my-4">+{data.credits} cr\u00e9dits</p>
+        <div className="text-6xl mb-4">💎</div>
+        <h2 className="text-2xl font-black text-[#C9963A] mb-1">Felicitations {data.userName} ! 🎉</h2>
+        <p className="text-4xl font-black text-white my-4">+{data.credits} credits</p>
         <p className="text-xs text-white/40 mb-6">Nouveau solde : <span className="text-white font-bold">{getCredits()}</span></p>
         <button
           onClick={onClose}
           className="w-full py-4 rounded-2xl font-black text-[#1A0A00]"
           style={{ background: 'linear-gradient(135deg, #C9963A, #E8B96A)' }}
         >
-          Lancer un essai \u2728
+          Lancer un essai ✨
         </button>
       </motion.div>
     </motion.div>
@@ -126,7 +125,7 @@ function CreditErrorPopup({ onClose, onRetry }) {
         </h2>
         <p className="text-sm mb-6" style={{ color: 'rgba(255,255,255,0.55)', lineHeight: 1.7 }}>
           Une erreur interne s'est produite lors de la validation de votre paiement.
-          Aucun montant n'a été débité. Réessayez ou contactez le support.
+          Aucun montant n'a ete debite. Reessayez ou contactez le support.
         </p>
         <div className="flex flex-col gap-3">
           <button
@@ -134,7 +133,7 @@ function CreditErrorPopup({ onClose, onRetry }) {
             className="w-full py-4 rounded-2xl font-black text-white"
             style={{ background: 'linear-gradient(135deg, #C93A3A, #E87A7A)' }}
           >
-            Réessayer le paiement
+            Reessayer le paiement
           </button>
           <button
             onClick={onClose}
@@ -149,7 +148,7 @@ function CreditErrorPopup({ onClose, onRetry }) {
           </button>
         </div>
         <p className="text-[10px] mt-4" style={{ color: 'rgba(255,255,255,0.25)' }}>
-          Si le problème persiste, contactez-nous via WhatsApp.
+          Si le probleme persiste, contactez-nous via WhatsApp.
         </p>
       </motion.div>
     </motion.div>
@@ -203,7 +202,6 @@ export default function App() {
     const syncSession = async (user) => {
       if (!user) return;
 
-      // Sync crédits depuis usage_credits (plus profiles)
       const { data: creditData } = await supabase
         .from('usage_credits')
         .select('credits')
@@ -211,7 +209,6 @@ export default function App() {
         .single();
       if (creditData?.credits > 0) setCredits(creditData.credits);
 
-      // Mise à jour last_seen
       await supabase
         .from('usage_credits')
         .update({ last_seen: new Date().toISOString() })
@@ -229,36 +226,30 @@ export default function App() {
     return () => subscription?.unsubscribe();
   }, [])
 
-  // Écoute succès crédits
   useEffect(() => {
     const handler = (e) => setCreditSuccess(e.detail);
     window.addEventListener('afrotresse:credit_success', handler);
     return () => window.removeEventListener('afrotresse:credit_success', handler);
   }, [])
 
-  // Écoute erreur paiement (événement custom depuis Credits.jsx ou webhook)
   useEffect(() => {
     const handler = () => setCreditError(true);
     window.addEventListener('afrotresse:credit_error', handler);
     return () => window.removeEventListener('afrotresse:credit_error', handler);
   }, [])
 
-  // Détection retour Stripe échoué via paramètres URL
-  // Ex: /credits?payment_status=failed ou /credits?canceled=true
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const status   = params.get('payment_status') || params.get('status');
     const canceled = params.get('canceled');
     if (status === 'failed' || status === 'error' || canceled === 'true') {
       setCreditError(true);
-      // Nettoyer l'URL sans recharger
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, [])
 
   const handleRetry = () => {
     setCreditError(false);
-    // Redirige vers la page crédits pour réessayer
     window.location.href = '/credits';
   }
 
@@ -286,4 +277,5 @@ export default function App() {
       </div>
     </BrowserRouter>
   )
-}
+            }
+    
