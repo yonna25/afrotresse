@@ -123,3 +123,4 @@ export const unsaveStyle = (styleId) => {
 };
 
 export const PRICING = { referral: { sender: 2, receiver: 2 } };
+  
