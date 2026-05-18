@@ -17,8 +17,13 @@ async function getCurrentIdentifier() {
     }
   } catch {}
 
-  const fp = localStorage.getItem("afrotresse_fp");
-  if (fp) return { userId: null, sessionId: `fp_${fp}` };
+  // Utiliser getSessionIdWithFp() — async, jamais null, jamais guest_user
+  try {
+    const { getSessionIdWithFp } = await import('./fingerprint.js');
+    const sessionId = await getSessionIdWithFp();
+    return { userId: null, sessionId };
+  } catch {}
+
   return { userId: null, sessionId: null };
 }
 
@@ -30,7 +35,7 @@ export const useCredit = async () => {
   const { userId, sessionId } = await getCurrentIdentifier();
 
   try {
-    const res = await fetch("/api/consume-credit", {
+    const res = await fetch("/api/consume", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId, sessionId }),
@@ -90,7 +95,7 @@ export const addCredits = async (amount) => {
   try {
     const { userId, sessionId } = await getCurrentIdentifier();
 
-    const res = await fetch("/api/add-credits", {
+    const res = await fetch("/api/credits", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId, sessionId, amount }),
@@ -123,4 +128,3 @@ export const unsaveStyle = (styleId) => {
 };
 
 export const PRICING = { referral: { sender: 2, receiver: 2 } };
-  
