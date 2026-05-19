@@ -48,7 +48,7 @@ function AdminRoute({ children }) {
       </div>
     </div>
   );
-  
+
   if (!session) return <Navigate to="/login" replace />;
   return children;
 }
@@ -157,36 +157,46 @@ function CreditErrorPopup({ onClose, onRetry }) {
 
 function AnimatedRoutes() {
   const location = useLocation()
-  
+
   const hideNav = [
-    '/camera', '/analyze', '/magic-link', '/admin-reviews', 
+    '/camera', '/analyze', '/magic-link', '/admin-reviews',
     '/admin-partners', '/admin-credits', '/admin-users', '/login', '/debug'
   ].includes(location.pathname)
 
   return (
     <>
       <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/camera" element={<Camera />} />
-          <Route path="/analyze" element={<Analyze />} />
-          <Route path="/results" element={<Results />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/credits" element={<Credits />} />
-          <Route path="/debug" element={<AdminRoute><Debug /></AdminRoute>} />
-          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-          <Route path="/terms-of-service" element={<TermsOfService />} />
-          <Route path="/cookie-policy" element={<CookiePolicy />} />
-          <Route path="/faq" element={<FAQ />} />
-          <Route path="/magic-link" element={<MagicLink />} />
-          <Route path="/library" element={<Library />} />
-          <Route path="/partners" element={<Partners />} />
-          <Route path="/admin-reviews" element={<AdminRoute><AdminReviews /></AdminRoute>} />
-          <Route path="/admin-partners" element={<AdminRoute><AdminPartners /></AdminRoute>} />
-          <Route path="/admin-credits" element={<AdminRoute><AdminCredits /></AdminRoute>} />
-          <Route path="/admin-users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
-          <Route path="/login" element={<Login />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/camera" element={<Camera />} />
+        <Route path="/analyze" element={<Analyze />} />
+        <Route path="/results" element={<Results />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/credits" element={<Credits />} />
+        <Route path="/debug" element={<AdminRoute><Debug /></AdminRoute>} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/terms-of-service" element={<TermsOfService />} />
+        <Route path="/cookie-policy" element={<CookiePolicy />} />
+        <Route path="/faq" element={<FAQ />} />
+        <Route path="/magic-link" element={<MagicLink />} />
+        <Route path="/library" element={<Library />} />
+        <Route path="/partners" element={<Partners />} />
+        <Route path="/admin-reviews" element={<AdminRoute><AdminReviews /></AdminRoute>} />
+        <Route path="/admin-partners" element={<AdminRoute><AdminPartners /></AdminRoute>} />
+        <Route path="/admin-credits" element={<AdminRoute><AdminCredits /></AdminRoute>} />
+        <Route path="/admin-users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
+        <Route path="/login" element={<Login />} />
+
+        {/* FIX IMPORTANT: suppression du redirect vers "/" */}
+        <Route
+          path="*"
+          element={
+            <div className="min-h-screen flex items-center justify-center text-white bg-[#2C1A0E]">
+              Page introuvable
+            </div>
+          }
+        />
       </Routes>
+
       {!hideNav && <BottomNav />}
     </>
   )
@@ -194,7 +204,7 @@ function AnimatedRoutes() {
 
 export default function App() {
   const [creditSuccess, setCreditSuccess] = useState(null)
-  const [creditError, setCreditError]     = useState(false)
+  const [creditError, setCreditError] = useState(false)
 
   useEffect(() => {
     const syncSession = async (user) => {
@@ -205,6 +215,7 @@ export default function App() {
         .select('credits')
         .eq('user_id', user.id)
         .single();
+
       if (creditData?.credits > 0) setCredits(creditData.credits);
 
       await supabase
@@ -238,8 +249,9 @@ export default function App() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const status   = params.get('payment_status') || params.get('status');
+    const status = params.get('payment_status') || params.get('status');
     const canceled = params.get('canceled');
+
     if (status === 'failed' || status === 'error' || canceled === 'true') {
       setCreditError(true);
       window.history.replaceState({}, '', window.location.pathname);
@@ -258,9 +270,9 @@ export default function App() {
         <div className="w-full max-w-[430px] relative bg-[#2C1A0E] min-h-screen shadow-2xl overflow-x-hidden">
           <AnimatePresence>
             {creditSuccess && (
-              <CreditSuccessPopup 
-                data={creditSuccess} 
-                onClose={() => setCreditSuccess(null)} 
+              <CreditSuccessPopup
+                data={creditSuccess}
+                onClose={() => setCreditSuccess(null)}
               />
             )}
             {creditError && (
@@ -270,9 +282,10 @@ export default function App() {
               />
             )}
           </AnimatePresence>
+
           <AnimatedRoutes />
         </div>
       </div>
     </BrowserRouter>
   )
-}
+                  }
