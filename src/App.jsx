@@ -74,12 +74,13 @@ function CreditSuccessPopup({ data, onClose }) {
         initial={{ scale: 0.8, y: 40, opacity: 0 }}
         animate={{ scale: 1, y: 0, opacity: 1 }}
         exit={{ scale: 0.8, y: 40, opacity: 0 }}
-        className="w-full max-w-sm rounded-[2.5rem] p-8 text-center"
+        className="w-full max-w-sm rounded-[2.5rem] p-8 text-center relative overflow-hidden"
         style={{
           background: 'linear-gradient(160deg, #2C1A0E 0%, #3D2616 100%)',
           border: '2px solid #C9963A',
           boxShadow: '0 0 60px rgba(201,150,58,0.4)',
         }}
+        onClick={e => e.stopPropagation()}
       >
         <div className="text-6xl mb-4">💎</div>
         <h2 className="text-2xl font-black text-[#C9963A] mb-1">
@@ -91,6 +92,7 @@ function CreditSuccessPopup({ data, onClose }) {
         <p className="text-xs text-white/40 mb-6">
           Nouveau solde : <span className="text-white font-bold">{getCredits()}</span>
         </p>
+
         <button
           onClick={onClose}
           className="w-full py-4 rounded-2xl font-black text-[#1A0A00]"
@@ -120,12 +122,13 @@ function CreditErrorPopup({ onClose, onRetry }) {
         initial={{ scale: 0.8, y: 40, opacity: 0 }}
         animate={{ scale: 1, y: 0, opacity: 1 }}
         exit={{ scale: 0.8, y: 40, opacity: 0 }}
-        className="w-full max-w-sm rounded-[2.5rem] p-8 text-center"
+        className="w-full max-w-sm rounded-[2.5rem] p-8 text-center relative overflow-hidden"
         style={{
           background: 'linear-gradient(160deg, #1A0A0A 0%, #2E1010 100%)',
           border: '2px solid #C93A3A',
           boxShadow: '0 0 60px rgba(201,58,58,0.35)',
         }}
+        onClick={e => e.stopPropagation()}
       >
         <div className="text-6xl mb-4">⚠️</div>
         <h2 className="text-2xl font-black mb-2 text-[#E87A7A]">
@@ -187,8 +190,35 @@ function AnimatedRoutes() {
 
         <Route path="/login" element={<Login />} />
 
-        {/* IMPORTANT: plus de redirect vers "/" */}
-        <Route path="*" element={<div className="text-white p-6">Page introuvable</div>} />
+        {/* PAGE SUCCÈS (fallback global) */}
+        <Route
+          path="*"
+          element={
+            <div className="min-h-screen flex items-center justify-center bg-[#2C1A0E] px-6">
+              <div className="text-center">
+                <div className="text-6xl mb-4">🎉</div>
+
+                <h1 className="text-2xl font-black text-[#C9963A] mb-2">
+                  Succès !
+                </h1>
+
+                <p className="text-white/60 text-sm mb-6">
+                  Tout s’est bien déroulé. Vous pouvez continuer votre navigation.
+                </p>
+
+                <a
+                  href="/"
+                  className="inline-block px-6 py-3 rounded-2xl font-black text-[#1A0A00]"
+                  style={{
+                    background: 'linear-gradient(135deg, #C9963A, #E8B96A)'
+                  }}
+                >
+                  Retour à l’accueil
+                </a>
+              </div>
+            </div>
+          }
+        />
       </Routes>
 
       {!hideNav && <BottomNav />}
@@ -260,8 +290,10 @@ export default function App() {
   return (
     <BrowserRouter>
       <Analytics />
+
       <div className="min-h-screen bg-black flex justify-center font-sans">
         <div className="w-full max-w-[430px] relative bg-[#2C1A0E] min-h-screen shadow-2xl overflow-x-hidden">
+
           <AnimatePresence>
             {creditSuccess && (
               <CreditSuccessPopup
@@ -281,5 +313,5 @@ export default function App() {
         </div>
       </div>
     </BrowserRouter>
-  );
-        }
+  )
+    }
