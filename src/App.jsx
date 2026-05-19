@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Analytics } from '@vercel/analytics/react'
 
@@ -163,10 +163,12 @@ function CreditErrorPopup({ onClose, onRetry }) {
 
 function AnimatedRoutes() {
   const hideNav = false;
+  const location = useLocation(); // Accrochage de la location actuelle de l'application
 
   return (
     <>
-      <Routes>
+      {/* L'injection de la location force React Router à garder le contexte stable pendant le démontage de l'iframe */}
+      <Routes location={location} key={location.key}>
         <Route path="/" element={<Home />} />
         <Route path="/camera" element={<Camera />} />
         <Route path="/analyze" element={<Analyze />} />
@@ -314,4 +316,5 @@ export default function App() {
       </div>
     </BrowserRouter>
   )
-    }
+        }
+          
