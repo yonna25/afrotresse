@@ -131,7 +131,7 @@ function FedaPayModal({ url, onClose, onSuccess }) {
       }}
     >
       <div style={{
-        display: 'flex', alignItems: 'center', justifyBetween: 'space-between',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '16px 20px', flexShrink: 0,
         borderBottom: '1px solid rgba(194,144,54,0.1)',
       }}>
@@ -207,6 +207,28 @@ function ErrorToast({ message, onClose }) {
   );
 }
 
+async function callFedaPay(pack, userId, email = '') {
+  let sessionId;
+  if (userId) {
+    sessionId = userId;
+  } else {
+    const fp = localStorage.getItem('afrotresse_fp') || localStorage.getItem('afrotresse_fingerprint');
+    if (fp) {
+      sessionId = `fp_${fp}`;
+    } else {
+      const { getSessionIdWithFp } = await import('../services/fingerprint.js');
+      sessionId = await getSessionIdWithFp();
+    }
+  }
+
+  const response = await fetch('/api/fedapay', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pack, email, sessionId }),
+  });
+  return response.json();
+}
+
 export default function Credits() {
   const navigate = useNavigate();
   const [selected, setSelected] = useState('allie');
@@ -245,7 +267,7 @@ export default function Credits() {
             else setErrorMsg(matchFedaError(result.error));
           } catch {
             setErrorMsg("Une erreur est survenue. Veuillez réessayer.");
-          } finaly {
+          } finally {
             setLoading(false);
           }
           return;
@@ -291,7 +313,7 @@ export default function Credits() {
       }
     } catch {
       setErrorMsg('Une erreur est survenue. Veuillez réessayer.');
-    } finaly {
+    } finally {
       setLoading(false);
     }
   };
@@ -310,7 +332,7 @@ export default function Credits() {
     } catch {
       clearPendingPack();
       setErrorMsg("Impossible d'envoyer le lien. Vérifie ton adresse email.");
-    } finaly {
+    } finally {
       setAuthLoading(null);
     }
   };
@@ -329,11 +351,10 @@ export default function Credits() {
     }
   };
 
-  // ── MODIFICATION : ÉCRAN SUCCÈS PREMIUM & REDIRECTION DIRECTE PROFIL ──
   if (paymentSuccess) {
     const packInfo = PACKS_CONFIG[successPack];
     return (
-      <div className="text-white font-sans flex flex-col items-center justify-center animate-fade-in" style={{ backgroundColor: '#1E1008', height: '100dvh', padding: '0 24px' }}>
+      <div className="text-white font-sans flex flex-col items-center justify-center" style={{ backgroundColor: '#1E1008', height: '100dvh', padding: '0 24px' }}>
         <Seo title="Paiement réussi - AfroTresse" />
         <div style={{ textAlign: 'center', maxWidth: 320, width: '100%' }}>
           <div style={{ fontSize: 56, marginBottom: 20 }}>✨</div>
@@ -432,14 +453,6 @@ export default function Credits() {
             </motion.div>
           </motion.div>
         )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {loading && <LoadingOverlay key="loader" />}
-        {paymentUrl && (
-          <FedaPayModal key="modal" url={paymentUrl} onClose={() => setPaymentUrl(null)} onSuccess={() => navigate('/profile')} />
-        )}
-        {errorMsg && <ErrorToast key="error" message={errorMsg} onClose={() => setErrorMsg(null)} />}
       </AnimatePresence>
 
       <div className="max-w-lg mx-auto px-4 pt-10">
