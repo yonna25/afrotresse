@@ -30,11 +30,6 @@ function clearPendingPack() {
   localStorage.removeItem('afrotresse_pending_pack_ts');
 }
 
-function setPendingPack(pack) {
-  localStorage.setItem('afrotresse_pending_pack', pack);
-  localStorage.setItem('afrotresse_pending_pack_ts', Date.now().toString());
-}
-
 function LoadingOverlay() {
   return createPortal(
     <motion.div
@@ -60,7 +55,6 @@ function FedaPayModal({ url, onClose, onSuccess }) {
     return () => window.removeEventListener('keydown', handler);
   }, [onClose]);
 
-  // Détection automatique du succès via l'évolution des crédits en base
   useEffect(() => {
     let attempts = 0;
     let timer;
@@ -76,7 +70,7 @@ function FedaPayModal({ url, onClose, onSuccess }) {
           return;
         }
       } catch {}
-      if (attempts < 45) timer = setTimeout(poll, 2000); // Poll pendant 1min30 max
+      if (attempts < 45) timer = setTimeout(poll, 2000);
     };
 
     poll();
@@ -105,7 +99,7 @@ function FedaPayModal({ url, onClose, onSuccess }) {
   );
 }
 
-async function callFedaPay(pack, userId, email = '') {
+async function callFedaPay(pack, userId, email = '', fromPath = '/profile') {
   let sessionId = userId;
   if (!sessionId) {
     const fp = localStorage.getItem('afrotresse_fp') || localStorage.getItem('afrotresse_fingerprint');
@@ -119,7 +113,7 @@ async function callFedaPay(pack, userId, email = '') {
   const response = await fetch('/api/fedapay', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ pack, email, sessionId }),
+    body: JSON.stringify({ pack, email, sessionId, fromPath }),
   });
   return response.json();
 }
@@ -131,6 +125,9 @@ export default function Credits() {
   const [paymentUrl, setPaymentUrl] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
   const payButtonRef = useRef(null);
+
+  // Déterminer la page de retour cible par défaut
+  const targetRedirect = localStorage.getItem('afrotresse_payment_origin') || '/profile';
 
   useEffect(() => {
     window.history.replaceState({}, '', '/credits');
@@ -149,7 +146,8 @@ export default function Credits() {
           setSelected(pendingPack);
           setLoading(true);
           try {
-            const result = await callFedaPay(pendingPack, session.user.id, session.user.email || '');
+            const originPath = localStorage.getItem('afrotresse_payment_origin') || '/profile';
+            const result = await callFedaPay(pendingPack, session.user.id, session.user.email || '', originPath);
             if (result.paymentUrl) setPaymentUrl(result.paymentUrl);
           } catch {
             setErrorMsg("Une erreur est survenue lors de la reprise du paiement.");
@@ -178,7 +176,10 @@ export default function Credits() {
       const { data: { session } } = await supabase.auth.getSession();
       const userId = session?.user?.id || null;
       const email  = session?.user?.email || localStorage.getItem('afrotresse_email') || '';
-      const result = await callFedaPay(selected, userId, email);
+      
+      // Récupère la page d'origine stockée ou utilise l'historique
+      const originPath = localStorage.getItem('afrotresse_payment_origin') || '/profile';
+      const result = await callFedaPay(selected, userId, email, originPath);
 
       if (result.paymentUrl) setPaymentUrl(result.paymentUrl);
       else setErrorMsg(result.error || 'Erreur lors de l\'initialisation du paiement.');
@@ -196,7 +197,10 @@ export default function Credits() {
       <AnimatePresence>
         {loading && <LoadingOverlay />}
         {paymentUrl && (
-          <FedaPayModal url={paymentUrl} onClose={() => setPaymentUrl(null)} onSuccess={() => navigate('/profile')} />
+          <FedaPayModal url={paymentUrl} onClose={() => setPaymentUrl(null)} onSuccess={() => {
+            localStorage.removeItem('afrotresse_payment_origin');
+            navigate(targetRedirect);
+          }} />
         )}
       </AnimatePresence>
 
@@ -249,7 +253,6 @@ export default function Credits() {
           <span>Payer avec FedaPay</span>
         </button>
 
-        {/* ── INFO EN BAS DE PAGE RESTAURÉES ── */}
         <div className="space-y-4">
           <div className="rounded-2xl px-5 py-4 flex items-center gap-3" style={{ backgroundColor: '#2C1A0E', border: '1px solid rgba(255,255,255,0.05)' }}>
             <span className="text-xl">🎁</span>
