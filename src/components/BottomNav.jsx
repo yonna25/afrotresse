@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 
 const ITEMS = [
@@ -10,6 +10,11 @@ const ITEMS = [
 ]
 
 export default function BottomNav() {
+  const location = useLocation()
+
+  // Ne pas afficher la barre de navigation si on est en train de prendre un selfie
+  if (location.pathname === '/camera') return null
+
   return (
     <nav className="fixed bottom-0 z-50 left-1/2 -translate-x-1/2 w-full max-w-[430px]">
       {/* Container principal ancré */}
