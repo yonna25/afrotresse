@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Paiement reçu</title>
+  <title>Paiement réussi</title>
 
   <style>
     * {
@@ -25,6 +25,11 @@
       padding: 24px;
     }
 
+    .container {
+      max-width: 360px;
+      width: 100%;
+    }
+
     .icon {
       font-size: 64px;
       margin-bottom: 20px;
@@ -32,34 +37,59 @@
 
     h1 {
       color: #C29036;
-      font-size: 24px;
-      margin-bottom: 12px;
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
     }
 
     p {
-      color: rgba(255,255,255,0.6);
+      color: rgba(255, 255, 255, 0.7);
       font-size: 14px;
       line-height: 1.6;
+      margin-bottom: 32px;
+    }
+
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 16px;
+      border-radius: 16px;
+      border: none;
+      background: linear-gradient(135deg, #C29036, #8B4513);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 10px 20px rgba(194,144,54,0.15);
+    }
+
+    .btn:active {
+      transform: scale(0.98);
     }
   </style>
 </head>
 
 <body>
-  <div class="icon">✅</div>
+  <div class="container">
+    <div class="icon">🎉</div>
 
-  <h1>Paiement reçu !</h1>
+    <h1>Paiement réussi !</h1>
 
-  <p>
-    Tes crédits sont en cours d'activation.<br/>
-    Tu peux fermer cette fenêtre.
-  </p>
+    <p>
+      Ton pack a été activé. Tu peux maintenant voir ton solde mis à jour.
+    </p>
 
-  <!-- FIX IMPORTANT : signal vers l'app React -->
+    <button class="btn" onclick="goToProfile()">
+      Voir mon solde →
+    </button>
+  </div>
+
   <script>
-    window.parent.postMessage(
-      { type: "PAYMENT_SUCCESS" },
-      "*"
-    );
+    function goToProfile() {
+      window.parent.postMessage({ type: "PAYMENT_SUCCESS" }, "*");
+    }
   </script>
 </body>
 </html>
