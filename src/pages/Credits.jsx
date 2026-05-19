@@ -72,7 +72,7 @@ function LoadingOverlay() {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       style={{
-        position: 'fixed', inset: 0, zIndex: 40,
+        position: 'fixed', inset: 0, zIndex: 100,
         display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center', gap: 20,
         background: 'rgba(30,16,8,0.98)', backdropFilter: 'blur(6px)',
@@ -125,7 +125,7 @@ function FedaPayModal({ url, onClose, onSuccess }) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       style={{
-        position: 'fixed', inset: 0, zIndex: 40,
+        position: 'fixed', inset: 0, zIndex: 90,
         display: 'flex', flexDirection: 'column',
         background: '#1E1008',
       }}
@@ -190,7 +190,7 @@ function ErrorToast({ message, onClose }) {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 20 }}
       style={{
-        position: 'fixed', bottom: 100, left: 16, right: 16, zIndex: 45,
+        position: 'fixed', bottom: 100, left: 16, right: 16, zIndex: 110,
         maxWidth: 400, margin: '0 auto', borderRadius: 16, padding: 16,
         display: 'flex', alignItems: 'center', gap: 12,
         background: 'linear-gradient(135deg, #3D0E0E, #2A0808)',
@@ -381,7 +381,7 @@ export default function Credits() {
   }
 
   return (
-    <div className="text-white font-sans" style={{ backgroundColor: '#1E1008', height: '100dvh', overflowY: 'auto', paddingBottom: '100px' }}>
+    <div className="text-white font-sans" style={{ backgroundColor: '#1E1008', minHeight: '100dvh', overflowY: 'auto', paddingBottom: '120px' }}>
       <Seo title="Acheter des crédits - AfroTresse" />
 
       {/* Modale d'Authentification */}
@@ -389,7 +389,7 @@ export default function Credits() {
         {showAuthModal && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)' }}
+            style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'flex-end', justifyBetween: 'center', background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)' }}
             onClick={() => setShowAuthModal(false)}
           >
             <motion.div
@@ -397,7 +397,7 @@ export default function Credits() {
               onClick={e => e.stopPropagation()}
               style={{ width: '100%', maxWidth: 460, background: '#1E1008', borderRadius: '28px 28px 0 0', padding: '32px 24px 48px', border: '1px solid rgba(194,144,54,0.3)', borderBottom: 'none' }}
             >
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 24 }}>
+              <div style={{ display: 'flex', justifyBetweenContent: 'center', marginBottom: 24 }}>
                 <div style={{ width: 40, height: 4, borderRadius: 2, background: 'rgba(194,144,54,0.3)' }}/>
               </div>
               <div style={{ textAlign: 'center', marginBottom: 28 }}>
@@ -408,7 +408,7 @@ export default function Credits() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <button
                   onClick={() => handleSocialLogin('google')} disabled={authLoading !== null}
-                  style={{ width: '100%', padding: '16px', borderRadius: 14, border: '1px solid rgba(255,255,255,0.15)', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, cursor: 'pointer' }}
+                  style={{ width: '100%', padding: '16px', borderRadius: 14, border: '1px solid rgba(255,255,255,0.15)', background: '#fff', display: 'flex', alignItems: 'center', justifyBetweenContent: 'center', gap: 12, cursor: 'pointer' }}
                 >
                   <span style={{ color: '#333', fontSize: 14, fontWeight: 600 }}>{authLoading === 'google' ? 'Connexion…' : 'Continuer avec Google'}</span>
                 </button>
@@ -417,7 +417,7 @@ export default function Credits() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     <button
                       onClick={() => setShowMagicForm(v => !v)} disabled={authLoading !== null}
-                      style={{ width: '100%', padding: '15px', borderRadius: 14, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
+                      style={{ width: '100%', padding: '15px', borderRadius: 14, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyBetweenContent: 'space-between', cursor: 'pointer' }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <span style={{ fontSize: 16 }}>✉️</span>
@@ -453,6 +453,14 @@ export default function Credits() {
             </motion.div>
           </motion.div>
         )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {loading && <LoadingOverlay key="loader" />}
+        {paymentUrl && (
+          <FedaPayModal key="modal" url={paymentUrl} onClose={() => setPaymentUrl(null)} onSuccess={() => navigate('/profile')} />
+        )}
+        {errorMsg && <ErrorToast key="error" message={errorMsg} onClose={() => setErrorMsg(null)} />}
       </AnimatePresence>
 
       <div className="max-w-lg mx-auto px-4 pt-10">
@@ -502,12 +510,40 @@ export default function Credits() {
 
         <button
           ref={payButtonRef} onClick={handleBuy} disabled={loading}
-          className="w-full font-semibold py-4 rounded-2xl text-sm tracking-wide transition-all flex items-center justify-center gap-2"
-          style={{ backgroundColor: '#C29036', color: '#1E1008' }}
+          className="w-full font-semibold py-4 rounded-2xl text-sm tracking-wide transition-all flex items-center justify-center gap-2 mb-8"
+          style={{ backgroundColor: '#C29036', color: '#1E1008', cursor: 'pointer' }}
         >
           <span>💳</span>
           <span>Payer avec FedaPay</span>
         </button>
+
+        {/* ── INFO EN BAS DE PAGE RESTAURÉES ET ÉPURÉES ── */}
+        <div className="space-y-4">
+          <div className="rounded-2xl px-5 py-4 flex items-center gap-3" style={{ backgroundColor: '#2C1A0E', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <span className="text-xl flex-shrink-0">🎁</span>
+            <div>
+              <p className="text-xs font-semibold text-white">Crédits offerts à l'inscription</p>
+              <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>Commence gratuitement dès ton arrivée</p>
+            </div>
+          </div>
+
+          <div className="rounded-2xl px-5 py-4" style={{ backgroundColor: '#2C1A0E', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <p className="text-[10px] uppercase tracking-widest font-medium mb-3" style={{ color: 'rgba(255,255,255,0.3)' }}>Paiements acceptés</p>
+            <div className="flex items-center gap-2 flex-wrap">
+              {[
+                { icon: '📱', label: 'Mobile Money' },
+                { icon: '💳', label: 'Carte bancaire' },
+                { icon: '🏦', label: 'Virement' },
+              ].map(({ icon, label }) => (
+                <div key={label} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs" style={{ background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.55)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <span>{icon}</span>
+                  <span>{label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   );
