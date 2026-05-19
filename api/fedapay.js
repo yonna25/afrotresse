@@ -38,7 +38,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { pack, email, phone, sessionId } = req.body;
+    const { pack, email, phone, sessionId, fromPath } = req.body;
     const selectedPack = PACKS[pack];
 
     if (!selectedPack || !sessionId) {
@@ -48,10 +48,9 @@ export default async function handler(req, res) {
     const host     = req.headers['x-forwarded-host'] || req.headers.host || 'afrotresse.com';
     const protocol = host.includes('localhost') ? 'http' : 'https';
 
-    // ── callback_url pointe vers /merci.html — page statique minimaliste ──
-    // Ne charge PAS AfroTresse dans l'iframe → pas de doublon de fenêtre.
-    // Le succès est détecté par polling dans FedaPayModal (Credits.jsx).
-    const callbackUrl = `${protocol}://${host}/merci.html?pack=${pack}&sid=${encodeURIComponent(sessionId)}`;
+    // Construction propre et dynamique de l'URL d'origine cible
+    const cleanPath = fromPath && fromPath.startsWith('/') ? fromPath : '/profile';
+    const callbackUrl = `${protocol}://${host}${cleanPath}`;
 
     const fedaRes = await fetch(`${fedaBase}/v1/transactions`, {
       method: 'POST',
