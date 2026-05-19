@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Analytics } from '@vercel/analytics/react'
 
@@ -40,15 +40,19 @@ function AdminRoute({ children }) {
     });
   }, []);
 
-  if (session === undefined) return (
-    <div className="min-h-screen bg-[#0F0500] flex items-center justify-center">
-      <div className="flex flex-col items-center gap-3">
-        <div className="w-6 h-6 border-2 border-[#C9963A] border-t-transparent rounded-full animate-spin"></div>
-        <span className="text-[#C9963A] text-[10px] font-black uppercase tracking-widest">Verification...</span>
+  if (session === undefined) {
+    return (
+      <div className="min-h-screen bg-[#0F0500] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-6 h-6 border-2 border-[#C9963A] border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-[#C9963A] text-[10px] font-black uppercase tracking-widest">
+            Verification...
+          </span>
+        </div>
       </div>
-    </div>
-  );
-  
+    );
+  }
+
   if (!session) return <Navigate to="/login" replace />;
   return children;
 }
@@ -70,18 +74,23 @@ function CreditSuccessPopup({ data, onClose }) {
         initial={{ scale: 0.8, y: 40, opacity: 0 }}
         animate={{ scale: 1, y: 0, opacity: 1 }}
         exit={{ scale: 0.8, y: 40, opacity: 0 }}
-        className="w-full max-w-sm rounded-[2.5rem] p-8 text-center relative overflow-hidden"
+        className="w-full max-w-sm rounded-[2.5rem] p-8 text-center"
         style={{
           background: 'linear-gradient(160deg, #2C1A0E 0%, #3D2616 100%)',
           border: '2px solid #C9963A',
           boxShadow: '0 0 60px rgba(201,150,58,0.4)',
         }}
-        onClick={e => e.stopPropagation()}
       >
         <div className="text-6xl mb-4">💎</div>
-        <h2 className="text-2xl font-black text-[#C9963A] mb-1">Felicitations {data.userName} ! 🎉</h2>
-        <p className="text-4xl font-black text-white my-4">+{data.credits} credits</p>
-        <p className="text-xs text-white/40 mb-6">Nouveau solde : <span className="text-white font-bold">{getCredits()}</span></p>
+        <h2 className="text-2xl font-black text-[#C9963A] mb-1">
+          Felicitations {data.userName} ! 🎉
+        </h2>
+        <p className="text-4xl font-black text-white my-4">
+          +{data.credits} credits
+        </p>
+        <p className="text-xs text-white/40 mb-6">
+          Nouveau solde : <span className="text-white font-bold">{getCredits()}</span>
+        </p>
         <button
           onClick={onClose}
           className="w-full py-4 rounded-2xl font-black text-[#1A0A00]"
@@ -111,82 +120,77 @@ function CreditErrorPopup({ onClose, onRetry }) {
         initial={{ scale: 0.8, y: 40, opacity: 0 }}
         animate={{ scale: 1, y: 0, opacity: 1 }}
         exit={{ scale: 0.8, y: 40, opacity: 0 }}
-        className="w-full max-w-sm rounded-[2.5rem] p-8 text-center relative overflow-hidden"
+        className="w-full max-w-sm rounded-[2.5rem] p-8 text-center"
         style={{
           background: 'linear-gradient(160deg, #1A0A0A 0%, #2E1010 100%)',
           border: '2px solid #C93A3A',
           boxShadow: '0 0 60px rgba(201,58,58,0.35)',
         }}
-        onClick={e => e.stopPropagation()}
       >
         <div className="text-6xl mb-4">⚠️</div>
-        <h2 className="text-2xl font-black mb-2" style={{ color: '#E87A7A' }}>
+        <h2 className="text-2xl font-black mb-2 text-[#E87A7A]">
           Paiement non abouti
         </h2>
-        <p className="text-sm mb-6" style={{ color: 'rgba(255,255,255,0.55)', lineHeight: 1.7 }}>
-          Une erreur interne s'est produite lors de la validation de votre paiement.
-          Aucun montant n'a ete debite. Reessayez ou contactez le support.
+
+        <p className="text-sm mb-6 text-white/60 leading-relaxed">
+          Une erreur s'est produite. Aucun débit effectué.
         </p>
+
         <div className="flex flex-col gap-3">
           <button
             onClick={onRetry}
             className="w-full py-4 rounded-2xl font-black text-white"
             style={{ background: 'linear-gradient(135deg, #C93A3A, #E87A7A)' }}
           >
-            Reessayer le paiement
+            Reessayer
           </button>
+
           <button
             onClick={onClose}
-            className="w-full py-3 rounded-2xl font-semibold text-sm"
-            style={{
-              background: 'transparent',
-              border: '1px solid rgba(255,255,255,0.15)',
-              color: 'rgba(255,255,255,0.5)',
-            }}
+            className="w-full py-3 rounded-2xl text-sm text-white/60"
+            style={{ border: '1px solid rgba(255,255,255,0.15)' }}
           >
             Fermer
           </button>
         </div>
-        <p className="text-[10px] mt-4" style={{ color: 'rgba(255,255,255,0.25)' }}>
-          Si le probleme persiste, contactez-nous via WhatsApp.
-        </p>
       </motion.div>
     </motion.div>
   )
 }
 
 function AnimatedRoutes() {
-  const location = useLocation()
-  
-  const hideNav = [
-    '/camera', '/analyze', '/magic-link', '/admin-reviews', 
-    '/admin-partners', '/admin-credits', '/admin-users', '/login', '/debug'
-  ].includes(location.pathname)
+  const hideNav = false;
 
   return (
     <>
       <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/camera" element={<Camera />} />
-          <Route path="/analyze" element={<Analyze />} />
-          <Route path="/results" element={<Results />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/credits" element={<Credits />} />
-          <Route path="/debug" element={<AdminRoute><Debug /></AdminRoute>} />
-          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-          <Route path="/terms-of-service" element={<TermsOfService />} />
-          <Route path="/cookie-policy" element={<CookiePolicy />} />
-          <Route path="/faq" element={<FAQ />} />
-          <Route path="/magic-link" element={<MagicLink />} />
-          <Route path="/library" element={<Library />} />
-          <Route path="/partners" element={<Partners />} />
-          <Route path="/admin-reviews" element={<AdminRoute><AdminReviews /></AdminRoute>} />
-          <Route path="/admin-partners" element={<AdminRoute><AdminPartners /></AdminRoute>} />
-          <Route path="/admin-credits" element={<AdminRoute><AdminCredits /></AdminRoute>} />
-          <Route path="/admin-users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
-          <Route path="/login" element={<Login />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/camera" element={<Camera />} />
+        <Route path="/analyze" element={<Analyze />} />
+        <Route path="/results" element={<Results />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/credits" element={<Credits />} />
+
+        <Route path="/debug" element={<Debug />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/terms-of-service" element={<TermsOfService />} />
+        <Route path="/cookie-policy" element={<CookiePolicy />} />
+        <Route path="/faq" element={<FAQ />} />
+        <Route path="/magic-link" element={<MagicLink />} />
+        <Route path="/library" element={<Library />} />
+        <Route path="/partners" element={<Partners />} />
+
+        <Route path="/admin-reviews" element={<AdminRoute><AdminReviews /></AdminRoute>} />
+        <Route path="/admin-partners" element={<AdminRoute><AdminPartners /></AdminRoute>} />
+        <Route path="/admin-credits" element={<AdminRoute><AdminCredits /></AdminRoute>} />
+        <Route path="/admin-users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
+
+        <Route path="/login" element={<Login />} />
+
+        {/* IMPORTANT: plus de redirect vers "/" */}
+        <Route path="*" element={<div className="text-white p-6">Page introuvable</div>} />
       </Routes>
+
       {!hideNav && <BottomNav />}
     </>
   )
@@ -194,7 +198,7 @@ function AnimatedRoutes() {
 
 export default function App() {
   const [creditSuccess, setCreditSuccess] = useState(null)
-  const [creditError, setCreditError]     = useState(false)
+  const [creditError, setCreditError] = useState(false)
 
   useEffect(() => {
     const syncSession = async (user) => {
@@ -205,6 +209,7 @@ export default function App() {
         .select('credits')
         .eq('user_id', user.id)
         .single();
+
       if (creditData?.credits > 0) setCredits(creditData.credits);
 
       await supabase
@@ -222,34 +227,35 @@ export default function App() {
     });
 
     return () => subscription?.unsubscribe();
-  }, [])
+  }, []);
 
   useEffect(() => {
     const handler = (e) => setCreditSuccess(e.detail);
     window.addEventListener('afrotresse:credit_success', handler);
     return () => window.removeEventListener('afrotresse:credit_success', handler);
-  }, [])
+  }, []);
 
   useEffect(() => {
     const handler = () => setCreditError(true);
     window.addEventListener('afrotresse:credit_error', handler);
     return () => window.removeEventListener('afrotresse:credit_error', handler);
-  }, [])
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const status   = params.get('payment_status') || params.get('status');
+    const status = params.get('payment_status') || params.get('status');
     const canceled = params.get('canceled');
+
     if (status === 'failed' || status === 'error' || canceled === 'true') {
       setCreditError(true);
       window.history.replaceState({}, '', window.location.pathname);
     }
-  }, [])
+  }, []);
 
   const handleRetry = () => {
     setCreditError(false);
     window.location.href = '/credits';
-  }
+  };
 
   return (
     <BrowserRouter>
@@ -258,9 +264,9 @@ export default function App() {
         <div className="w-full max-w-[430px] relative bg-[#2C1A0E] min-h-screen shadow-2xl overflow-x-hidden">
           <AnimatePresence>
             {creditSuccess && (
-              <CreditSuccessPopup 
-                data={creditSuccess} 
-                onClose={() => setCreditSuccess(null)} 
+              <CreditSuccessPopup
+                data={creditSuccess}
+                onClose={() => setCreditSuccess(null)}
               />
             )}
             {creditError && (
@@ -270,9 +276,10 @@ export default function App() {
               />
             )}
           </AnimatePresence>
+
           <AnimatedRoutes />
         </div>
       </div>
     </BrowserRouter>
-  )
-}
+  );
+        }
