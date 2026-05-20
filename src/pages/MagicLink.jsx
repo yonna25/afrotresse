@@ -32,7 +32,7 @@ export default function MagicLink() {
   const [error,   setError]   = useState('')
   const [verifying, setVerifying] = useState(false)
 
-  // Ref pour bloquer la redirection automatique de la session existante AU DÉPART
+  // Bloque la redirection automatique uniquement à l'envoi initial du formulaire
   const justSent = useRef(false)
 
   useEffect(() => {
@@ -45,7 +45,7 @@ export default function MagicLink() {
       return
     }
 
-    // ── Cas 2 : déjà connecté (session existante à l'ouverture) ────────────
+    // ── Cas 2 : déjà connecté (session existante à l'ouverture de la page) ──
     getCurrentUser().then(async user => {
       if (user && !justSent.current) {
         await ensureUserExists(user)
@@ -56,11 +56,11 @@ export default function MagicLink() {
   }, [navigate])
 
   useEffect(() => {
-    // ── Écoute SIGNED_IN — Déclenché quand le lien mail est cliqué ──
+    // ── Écoute SIGNED_IN — Déclenché dès que l'onglet reçoit le token d'accès du mail ──
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
-          // On redirige sans condition pour libérer l'écran figé
+          // Redirection directe sans aucune restriction
           await ensureUserExists(session.user)
           restoreSessionBackup()
           navigate('/profile', { replace: true })
@@ -76,7 +76,7 @@ export default function MagicLink() {
     setError('')
     try {
       getSessionIdWithFp()
-      justSent.current = true  // Bloque la vérification initiale au chargement
+      justSent.current = true  
       await sendMagicLink(email.trim())
       setSent(true)
     } catch {
@@ -87,7 +87,7 @@ export default function MagicLink() {
     }
   }
 
-  // ── Écran de vérification (retour depuis le lien email) ──────────────────
+  // ── Écran de vérification (Affiché sur le nouvel onglet ouvert par l'email) ──
   if (verifying) {
     return (
       <div
