@@ -32,24 +32,20 @@ export default function MagicLink() {
   const [error,   setError]   = useState('')
   const [verifying, setVerifying] = useState(false)
 
-  // Ref pour savoir si on vient d'envoyer le lien (évite la redirection immédiate)
+  // Ref pour bloquer la redirection automatique de la session existante AU DÉPART
   const justSent = useRef(false)
 
   useEffect(() => {
     getSessionIdWithFp()
 
     // ── Cas 1 : retour depuis le magic link (hash dans l'URL) ──────────────
-    // Supabase envoie #access_token=...&type=magiclink dans l'URL
     const hash = window.location.hash
     if (hash && hash.includes('access_token')) {
       setVerifying(true)
-      // Supabase JS détecte automatiquement le hash et établit la session
-      // On écoute juste le SIGNED_IN qui va suivre
       return
     }
 
-    // ── Cas 2 : déjà connecté (session existante) ──────────────────────────
-    // Ne pas rediriger si on vient juste d'envoyer le lien
+    // ── Cas 2 : déjà connecté (session existante à l'ouverture) ────────────
     getCurrentUser().then(async user => {
       if (user && !justSent.current) {
         await ensureUserExists(user)
@@ -60,16 +56,14 @@ export default function MagicLink() {
   }, [navigate])
 
   useEffect(() => {
-    // ── Écoute SIGNED_IN — déclenché après parsing du hash par Supabase ──
+    // ── Écoute SIGNED_IN — Déclenché quand le lien mail est cliqué ──
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
-          // Ne rediriger que si on n'est pas en train d'attendre un lien
-          if (!justSent.current) {
-            await ensureUserExists(session.user)
-            restoreSessionBackup()
-            navigate('/profile', { replace: true })
-          }
+          // On redirige sans condition pour libérer l'écran figé
+          await ensureUserExists(session.user)
+          restoreSessionBackup()
+          navigate('/profile', { replace: true })
         }
       }
     )
@@ -82,7 +76,7 @@ export default function MagicLink() {
     setError('')
     try {
       getSessionIdWithFp()
-      justSent.current = true  // bloquer la redirection automatique
+      justSent.current = true  // Bloque la vérification initiale au chargement
       await sendMagicLink(email.trim())
       setSent(true)
     } catch {
