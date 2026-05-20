@@ -32,20 +32,19 @@ export default function MagicLink() {
   const [error,   setError]   = useState('')
   const [verifying, setVerifying] = useState(false)
 
-  // Bloque la redirection automatique uniquement à l'envoi initial du formulaire
   const justSent = useRef(false)
 
   useEffect(() => {
     getSessionIdWithFp()
 
-    // ── Cas 1 : retour depuis le magic link (hash dans l'URL) ──────────────
+    // ── Cas 1 : Retour depuis le magic link (Nouvelle fenêtre ouverte par le mail) ──
     const hash = window.location.hash
     if (hash && hash.includes('access_token')) {
       setVerifying(true)
       return
     }
 
-    // ── Cas 2 : déjà connecté (session existante à l'ouverture de la page) ──
+    // ── Cas 2 : Déjà connecté (Session existante à l'ouverture) ──
     getCurrentUser().then(async user => {
       if (user && !justSent.current) {
         await ensureUserExists(user)
@@ -56,13 +55,13 @@ export default function MagicLink() {
   }, [navigate])
 
   useEffect(() => {
-    // ── Écoute SIGNED_IN — Déclenché dès que l'onglet reçoit le token d'accès du mail ──
+    // ── Écoute globale : Déclenché sur la nouvelle ET sur l'ancienne fenêtre ──
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
-          // Redirection directe sans aucune restriction
           await ensureUserExists(session.user)
           restoreSessionBackup()
+          // Redirige immédiatement, libérant ainsi l'ancienne fenêtre abandonnée
           navigate('/profile', { replace: true })
         }
       }
@@ -87,7 +86,6 @@ export default function MagicLink() {
     }
   }
 
-  // ── Écran de vérification (Affiché sur le nouvel onglet ouvert par l'email) ──
   if (verifying) {
     return (
       <div
