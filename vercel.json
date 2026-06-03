@@ -30,7 +30,7 @@
         },
         {
           "key": "X-Frame-Options",
-          "value": "SAMEORIGIN"
+          "value": "ALLOW-FROM https://checkout.fedapay.com"
         },
         {
           "key": "X-Content-Type-Options",
