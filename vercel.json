@@ -3,6 +3,7 @@
   "framework": "vite",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+
   "headers": [
     {
       "source": "/api/(.*)",
@@ -30,7 +31,7 @@
         },
         {
           "key": "X-Frame-Options",
-          "value": "DENY"
+          "value": "SAMEORIGIN"
         },
         {
           "key": "X-Content-Type-Options",
@@ -46,11 +47,12 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://connect.facebook.net https://sandbox-api.fedapay.com https://api.fedapay.com https://checkout.fedapay.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.supabase.co https://api.fedapay.com https://sandbox-api.fedapay.com https://www.google-analytics.com https://region1.google-analytics.com; frame-src https://*.fedapay.com; object-src 'none'"
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://connect.facebook.net https://sandbox-api.fedapay.com https://api.fedapay.com https://checkout.fedapay.com https://sandbox-checkout.fedapay.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.supabase.co https://api.fedapay.com https://sandbox-api.fedapay.com https://checkout.fedapay.com https://sandbox-checkout.fedapay.com https://www.google-analytics.com https://region1.google-analytics.com; frame-src https://checkout.fedapay.com https://sandbox-checkout.fedapay.com https://process.fedapay.com https://sandbox-process.fedapay.com; object-src 'none'"
         }
       ]
     }
   ],
+
   "rewrites": [
     {
       "source": "/api/:path*",
