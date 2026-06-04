@@ -266,9 +266,6 @@ export default function Results() {
     return fullOrder.slice(start, start + STYLES_PER_PAGE);
   };
 
-  const displayedStyles = getPageStyles(currentPage);
-  const maxPages = styles.length > 0 ? Math.ceil(styles.length / STYLES_PER_PAGE) : 2;
-
   useEffect(() => {
     // Enregistrer les styles actuellement affichés comme "vus"
     displayedStyles.forEach(style => {
