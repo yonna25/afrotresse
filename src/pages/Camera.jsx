@@ -37,8 +37,8 @@ async function checkImageQuality(dataUrl) {
       }
       const mean     = sum / n
       const variance = sumSq / n - mean * mean
-      // Variance < 100 = image trop uniforme = floue ou trop sombre
-      resolve(variance > 100)
+      // Variance < 200 = image trop uniforme = floue ou trop sombre
+      resolve(variance > 200)
     }
     img.src = dataUrl
   })
