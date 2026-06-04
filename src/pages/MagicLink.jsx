@@ -25,26 +25,47 @@ function restoreSessionBackup() {
 }
 
 export default function MagicLink() {
-  const navigate       = useNavigate()
+  const navigate        = useNavigate()
   const [email,   setEmail]   = useState('')
   const [sent,    setSent]    = useState(false)
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState('')
   const [verifying, setVerifying] = useState(false)
+  const [checking,  setChecking]  = useState(false)
 
-  const justSent = useRef(false)
+  const justSent   = useRef(false)
+  const pollRef    = useRef(null)
+
+  // ── Démarrer le polling dès que le lien est envoyé ──────────────────────
+  useEffect(() => {
+    if (!sent) return
+
+    pollRef.current = setInterval(async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.user) {
+          clearInterval(pollRef.current)
+          await ensureUserExists(session.user)
+          restoreSessionBackup()
+          navigate('/profile', { replace: true })
+        }
+      } catch {}
+    }, 2000)
+
+    return () => clearInterval(pollRef.current)
+  }, [sent, navigate])
 
   useEffect(() => {
     getSessionIdWithFp()
 
-    // ── Cas 1 : Retour depuis le magic link (Nouvelle fenêtre ouverte par le mail) ──
+    // Cas 1 : Retour depuis le magic link (nouvelle fenêtre avec access_token)
     const hash = window.location.hash
     if (hash && hash.includes('access_token')) {
       setVerifying(true)
       return
     }
 
-    // ── Cas 2 : Déjà connecté (Session existante à l'ouverture) ──
+    // Cas 2 : Déjà connecté
     getCurrentUser().then(async user => {
       if (user && !justSent.current) {
         await ensureUserExists(user)
@@ -55,13 +76,13 @@ export default function MagicLink() {
   }, [navigate])
 
   useEffect(() => {
-    // ── Écoute globale : Déclenché sur la nouvelle ET sur l'ancienne fenêtre ──
+    // Écoute cross-tab (fonctionne si même navigateur/contexte)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
+          clearInterval(pollRef.current)
           await ensureUserExists(session.user)
           restoreSessionBackup()
-          // Redirige immédiatement, libérant ainsi l'ancienne fenêtre abandonnée
           navigate('/profile', { replace: true })
         }
       }
@@ -75,14 +96,34 @@ export default function MagicLink() {
     setError('')
     try {
       getSessionIdWithFp()
-      justSent.current = true  
+      justSent.current = true
       await sendMagicLink(email.trim())
       setSent(true)
-    } catch {
+    } catch (err) {
       justSent.current = false
-      setError("Erreur lors de l'envoi. Vérifie ton email et réessaie.")
+      setError(err?.message || "Erreur lors de l'envoi. Réessaie.")
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Bouton manuel — vérifie la session à la demande
+  const handleManualCheck = async () => {
+    setChecking(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.user) {
+        clearInterval(pollRef.current)
+        await ensureUserExists(session.user)
+        restoreSessionBackup()
+        navigate('/profile', { replace: true })
+      } else {
+        setError("Pas encore connecté. Clique le lien dans ton email d'abord.")
+      }
+    } catch {
+      setError("Impossible de vérifier. Réessaie.")
+    } finally {
+      setChecking(false)
     }
   }
 
@@ -192,6 +233,7 @@ export default function MagicLink() {
               Clique dessus pour accéder à ton compte.
             </p>
 
+            {/* Indicateur polling */}
             <div
               className="flex items-center justify-center gap-2 py-3 rounded-2xl mb-3"
               style={{ background: 'rgba(201,150,58,0.08)', border: '1px solid rgba(201,150,58,0.2)' }}
@@ -204,6 +246,31 @@ export default function MagicLink() {
                 En attente de connexion...
               </span>
             </div>
+
+            {/* Bouton manuel — fallback Gmail in-app browser */}
+            <button
+              onClick={handleManualCheck}
+              disabled={checking}
+              className="w-full py-3 rounded-2xl font-display font-semibold text-sm mb-3 disabled:opacity-50"
+              style={{ background: 'linear-gradient(135deg,#C9963A,#E8B96A)', color: '#2C1A0E' }}
+            >
+              {checking
+                ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                    </svg>
+                    Vérification...
+                  </span>
+                )
+                : "J'ai cliqué le lien → Continuer"
+              }
+            </button>
+
+            {error && (
+              <p className="text-xs text-red-400 mb-3 text-center">{error}</p>
+            )}
 
             <div
               className="rounded-2xl p-4 mb-4 space-y-1.5"
@@ -218,7 +285,13 @@ export default function MagicLink() {
             </div>
 
             <button
-              onClick={() => { setSent(false); justSent.current = false; setEmail(''); }}
+              onClick={() => {
+                clearInterval(pollRef.current)
+                setSent(false)
+                justSent.current = false
+                setEmail('')
+                setError('')
+              }}
               className="w-full py-3 rounded-2xl font-display font-semibold text-sm"
               style={{
                 background: 'rgba(201,150,58,0.15)',
