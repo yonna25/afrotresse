@@ -12,28 +12,6 @@ import { useFavorites } from "../hooks/useFavorites.js";
 
 const STYLES_PER_PAGE = 3;
 
-// ─── Gestion des styles vus (sessionStorage = réinitialise à chaque session) ───
-const KEY_SEEN_STYLES = "afrotresse_seen_styles_session";
-
-function getSeenStyleIds() {
-  const raw = sessionStorage.getItem(KEY_SEEN_STYLES);
-  return raw ? JSON.parse(raw) : [];
-}
-
-function addSeenStyleId(styleId) {
-  const seen = getSeenStyleIds();
-  if (!seen.includes(styleId)) {
-    seen.push(styleId);
-    sessionStorage.setItem(KEY_SEEN_STYLES, JSON.stringify(seen));
-  }
-}
-
-function filterOutSeenStyles(allStyles) {
-  const seen = getSeenStyleIds();
-  return allStyles.filter(s => !seen.includes(s.id));
-}
-// ─────────────────────────────────────────────────────────────────────────────
-
 const EMPTY_STEPS = [
   { icon: "📸", num: "01", label: "Selfie", sub: "Prends ou upload une photo" },
   { icon: "🔍", num: "02", label: "Analyse", sub: "Morphologie détectée en 3s" },
@@ -221,13 +199,13 @@ export default function Results() {
     return () => { clearInterval(viewInterval); clearInterval(likeInterval); };
   }, []);
 
-  const getShuffledStyles = (shuffleSeed, stylesArray = styles) => {
+  const getShuffledStyles = (shuffleSeed) => {
     const seeded = (seed) => {
       let s = seed;
       return () => { s = (s * 1664525 + 1013904223) & 0xffffffff; return (s >>> 0) / 0xffffffff; };
     };
     const rand = seeded(shuffleSeed);
-    const arr = [...stylesArray];
+    const arr = [...styles];
     for (let i = arr.length - 1; i > 0; i--) {
       const j = Math.floor(rand() * (i + 1));
       [arr[i], arr[j]] = [arr[j], arr[i]];
@@ -236,12 +214,9 @@ export default function Results() {
   };
 
   const getPageStyles = (page) => {
-    // Exclure les styles déjà vus dans cette session
-    const availableStyles = filterOutSeenStyles(styles);
-    const total = availableStyles.length;
-    
+    const total = styles.length;
     if (total === 0) return [];
-    if (total <= STYLES_PER_PAGE) return availableStyles.slice(0, STYLES_PER_PAGE);
+    if (total <= STYLES_PER_PAGE) return styles.slice(0, STYLES_PER_PAGE);
 
     const baseSeed = userName.split("").reduce((acc, c) => acc + c.charCodeAt(0), 12345);
 
@@ -251,7 +226,7 @@ export default function Results() {
       const result = [];
       let cycle = 0;
       while (result.length < page * STYLES_PER_PAGE) {
-        const shuffled = getShuffledStyles(baseSeed + cycle * 9973, availableStyles);
+        const shuffled = getShuffledStyles(baseSeed + cycle * 9973);
         for (const s of shuffled) {
           result.push(s);
           if (result.length >= page * STYLES_PER_PAGE) break;
@@ -266,12 +241,8 @@ export default function Results() {
     return fullOrder.slice(start, start + STYLES_PER_PAGE);
   };
 
-  useEffect(() => {
-    // Enregistrer les styles actuellement affichés comme "vus"
-    displayedStyles.forEach(style => {
-      addSeenStyleId(style.id);
-    });
-  }, [displayedStyles]);
+  const displayedStyles = getPageStyles(currentPage);
+  const maxPages = styles.length > 0 ? Math.ceil(styles.length / STYLES_PER_PAGE) : 2;
 
   const goToPage = (page) => {
     setCurrentPage(page);
